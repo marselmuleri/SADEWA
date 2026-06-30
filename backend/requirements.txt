@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+alembic
+psycopg2-binary
+python-jose[cryptography]
+passlib[bcrypt]
+pydantic[email]
+pandas
+numpy
+scikit-learn
+joblib
+langchain
+langchain-google-genai
+python-multipart
+python-dotenv
