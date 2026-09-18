@@ -24,3 +24,4 @@ from app.models.rps import RPS
 from app.models.narasi_evaluasi import NarasiEvaluasi
 from app.models.laporan_evaluasi import LaporanEvaluasi
 from app.models.siap_sync_log import SiapSyncLog
+from app.models.dokumen import Dokumen
