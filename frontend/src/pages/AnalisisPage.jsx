@@ -1,54 +1,11 @@
 import { useEffect, useState } from 'react'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import api from '../services/api'
-import PrediksiCard from '../components/PrediksiCard'
-import FeatureImportanceChart from '../components/FeatureImportanceChart'
 
 export default function AnalisisPage() {
-  const [mahasiswa, setMahasiswa] = useState([])
-  const [cpl, setCpl] = useState([])
-  const [mataKuliah, setMataKuliah] = useState([])
-  const [form, setForm] = useState({ mahasiswa_id: '', mata_kuliah_id: '', cpl_id: '' })
-  const [hasil, setHasil] = useState(null)
-
-  useEffect(() => {
-    api.get('/mahasiswa').then((r) => setMahasiswa(r.data))
-    api.get('/cpl').then((r) => setCpl(r.data))
-    api.get('/mata-kuliah').then((r) => setMataKuliah(r.data))
-  }, [])
-
-  const prediksi = async () => {
-    const { data } = await api.post('/analisis/prediksi', {
-      mahasiswa_id: Number(form.mahasiswa_id),
-      mata_kuliah_id: Number(form.mata_kuliah_id),
-      cpl_id: Number(form.cpl_id),
-    })
-    setHasil(data)
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="bg-white rounded-xl p-4 border border-slate-200 grid md:grid-cols-4 gap-2">
-        <select className="border rounded px-3 py-2" onChange={(e) => setForm({ ...form, mahasiswa_id: e.target.value })}>
-          <option>Pilih Mahasiswa</option>
-          {mahasiswa.map((m) => <option key={m.id} value={m.id}>{m.nama}</option>)}
-        </select>
-        <select className="border rounded px-3 py-2" onChange={(e) => setForm({ ...form, mata_kuliah_id: e.target.value })}>
-          <option>Pilih MK</option>
-          {mataKuliah.map((m) => <option key={m.id} value={m.id}>{m.nama_mk}</option>)}
-        </select>
-        <select className="border rounded px-3 py-2" onChange={(e) => setForm({ ...form, cpl_id: e.target.value })}>
-          <option>Pilih CPL</option>
-          {cpl.map((c) => <option key={c.id} value={c.id}>{c.kode_cpl}</option>)}
-        </select>
-        <button className="bg-primary text-white rounded" onClick={prediksi}>Prediksi</button>
-      </div>
-
-      {hasil && (
-        <div className="grid md:grid-cols-2 gap-4">
-          <PrediksiCard data={hasil} />
-          <FeatureImportanceChart featureImportance={hasil.feature_importance} />
-        </div>
-      )}
-    </div>
-  )
+  const [data,setData]=useState([])
+  useEffect(()=>{api.get('/trending/cpl-by-angkatan').then(r=>setData(r.data.trend_data)).catch(()=>setData([]))},[])
+  const exportCsv=()=>{const csv=['Angkatan,Ketercapaian',...data.map(x=>`${x.angkatan},${x.achievement}`)].join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='tren-ketercapaian.csv';a.click()}
+  const low=data.filter(x=>x.achievement<70)
+  return <div className="space-y-5"><div className="flex justify-between"><div><h1 className="text-2xl font-bold text-primary">Analisis Tren Ketercapaian CPL</h1><p className="text-sm text-slate-500">Perbandingan lintas angkatan untuk evaluasi kurikulum.</p></div><button onClick={exportCsv} className="border rounded px-3 py-2 text-sm">Export Excel (CSV)</button></div><div className="grid md:grid-cols-2 gap-5"><section className="bg-white border rounded-xl p-5 h-80"><h2 className="font-semibold">Tren tahun ke tahun</h2><ResponsiveContainer width="100%" height="90%"><LineChart data={data}><XAxis dataKey="angkatan"/><YAxis domain={[0,100]}/><Tooltip/><Line type="monotone" dataKey="achievement" stroke="#1A3A6B" strokeWidth={3}/></LineChart></ResponsiveContainer></section><section className="bg-white border rounded-xl p-5 h-80"><h2 className="font-semibold">Perbandingan angkatan</h2><ResponsiveContainer width="100%" height="90%"><BarChart data={data}><XAxis dataKey="angkatan"/><YAxis domain={[0,100]}/><Tooltip/><Bar dataKey="achievement" fill="#F4A300"/></BarChart></ResponsiveContainer></section></div><section className="bg-white border rounded-xl p-5"><h2 className="font-semibold">Tabel & insight</h2><table className="w-full text-sm mt-3"><thead className="text-left border-b"><tr><th className="py-2">Angkatan</th><th>Ketercapaian CPL</th><th>Gap target 70%</th><th>Status</th></tr></thead><tbody>{data.map(x=><tr className="border-b" key={x.angkatan}><td className="py-3">{x.angkatan}</td><td>{x.achievement}%</td><td>{(x.achievement-70).toFixed(1)}%</td><td className={x.achievement>=70?'text-emerald-700':'text-red-600'}>{x.achievement>=70?'Tercapai':'Perlu tindak lanjut'}</td></tr>)}</tbody></table>{low.length>0&&<p className="mt-4 text-sm bg-amber-50 p-3 rounded">Insight: ketercapaian angkatan {low.map(x=>x.angkatan).join(', ')} masih di bawah target; lakukan review kurikulum dan rencana tindak lanjut.</p>}</section></div>
 }

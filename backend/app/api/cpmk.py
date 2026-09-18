@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.deps import get_current_user, require_roles
+from app.core.deps import allowed_program_ids, get_current_user, require_program_access, require_roles
 from app.models.enums import UserRole
 from app.models.cpmk import CPMK
 from app.models.cpmk_ik_map import CPMKIKMap
@@ -33,6 +33,7 @@ def update_cpmk(cpmk_id: int, payload: CPMKUpdate, db: Session = Depends(get_db)
     data = db.query(CPMK).filter(CPMK.id == cpmk_id).first()
     if not data:
         raise HTTPException(status_code=404, detail="CPMK tidak ditemukan")
+    require_program_access(user, data.mata_kuliah.program_studi_id)
     for key, value in payload.model_dump(exclude_unset=True).items():
         setattr(data, key, value)
     db.commit()

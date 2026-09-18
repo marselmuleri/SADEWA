@@ -7,6 +7,7 @@ export const useRole = () => {
     isAdmin: user?.role === 'admin',
     isDosen: user?.role === 'dosen',
     isKaprodi: user?.role === 'kaprodi',
+    isDekan: user?.role === 'dekan',
     canEdit: ['admin', 'kaprodi', 'dosen'].includes(user?.role),
     canDelete: ['admin', 'kaprodi'].includes(user?.role),
     canManageUser: user?.role === 'admin',

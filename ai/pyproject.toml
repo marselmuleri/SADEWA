@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sadewa-ai"
+version = "1.0.0"
+description = "Modul AI (RAG pipeline) untuk SADEWA — generate RPS dan narasi evaluasi kurikulum"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+authors = [{ name = "Capstone SADEWA — AI Engineer" }]
+
+dependencies = [
+    # Orkestrasi RAG
+    "langchain==0.3.27",
+    "langchain-community==0.3.27",
+    "langchain-text-splitters==0.3.11",
+    # Vector store
+    "langchain-chroma==0.2.6",
+    "chromadb>=1.0.20",
+    # Embedding
+    "langchain-huggingface==0.3.1",
+    "sentence-transformers==3.3.1",
+    # Pembaca PDF
+    "pypdf==5.1.0",
+    # Klien LLM Qwen (kompatibel OpenAI)
+    "openai==1.59.6",
+    # Konfigurasi & validasi
+    "python-dotenv==1.0.1",
+    "pydantic>=2.6",
+    "pydantic-settings>=2.2",
+]
+
+[project.optional-dependencies]
+# Dibutuhkan hanya kalau mau menjalankan modul ini sebagai REST API sendiri
+# (lihat sadewa_ai/api.py). Tidak wajib untuk pemakaian sebagai library.
+api = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+]
+dev = [
+    "pytest==8.3.4",
+    "httpx>=0.27",   # dipakai TestClient FastAPI di tests/test_api.py
+]
+
+[project.scripts]
+sadewa-ai = "sadewa_ai.cli:main"
+sadewa-ingest = "sadewa_ai.ingest:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+sadewa_ai = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

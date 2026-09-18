@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.deps import get_current_user, require_roles
+from app.core.deps import allowed_program_ids, get_current_user, require_program_access, require_roles
 from app.models.enums import UserRole
 from app.models.mata_kuliah import MataKuliah
 from app.models.user import User
@@ -11,7 +11,8 @@ router = APIRouter()
 
 
 @router.post("", response_model=MataKuliahResponse)
-def create_mata_kuliah(payload: MataKuliahCreate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin, UserRole.kaprodi))):
+def create_mata_kuliah(payload: MataKuliahCreate, db: Session = Depends(get_db), user: User = Depends(require_roles(UserRole.admin, UserRole.kaprodi))):
+    require_program_access(user, payload.program_studi_id)
     data = MataKuliah(**payload.model_dump())
     db.add(data)
     db.commit()
@@ -28,18 +29,20 @@ def list_mata_kuliah(kurikulum_version_id: int | None = None, db: Session = Depe
 
 
 @router.get("/{mata_kuliah_id}", response_model=MataKuliahResponse)
-def get_mata_kuliah(mata_kuliah_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+def get_mata_kuliah(mata_kuliah_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     data = db.query(MataKuliah).filter(MataKuliah.id == mata_kuliah_id).first()
     if not data:
         raise HTTPException(status_code=404, detail="Mata kuliah tidak ditemukan")
+    require_program_access(user, data.program_studi_id)
     return data
 
 
 @router.put("/{mata_kuliah_id}", response_model=MataKuliahResponse)
-def update_mata_kuliah(mata_kuliah_id: int, payload: MataKuliahUpdate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin, UserRole.kaprodi))):
+def update_mata_kuliah(mata_kuliah_id: int, payload: MataKuliahUpdate, db: Session = Depends(get_db), user: User = Depends(require_roles(UserRole.admin, UserRole.kaprodi))):
     data = db.query(MataKuliah).filter(MataKuliah.id == mata_kuliah_id).first()
     if not data:
         raise HTTPException(status_code=404, detail="Mata kuliah tidak ditemukan")
+    require_program_access(user, data.program_studi_id)
     for key, value in payload.model_dump(exclude_unset=True).items():
         setattr(data, key, value)
     db.commit()
