@@ -1,17 +1,20 @@
-from sqlalchemy import JSON, ForeignKey, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Column, BigInteger, String, Text, DECIMAL, ForeignKey, TIMESTAMP
+from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.models.base import Base
-
 
 class CPMK(Base):
     __tablename__ = "cpmk"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    kode_cpmk: Mapped[str] = mapped_column(String(20), nullable=False)
-    deskripsi: Mapped[str] = mapped_column(Text, nullable=False)
-    mata_kuliah_id: Mapped[int] = mapped_column(ForeignKey("mata_kuliah.id"), nullable=False)
-    bobot_ke_cpl: Mapped[dict] = mapped_column(JSON, nullable=False)
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    mata_kuliah_id = Column(BigInteger, ForeignKey("mata_kuliah.id"), nullable=False)
+    kode = Column(String, nullable=False)
+    deskripsi = Column(Text, nullable=False)
+    level_taksonomi = Column(String)
+    bobot = Column(DECIMAL, nullable=False)
+    created_by = Column(BigInteger, ForeignKey("users.id"))
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
     mata_kuliah = relationship("MataKuliah", back_populates="cpmk")
-    penilaian = relationship("Penilaian", back_populates="cpmk")
-    ik_mappings = relationship("CPMKIK", back_populates="cpmk", cascade="all, delete-orphan")
+    cpmk_ik_map = relationship("CPMKIKMap", back_populates="cpmk")
+    cpmk_achievement = relationship("CPMKAchievement", back_populates="cpmk")

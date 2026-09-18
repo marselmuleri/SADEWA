@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.router import api_router
 from app.api.v1.router import api_v1_router
 from sqlalchemy import inspect, text
 from app.core.database import Base, engine
@@ -44,5 +43,4 @@ def root():
     return {"message": "SADEWA API aktif"}
 
 
-app.include_router(api_router)
 app.include_router(api_v1_router)

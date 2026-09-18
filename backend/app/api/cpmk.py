@@ -1,22 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import allowed_program_ids, get_current_user, require_program_access, require_roles
 from app.models.enums import UserRole
 from app.models.cpmk import CPMK
-from app.models.mata_kuliah import MataKuliah
+from app.models.cpmk_ik_map import CPMKIKMap
 from app.models.user import User
-from app.schemas.cpmk import CPMKCreate, CPMKResponse, CPMKUpdate
+from app.schemas.cpmk import CPMKCreate, CPMKMapIKRequest, CPMKResponse, CPMKUpdate
 
 router = APIRouter()
 
 
 @router.post("", response_model=CPMKResponse)
-def create_cpmk(payload: CPMKCreate, db: Session = Depends(get_db), user: User = Depends(require_roles(UserRole.admin, UserRole.kaprodi))):
-    course = db.get(MataKuliah, payload.mata_kuliah_id)
-    if not course: raise HTTPException(404, detail="Mata kuliah tidak ditemukan")
-    require_program_access(user, course.program_studi_id)
-    data = CPMK(**payload.model_dump())
+def create_cpmk(payload: CPMKCreate, db: Session = Depends(get_db), user: User = Depends(require_roles(UserRole.admin, UserRole.dosen))):
+    data = CPMK(**payload.model_dump(), created_by=user.id)
     db.add(data)
     db.commit()
     db.refresh(data)
@@ -24,24 +21,15 @@ def create_cpmk(payload: CPMKCreate, db: Session = Depends(get_db), user: User =
 
 
 @router.get("", response_model=list[CPMKResponse])
-def list_cpmk(mk_id: int | None = Query(default=None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    query = db.query(CPMK).join(MataKuliah).filter(MataKuliah.program_studi_id.in_(allowed_program_ids(user) or []))
-    if mk_id:
-        query = query.filter(CPMK.mata_kuliah_id == mk_id)
+def list_cpmk(mata_kuliah_id: int | None = None, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    query = db.query(CPMK)
+    if mata_kuliah_id:
+        query = query.filter(CPMK.mata_kuliah_id == mata_kuliah_id)
     return query.all()
 
 
-@router.get("/{cpmk_id}", response_model=CPMKResponse)
-def get_cpmk(cpmk_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    data = db.query(CPMK).filter(CPMK.id == cpmk_id).first()
-    if not data:
-        raise HTTPException(status_code=404, detail="CPMK tidak ditemukan")
-    require_program_access(user, data.mata_kuliah.program_studi_id)
-    return data
-
-
 @router.put("/{cpmk_id}", response_model=CPMKResponse)
-def update_cpmk(cpmk_id: int, payload: CPMKUpdate, db: Session = Depends(get_db), user: User = Depends(require_roles(UserRole.admin, UserRole.kaprodi))):
+def update_cpmk(cpmk_id: int, payload: CPMKUpdate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin, UserRole.dosen))):
     data = db.query(CPMK).filter(CPMK.id == cpmk_id).first()
     if not data:
         raise HTTPException(status_code=404, detail="CPMK tidak ditemukan")
@@ -53,12 +41,18 @@ def update_cpmk(cpmk_id: int, payload: CPMKUpdate, db: Session = Depends(get_db)
     return data
 
 
-@router.delete("/{cpmk_id}")
-def delete_cpmk(cpmk_id: int, db: Session = Depends(get_db), user: User = Depends(require_roles(UserRole.admin, UserRole.kaprodi))):
-    data = db.query(CPMK).filter(CPMK.id == cpmk_id).first()
-    if not data:
+@router.put("/{cpmk_id}/map-ik")
+def map_ik(cpmk_id: int, payload: CPMKMapIKRequest, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin, UserRole.dosen))):
+    cpmk = db.query(CPMK).filter(CPMK.id == cpmk_id).first()
+    if not cpmk:
         raise HTTPException(status_code=404, detail="CPMK tidak ditemukan")
-    require_program_access(user, data.mata_kuliah.program_studi_id)
-    db.delete(data)
+
+    total_bobot = sum(m.bobot for m in payload.mappings)
+    if total_bobot > cpmk.bobot:
+        raise HTTPException(status_code=400, detail=f"Total bobot IK ({total_bobot}%) melebihi bobot CPMK ({cpmk.bobot}%)")
+
+    db.query(CPMKIKMap).filter(CPMKIKMap.cpmk_id == cpmk_id).delete()
+    for m in payload.mappings:
+        db.add(CPMKIKMap(cpmk_id=cpmk_id, ik_id=m.ik_id, bobot=m.bobot))
     db.commit()
-    return {"message": "CPMK dihapus"}
+    return {"message": "Mapping IK berhasil disimpan"}
