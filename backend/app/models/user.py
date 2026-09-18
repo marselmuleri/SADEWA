@@ -1,19 +1,16 @@
-from datetime import datetime
-from sqlalchemy import Boolean, DateTime, Enum, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Column, BigInteger, String, Boolean, Enum as SAEnum, TIMESTAMP
+from sqlalchemy.sql import func
 from app.models.base import Base
 from app.models.enums import UserRole
 
-
 class User(Base):
     __tablename__ = "users"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    nama: Mapped[str] = mapped_column(String(150), nullable=False)
-    email: Mapped[str] = mapped_column(String(150), unique=True, index=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=False, default=UserRole.dosen)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
-    mata_kuliah = relationship("MataKuliah", back_populates="dosen")
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    nama = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    password_hash = Column(String, nullable=True)
+    nip = Column(String, nullable=True)
+    role = Column(SAEnum(UserRole, name="role_enum", values_callable=lambda e: [x.value for x in e]), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())

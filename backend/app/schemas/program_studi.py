@@ -6,7 +6,7 @@ from app.schemas.common import ORMBaseModel
 class ProgramStudiBase(BaseModel):
     nama: str
     kode: str
-    jenjang: str
+    fakultas_id: int
 
 
 class ProgramStudiCreate(ProgramStudiBase):
@@ -16,7 +16,7 @@ class ProgramStudiCreate(ProgramStudiBase):
 class ProgramStudiUpdate(BaseModel):
     nama: str | None = None
     kode: str | None = None
-    jenjang: str | None = None
+    fakultas_id: int | None = None
 
 
 class ProgramStudiResponse(ProgramStudiBase, ORMBaseModel):
