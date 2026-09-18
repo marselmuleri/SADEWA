@@ -8,3 +8,6 @@ from app.models.cpmk import CPMK
 from app.models.penilaian import Penilaian
 from app.models.hasil_prediksi import HasilPrediksi
 from app.models.rekomendasi_llm import RekomendasiLLM
+from app.models.ik import IK
+from app.models.cpmk_ik import CPMKIK
+from app.models.dokumen import Dokumen

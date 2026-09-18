@@ -1,67 +1,14 @@
 import { useEffect, useState } from 'react'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import api from '../services/api'
-import HeatmapGrid from '../components/HeatmapGrid'
 
+const badge = (s) => s === 'Achieved' ? 'bg-emerald-100 text-emerald-700' : s === 'Critical' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
 export default function DashboardPage() {
-  const [summary, setSummary] = useState(null)
-  const [trend, setTrend] = useState([])
-  const [heatmap, setHeatmap] = useState([])
-
-  useEffect(() => {
-    api.get('/dashboard/ringkasan').then((r) => setSummary(r.data))
-    api.get('/dashboard/tren-semester').then((r) => setTrend(r.data))
-    api.get('/dashboard/heatmap').then((r) => setHeatmap(r.data))
-  }, [])
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card title="Total Mahasiswa" value={summary?.total_mahasiswa} />
-        <Card title="Total MK" value={summary?.total_mata_kuliah} />
-        <Card title="Total CPL" value={summary?.total_cpl} />
-        <Card title="Rata CPL" value={`${summary?.rata_rata_ketercapaian_cpl || 0}%`} />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl p-4 border border-slate-200 h-80">
-          <h3 className="font-semibold mb-3">Tren Ketercapaian Semester</h3>
-          <ResponsiveContainer width="100%" height="90%">
-            <LineChart data={trend}>
-              <XAxis dataKey="tahun_akademik" />
-              <YAxis />
-              <Tooltip />
-              <Line dataKey="rata_ketercapaian" stroke="#2563eb" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="bg-white rounded-xl p-4 border border-slate-200 h-80">
-          <h3 className="font-semibold mb-3">Distribusi Trend</h3>
-          <ResponsiveContainer width="100%" height="90%">
-            <BarChart data={trend}>
-              <XAxis dataKey="semester" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="rata_ketercapaian" fill="#16a34a" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl p-4 border border-slate-200">
-        <h3 className="font-semibold mb-3">Heatmap CPMK per MK</h3>
-        <HeatmapGrid data={heatmap} />
-      </div>
-    </div>
-  )
-}
-
-function Card({ title, value }) {
-  return (
-    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-      <p className="text-xs text-slate-500">{title}</p>
-      <p className="text-2xl font-bold text-primary">{value ?? '-'}</p>
-    </div>
-  )
+  const [cpl, setCpl] = useState([]); const [selected, setSelected] = useState(null); const [iks, setIks] = useState([]); const [detail, setDetail] = useState(null)
+  useEffect(() => { api.get('/dashboard/cpl-overview').then(r => setCpl(r.data)).catch(() => setCpl([])) }, [])
+  const openCpl = async (row) => { setSelected(row); setDetail(null); setIks((await api.get(`/dashboard/ik-breakdown/${row.cpl_id}`)).data.ik_list) }
+  const exportCsv = () => { const content=['Kode,Nama,Ketercapaian,Target', ...cpl.map(x=>`${x.kode},"${x.name}",${x.achievement},${x.target}`)].join('\n'); const link=document.createElement('a'); link.href=URL.createObjectURL(new Blob([content],{type:'text/csv'})); link.download='dashboard-cpl.csv'; link.click() }
+  return <div className="space-y-5"><header className="flex flex-wrap justify-between gap-3"><div><h1 className="text-2xl font-bold text-primary">Dashboard Ketercapaian OBE</h1><p className="text-sm text-slate-500">CPL → IK → CPMK · Semester aktif</p></div><div className="flex gap-2"><button onClick={exportCsv} className="border rounded px-3 py-2 text-sm">Export Excel (CSV)</button><button onClick={()=>window.print()} className="bg-primary text-white rounded px-3 py-2 text-sm">Cetak</button></div></header>
+  {!selected && <><div className="flex gap-2 text-sm"><select className="border rounded px-3"><option>2025/2026 Ganjil</option></select><select className="border rounded px-3"><option>Urutkan: Ketercapaian</option></select></div><div className="grid md:grid-cols-3 gap-4">{cpl.map(x=><button key={x.cpl_id} onClick={()=>openCpl(x)} className="text-left bg-white border rounded-xl p-5 hover:border-primary"><div className="flex justify-between"><b>{x.kode}</b><span className={`text-xs rounded px-2 py-1 ${badge(x.status)}`}>{x.status}</span></div><p className="text-sm mt-2 h-10">{x.name}</p><p className="text-3xl font-bold text-primary mt-3">{x.achievement}%</p><p className="text-xs text-slate-500 mt-2">{x.students_achieved} dari {x.students_total} mahasiswa mencapai target {x.target}%</p></button>)}{!cpl.length&&<div className="bg-white border rounded-xl p-6 text-slate-500">Belum ada ketercapaian. Atur CPL, IK, CPMK, lalu masukkan nilai.</div>}</div></>}
+  {selected&&!detail&&<section className="bg-white border rounded-xl p-5"><button onClick={()=>setSelected(null)} className="text-primary text-sm mb-4">← Semua CPL</button><h2 className="font-bold text-xl">{selected.kode}: {selected.name}</h2><p className="text-sm text-slate-500 mb-4">Level 2 · Indikator Kinerja</p><table className="w-full text-sm"><thead className="text-left border-b"><tr><th className="py-2">IK</th><th>Ketercapaian</th><th>Status</th><th /></tr></thead><tbody>{iks.map(x=><tr key={x.ik_id} className="border-b"><td className="py-3"><b>{x.kode}</b><br/><span className="text-slate-500">{x.name}</span></td><td>{x.achievement}%</td><td><span className={`text-xs rounded px-2 py-1 ${badge(x.status)}`}>{x.status}</span></td><td><button onClick={async()=>setDetail({...((await api.get(`/dashboard/cpmk-detail/${x.ik_id}`)).data),ik:x})} className="text-primary">Lihat CPMK →</button></td></tr>)}</tbody></table></section>}
+  {detail&&<section className="bg-white border rounded-xl p-5"><button onClick={()=>setDetail(null)} className="text-primary text-sm mb-4">← {selected.kode}</button><h2 className="font-bold text-xl">{detail.ik.kode}: {detail.ik.name}</h2><p className="my-3">Nilai IK (rata-rata CPMK pendukung): <b>{detail.achievement}%</b></p><div className="grid md:grid-cols-2 gap-3">{detail.cpmk_list.map(x=><div key={x.cpmk_id} className="border rounded p-4"><b>{x.kode}</b><p className="text-sm">{x.name}</p><p className="text-sm text-slate-500">{x.mata_kuliah}</p><p className="text-xl text-primary font-bold mt-2">{x.achievement}%</p></div>)}</div></section>}</div>
 }

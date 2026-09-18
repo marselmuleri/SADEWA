@@ -1,0 +1,11 @@
+import { useEffect, useState } from 'react'
+import api from '../services/api'
+
+const initial = { nama: '', kode: '', fakultas: '', jenjang: 'S1', admin_nama: '', admin_nip: '', admin_email: '' }
+export default function SuperAdminPage() {
+  const [programs, setPrograms] = useState([]); const [form, setForm] = useState(initial); const [notice, setNotice] = useState('')
+  const load = () => api.get('/super-admin/programs').then(r => setPrograms(r.data))
+  useEffect(() => { load().catch(() => setNotice('Akses hanya untuk Super Admin.')) }, [])
+  const submit = async (event) => { event.preventDefault(); try { const { data } = await api.post('/super-admin/programs', form); setNotice(`Prodi dibuat. Password sementara Admin Prodi: ${data.temporary_password}`); setForm(initial); load() } catch (error) { setNotice(error.response?.data?.detail || 'Gagal membuat prodi') } }
+  return <div className="space-y-5"><header><h1 className="text-2xl font-bold text-primary">Panel Super Admin</h1><p className="text-sm text-slate-500">Provisioning prodi dan metadata operasional. Data akademik tidak ditampilkan.</p></header>{notice && <p className="rounded bg-amber-50 p-3 text-sm">{notice}</p>}<form onSubmit={submit} className="grid gap-2 rounded-xl border bg-white p-5 md:grid-cols-2"><h2 className="font-semibold md:col-span-2">Tambah Prodi Baru & Admin Pertama</h2>{Object.entries(form).map(([key, value]) => <input key={key} required={key !== 'admin_nip'} type={key === 'admin_email' ? 'email' : 'text'} value={value} placeholder={key.replaceAll('_', ' ')} className="rounded border p-2" onChange={e => setForm({ ...form, [key]: e.target.value })} />)}<button className="rounded bg-primary px-3 py-2 text-white md:col-span-2">Provisioning Prodi</button></form><section className="rounded-xl border bg-white p-5"><h2 className="mb-3 font-semibold">Daftar Prodi</h2><table className="w-full text-sm"><thead className="border-b text-left"><tr><th>Prodi</th><th>Fakultas</th><th>Onboard</th><th>User aktif</th><th>CPL</th><th>MK</th></tr></thead><tbody>{programs.map(p => <tr key={p.id} className="border-b"><td className="py-3">{p.nama}</td><td>{p.fakultas || '—'}</td><td>{new Date(p.onboarded_at).toLocaleDateString('id-ID')}</td><td>{p.active_users}</td><td>{p.cpl_count}</td><td>{p.course_count}</td></tr>)}</tbody></table></section></div>
+}

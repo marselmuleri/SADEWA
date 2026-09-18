@@ -7,6 +7,7 @@ class ProgramStudiBase(BaseModel):
     nama: str
     kode: str
     jenjang: str
+    fakultas: str = ""
 
 
 class ProgramStudiCreate(ProgramStudiBase):
@@ -17,6 +18,7 @@ class ProgramStudiUpdate(BaseModel):
     nama: str | None = None
     kode: str | None = None
     jenjang: str | None = None
+    fakultas: str | None = None
 
 
 class ProgramStudiResponse(ProgramStudiBase, ORMBaseModel):

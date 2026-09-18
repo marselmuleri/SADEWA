@@ -1,6 +1,10 @@
 from __future__ import annotations
 
-from langchain.prompts import PromptTemplate
+try:
+    # LangChain 1.x memindahkan prompt primitives ke langchain_core.
+    from langchain_core.prompts import PromptTemplate
+except ImportError:  # kompatibilitas dengan LangChain 0.x
+    from langchain.prompts import PromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from sqlalchemy.orm import Session
 
