@@ -13,3 +13,4 @@ class CPL(Base):
 
     program_studi = relationship("ProgramStudi", back_populates="cpl")
     hasil_prediksi = relationship("HasilPrediksi", back_populates="cpl")
+    ik = relationship("IK", back_populates="cpl", cascade="all, delete-orphan")

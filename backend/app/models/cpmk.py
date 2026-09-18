@@ -14,3 +14,4 @@ class CPMK(Base):
 
     mata_kuliah = relationship("MataKuliah", back_populates="cpmk")
     penilaian = relationship("Penilaian", back_populates="cpmk")
+    ik_mappings = relationship("CPMKIK", back_populates="cpmk", cascade="all, delete-orphan")
