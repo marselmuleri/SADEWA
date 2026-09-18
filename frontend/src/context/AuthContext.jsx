@@ -23,6 +23,14 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false))
   }, [])
 
+  useEffect(() => {
+    if (!user) return undefined
+    let timer
+    const reset = () => { clearTimeout(timer); timer = setTimeout(logout, 30 * 60 * 1000) }
+    window.addEventListener('pointerdown', reset); window.addEventListener('keydown', reset); reset()
+    return () => { clearTimeout(timer); window.removeEventListener('pointerdown', reset); window.removeEventListener('keydown', reset) }
+  }, [user])
+
   const login = async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password })
     localStorage.setItem('token', data.access_token)

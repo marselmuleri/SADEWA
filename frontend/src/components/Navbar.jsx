@@ -2,9 +2,11 @@ import { Link } from 'react-router-dom'
 import useAuth from '../hooks/useAuth'
 
 const menus = {
-  admin: ['dashboard', 'mahasiswa', 'mata-kuliah', 'analisis', 'chatbot', 'laporan', 'pengaturan'],
-  dosen: ['dashboard', 'mahasiswa', 'mata-kuliah', 'analisis', 'chatbot'],
-  kaprodi: ['dashboard', 'mahasiswa', 'mata-kuliah', 'analisis', 'chatbot', 'laporan', 'pengaturan'],
+  admin: ['dashboard', 'kurikulum', 'mata-kuliah', 'analisis', 'dokumen', 'pengaturan'],
+  dosen: ['dashboard', 'mata-kuliah', 'dokumen'],
+  kaprodi: ['dashboard', 'kurikulum', 'mata-kuliah', 'analisis', 'dokumen', 'pengaturan'],
+  dekan: ['dashboard', 'analisis', 'dokumen'],
+  super_admin: ['super-admin'],
 }
 
 export default function Navbar() {
