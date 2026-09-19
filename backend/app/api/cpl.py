@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.deps import allowed_program_ids, get_current_user, require_program_access, require_roles
+from app.core.deps import get_current_user, require_roles
 from app.models.enums import UserRole
 from app.models.cpl import CPL
 from app.models.user import User
@@ -24,11 +24,10 @@ def list_cpl(
 
 
 @router.get("/{cpl_id}", response_model=CPLResponse)
-def get_cpl(cpl_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def get_cpl(cpl_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
     data = db.query(CPL).filter(CPL.id == cpl_id).first()
     if not data:
         raise HTTPException(status_code=404, detail="CPL tidak ditemukan")
-    require_program_access(user, data.program_studi_id)
     return data
 
 
@@ -36,7 +35,7 @@ def get_cpl(cpl_id: int, db: Session = Depends(get_db), user: User = Depends(get
 def create_cpl(
     payload: CPLCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(require_roles(UserRole.admin)),
+    user: User = Depends(require_roles(UserRole.admin_prodi)),
 ):
     data = CPL(**payload.model_dump(), created_by=user.id)
     db.add(data)
@@ -50,12 +49,11 @@ def update_cpl(
     cpl_id: int,
     payload: CPLUpdate,
     db: Session = Depends(get_db),
-    _: User = Depends(require_roles(UserRole.admin)),
+    _: User = Depends(require_roles(UserRole.admin_prodi)),
 ):
     data = db.query(CPL).filter(CPL.id == cpl_id).first()
     if not data:
         raise HTTPException(status_code=404, detail="CPL tidak ditemukan")
-    require_program_access(user, data.program_studi_id)
     for key, value in payload.model_dump(exclude_unset=True).items():
         setattr(data, key, value)
     db.commit()
@@ -68,7 +66,7 @@ def update_threshold(
     cpl_id: int,
     payload: CPLThresholdUpdate,
     db: Session = Depends(get_db),
-    _: User = Depends(require_roles(UserRole.admin, UserRole.kaprodi)),
+    _: User = Depends(require_roles(UserRole.admin_prodi, UserRole.kaprodi)),
 ):
     data = db.query(CPL).filter(CPL.id == cpl_id).first()
     if not data:
@@ -83,12 +81,11 @@ def update_threshold(
 def delete_cpl(
     cpl_id: int,
     db: Session = Depends(get_db),
-    _: User = Depends(require_roles(UserRole.admin)),
+    _: User = Depends(require_roles(UserRole.admin_prodi)),
 ):
     data = db.query(CPL).filter(CPL.id == cpl_id).first()
     if not data:
         raise HTTPException(status_code=404, detail="CPL tidak ditemukan")
-    require_program_access(user, data.program_studi_id)
     db.delete(data)
     db.commit()
     return {"message": "CPL dihapus"}

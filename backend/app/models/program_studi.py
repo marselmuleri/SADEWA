@@ -17,3 +17,4 @@ class ProgramStudi(Base):
     cpl = relationship("CPL", back_populates="program_studi")
     kurikulum_versions = relationship("KurikulumVersion", back_populates="program_studi")
     jenis_evaluasi = relationship("JenisEvaluasi", back_populates="program_studi")
+    users = relationship("User", back_populates="program_studi")

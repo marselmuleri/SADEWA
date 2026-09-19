@@ -1,11 +1,11 @@
 from fastapi import APIRouter
 
 from app.api import (
-    auth, bentuk_penilaian, cpl, cpmk, fakultas, ik, jenis_evaluasi,
-    kalkulasi, kurikulum_version, mahasiswa, mata_kuliah, mk_bentuk_penilaian,
-    nilai, peserta_mata_kuliah, prodi, users,
+    auth, bentuk_penilaian, cpl, cpmk, dashboard, fakultas, ik, jenis_evaluasi,
+    kalkulasi, kurikulum_version, laporan, mahasiswa, mata_kuliah, mk_bentuk_penilaian,
+    narasi, nilai, peserta_mata_kuliah, prodi, rps, trending, users, validasi,
 )
-# from app.api import analisis, chatbot, dashboard  # menyusul - bergantung modul RAG
+
 
 api_v1_router = APIRouter(prefix="/api/v1")
 api_v1_router.include_router(auth.router, prefix="/auth", tags=["auth"])
@@ -24,3 +24,9 @@ api_v1_router.include_router(mk_bentuk_penilaian.router, prefix="/mk-bentuk-peni
 api_v1_router.include_router(peserta_mata_kuliah.router, prefix="/peserta-mata-kuliah", tags=["peserta"])
 api_v1_router.include_router(nilai.router, prefix="/nilai", tags=["nilai"])
 api_v1_router.include_router(kalkulasi.router, prefix="/kalkulasi", tags=["kalkulasi"])
+api_v1_router.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
+api_v1_router.include_router(trending.router, prefix="/trending", tags=["trending"])
+api_v1_router.include_router(narasi.router, prefix="/narasi", tags=["narasi"])
+api_v1_router.include_router(laporan.router, prefix="/laporan", tags=["laporan"])
+api_v1_router.include_router(validasi.router, prefix="/validasi", tags=["validasi"])
+api_v1_router.include_router(rps.router, prefix="/rps", tags=["rps"])
