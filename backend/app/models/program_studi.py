@@ -1,20 +1,20 @@
-from datetime import datetime
-from sqlalchemy import DateTime, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Column, BigInteger, String, ForeignKey, TIMESTAMP
+from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.models.base import Base
-
 
 class ProgramStudi(Base):
     __tablename__ = "program_studi"
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    kode = Column(String)
+    nama = Column(String)
+    fakultas_id = Column(BigInteger, ForeignKey("fakultas.id"))
+    created_at = Column(TIMESTAMP, server_default=func.now())
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    nama: Mapped[str] = mapped_column(String(150), nullable=False)
-    kode: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
-    jenjang: Mapped[str] = mapped_column(String(20), nullable=False)
-    fakultas: Mapped[str] = mapped_column(String(150), default="", nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
-    mata_kuliah = relationship("MataKuliah", back_populates="program_studi")
+    fakultas = relationship("Fakultas", back_populates="program_studi")
     mahasiswa = relationship("Mahasiswa", back_populates="program_studi")
+    mata_kuliah = relationship("MataKuliah", back_populates="program_studi")
     cpl = relationship("CPL", back_populates="program_studi")
+    kurikulum_versions = relationship("KurikulumVersion", back_populates="program_studi")
+    jenis_evaluasi = relationship("JenisEvaluasi", back_populates="program_studi")
     users = relationship("User", back_populates="program_studi")

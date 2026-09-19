@@ -1,15 +1,19 @@
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import decode_token
 from app.models.user import User
 from app.models.enums import UserRole
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+bearer_scheme = HTTPBearer()
 
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    db: Session = Depends(get_db)
+) -> User:
+    token = credentials.credentials
     payload = decode_token(token)
     if not payload or "sub" not in payload:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token tidak valid")
@@ -28,16 +32,30 @@ def require_roles(*roles: UserRole):
     return checker
 
 
-def allowed_program_ids(user: User) -> set[int] | None:
-    """Return the server-side academic scope; None is Super Admin metadata-only."""
-    if user.role == UserRole.super_admin:
-        return None
-    if user.role == UserRole.dekan:
-        return set(user.program_studi_ids or ([] if user.program_studi_id is None else [user.program_studi_id]))
-    return {user.program_studi_id} if user.program_studi_id else set()
+def get_scoped_prodi_id(
+    user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.kaprodi)),
+) -> int:
+    """
+    Dipakai nanti di endpoint akademik (nilai, cpl, dashboard, laporan, dst).
+    Scope prodi SELALU dibaca dari akun yang login, tidak pernah dari query
+    param/body kiriman client -- supaya admin_prodi/kaprodi tidak bisa
+    mengakses data prodi lain hanya dengan mengubah parameter request.
+    """
+    if not user.program_studi_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Akun ini belum terhubung ke Program Studi manapun. Hubungi Super Admin.",
+        )
+    return user.program_studi_id
 
 
-def require_program_access(user: User, program_studi_id: int) -> None:
-    scope = allowed_program_ids(user)
-    if scope is None or program_studi_id not in scope:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Data di luar cakupan program studi Anda")
+def get_scoped_fakultas_id(
+    user: User = Depends(require_roles(UserRole.dekan)),
+) -> int:
+    """Sama seperti get_scoped_prodi_id, tapi untuk Dekan (scope di level Fakultas)."""
+    if not user.fakultas_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Akun ini belum terhubung ke Fakultas manapun. Hubungi Super Admin.",
+        )
+    return user.fakultas_id

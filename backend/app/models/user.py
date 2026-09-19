@@ -1,24 +1,30 @@
-from datetime import datetime
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, JSON, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Column, BigInteger, String, Boolean, ForeignKey, Enum as SAEnum, TIMESTAMP
+from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 from app.models.base import Base
 from app.models.enums import UserRole
 
-
 class User(Base):
     __tablename__ = "users"
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    nama = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    password_hash = Column(String, nullable=True)
+    nip = Column(String, nullable=True)
+    role = Column(SAEnum(UserRole, name="role_enum", values_callable=lambda e: [x.value for x in e]), nullable=True)
+    is_active = Column(Boolean, default=True, nullable=False)
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    nama: Mapped[str] = mapped_column(String(150), nullable=False)
-    nip: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
-    email: Mapped[str] = mapped_column(String(150), unique=True, index=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=False, default=UserRole.dosen)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    # One academic program for operational roles; Dekan may be assigned many.
-    program_studi_id: Mapped[int | None] = mapped_column(ForeignKey("program_studi.id"), nullable=True, index=True)
-    program_studi_ids: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    # Scope akses:
+    # - admin_prodi & kaprodi: wajib punya program_studi_id (dikunci ke satu prodi)
+    # - dekan: wajib punya fakultas_id (lintas semua prodi di fakultas itu, read-only)
+    # - super_admin & dosen: keduanya nullable (super_admin tidak terikat prodi/fakultas
+    #   sama sekali karena tidak boleh menyentuh data akademik; dosen scope-nya lewat
+    #   penugasan mata kuliah di PengampuMataKuliah, bukan lewat kolom ini)
+    program_studi_id = Column(BigInteger, ForeignKey("program_studi.id"), nullable=True)
+    fakultas_id = Column(BigInteger, ForeignKey("fakultas.id"), nullable=True)
 
-    mata_kuliah = relationship("MataKuliah", back_populates="dosen")
     program_studi = relationship("ProgramStudi", back_populates="users")
+    fakultas = relationship("Fakultas", back_populates="users")
+
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
