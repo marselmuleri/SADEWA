@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.post("", response_model=BentukPenilaianResponse)
-def create(payload: BentukPenilaianCreate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin))):
+def create(payload: BentukPenilaianCreate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin_prodi))):
     data = BentukPenilaian(**payload.model_dump())
     db.add(data)
     db.commit()
@@ -28,7 +28,7 @@ def list_all(jenis_evaluasi_id: int | None = None, db: Session = Depends(get_db)
 
 
 @router.put("/{id}", response_model=BentukPenilaianResponse)
-def update(id: int, payload: BentukPenilaianUpdate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin))):
+def update(id: int, payload: BentukPenilaianUpdate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin_prodi))):
     data = db.query(BentukPenilaian).filter(BentukPenilaian.id == id).first()
     if not data:
         raise HTTPException(status_code=404, detail="Tidak ditemukan")

@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.post("", response_model=PesertaMataKuliahResponse)
-def create(payload: PesertaMataKuliahCreate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin, UserRole.dosen))):
+def create(payload: PesertaMataKuliahCreate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen))):
     data = PesertaMataKuliah(**payload.model_dump())
     db.add(data)
     db.commit()

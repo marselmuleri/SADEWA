@@ -17,7 +17,7 @@ def list_fakultas(db: Session = Depends(get_db), _: User = Depends(get_current_u
 
 
 @router.post("", response_model=FakultasResponse)
-def create_fakultas(payload: FakultasCreate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin))):
+def create_fakultas(payload: FakultasCreate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.super_admin))):
     row = Fakultas(**payload.model_dump())
     db.add(row)
     db.commit()
@@ -26,7 +26,7 @@ def create_fakultas(payload: FakultasCreate, db: Session = Depends(get_db), _: U
 
 
 @router.put("/{fakultas_id}", response_model=FakultasResponse)
-def update_fakultas(fakultas_id: int, payload: FakultasUpdate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin))):
+def update_fakultas(fakultas_id: int, payload: FakultasUpdate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.super_admin))):
     row = db.query(Fakultas).filter(Fakultas.id == fakultas_id).first()
     if not row:
         raise HTTPException(status_code=404, detail="Fakultas tidak ditemukan")
@@ -38,7 +38,7 @@ def update_fakultas(fakultas_id: int, payload: FakultasUpdate, db: Session = Dep
 
 
 @router.delete("/{fakultas_id}")
-def delete_fakultas(fakultas_id: int, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin))):
+def delete_fakultas(fakultas_id: int, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.super_admin))):
     row = db.query(Fakultas).filter(Fakultas.id == fakultas_id).first()
     if not row:
         raise HTTPException(status_code=404, detail="Fakultas tidak ditemukan")
