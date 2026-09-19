@@ -1,11 +1,74 @@
-import { useEffect, useState } from 'react'
-import api from '../services/api'
+import { Plus } from 'lucide-react'
+import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
+import { demoCurriculumRows, demoCurriculumStats } from '../data/demoUi'
 import useAuth from '../hooks/useAuth'
+import { useRole } from '../hooks/useRole'
 
 export default function KurikulumPage() {
-  const { user }=useAuth(); const canEdit=['admin','kaprodi'].includes(user?.role); const [cpl,setCpl]=useState([]); const [ik,setIk]=useState([]); const [courses,setCourses]=useState([]); const [cpmk,setCpmk]=useState([]); const [form,setForm]=useState({kode_ik:'',nama:'',deskripsi:'',cpl_id:''}); const [mapping,setMapping]=useState({cpmk_id:'',ik_ids:[]})
-  const load=async()=>{const [a,b,c,d]=await Promise.all([api.get('/cpl'),api.get('/ik'),api.get('/mata-kuliah'),api.get('/cpmk')]);setCpl(a.data);setIk(b.data);setCourses(c.data);setCpmk(d.data)}
-  useEffect(()=>{load().catch(()=>{})},[])
-  const addIk=async e=>{e.preventDefault(); await api.post('/ik',{...form,cpl_id:Number(form.cpl_id)}); setForm({kode_ik:'',nama:'',deskripsi:'',cpl_id:''});load()}
-  return <div className="space-y-5"><div><h1 className="text-2xl font-bold text-primary">Manajemen Kurikulum OBE</h1><p className="text-sm text-slate-500">Versi aktif v1.0 · CPL → IK → CPMK. Perubahan tercatat sebagai pembaruan kurikulum.</p></div><div className="grid lg:grid-cols-2 gap-5"><section className="bg-white border rounded-xl p-5"><h2 className="font-semibold">Level 1 — CPL</h2>{cpl.map(x=><div key={x.id} className="border-b py-3"><b>{x.kode_cpl}</b><p className="text-sm">{x.deskripsi}</p><p className="text-xs text-slate-500">{ik.filter(y=>y.cpl_id===x.id).length} IK</p></div>)}</section><section className="bg-white border rounded-xl p-5"><h2 className="font-semibold">Level 2 — Indikator Kinerja</h2>{canEdit?<form onSubmit={addIk} className="space-y-2 mt-3"><select required className="w-full border rounded p-2" value={form.cpl_id} onChange={e=>setForm({...form,cpl_id:e.target.value})}><option value="">Pilih CPL</option>{cpl.map(x=><option key={x.id} value={x.id}>{x.kode_cpl}</option>)}</select><input required className="w-full border rounded p-2" placeholder="Kode IK (contoh: A.1)" value={form.kode_ik} onChange={e=>setForm({...form,kode_ik:e.target.value})}/><input required className="w-full border rounded p-2" placeholder="Nama indikator" value={form.nama} onChange={e=>setForm({...form,nama:e.target.value})}/><textarea className="w-full border rounded p-2" placeholder="Definisi indikator" value={form.deskripsi} onChange={e=>setForm({...form,deskripsi:e.target.value})}/><button className="bg-primary text-white rounded px-3 py-2">Simpan IK</button></form>:<p className="text-sm text-slate-500 mt-3">Hanya Admin Prodi/Kaprodi yang dapat mengubah kurikulum.</p>}<div className="mt-4">{ik.map(x=><p className="text-sm border-t py-2" key={x.id}><b>{x.kode_ik}</b> — {x.nama}</p>)}</div></section></div><section className="bg-white border rounded-xl p-5"><h2 className="font-semibold">Level 3 — Mata Kuliah, CPMK & Pemetaan</h2><p className="text-sm text-slate-500 mt-1">Setiap CPMK wajib terhubung ke minimal satu IK.</p>{canEdit&&<div className="grid md:grid-cols-3 gap-2 my-3"><select className="border rounded p-2" value={mapping.cpmk_id} onChange={e=>setMapping({...mapping,cpmk_id:e.target.value})}><option value="">Pilih CPMK</option>{cpmk.map(x=><option key={x.id} value={x.id}>{x.kode_cpmk}</option>)}</select><select multiple className="border rounded p-2 h-24" value={mapping.ik_ids} onChange={e=>setMapping({...mapping,ik_ids:[...e.target.selectedOptions].map(x=>Number(x.value))})}>{ik.map(x=><option key={x.id} value={x.id}>{x.kode_ik} — {x.nama}</option>)}</select><button disabled={!mapping.cpmk_id||!mapping.ik_ids.length} onClick={async()=>{await api.put(`/cpmk/${mapping.cpmk_id}/ik`,{ik_ids:mapping.ik_ids});setMapping({cpmk_id:'',ik_ids:[]})}} className="bg-primary text-white rounded px-3 py-2 disabled:opacity-40">Simpan Pemetaan</button></div>}{courses.map(x=><a key={x.id} href={`/mata-kuliah/${x.id}`} className="block border-b py-3 text-primary"><b>{x.kode_mk}</b> — {x.nama_mk} · Semester {x.semester}</a>)}</section></div>
+  const { user, activeRole } = useAuth()
+  const { role } = useRole()
+  const currentRole = activeRole || role || user?.role || 'admin'
+  const canEdit = currentRole === 'admin'
+
+  return (
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Kurikulum OBE"
+        title="Kurikulum OBE"
+        description="Struktur CPL → IK → CPMK ditampilkan sebagai kurikulum institusional yang rapi dan mudah dipindai."
+        badge={canEdit ? 'Mode Edit' : 'Mode Lihat'}
+        actions={canEdit ? <ActionButton data-testid="curriculum-add"><Plus className="h-4 w-4" />Tambah CPL</ActionButton> : null}
+      />
+
+      <div className="grid gap-4 xl:grid-cols-4">
+        {demoCurriculumStats.map((item) => (
+          <StatCard key={item.label} label={item.label} value={item.value} caption="Semester aktif" />
+        ))}
+      </div>
+
+      <SectionCard title="Hierarki Kurikulum" description="Daftar CPL dengan jumlah IK dan CPMK yang sudah terpetakan.">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-[#E2E8F0] text-left text-[10px] uppercase tracking-[0.14em] text-[#6D778E]">
+              <th className="pb-3">Kode CPL</th>
+              <th className="pb-3">Nama CPL</th>
+              <th className="pb-3">Jumlah IK</th>
+              <th className="pb-3">CPMK terpetakan</th>
+              <th className="pb-3">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {demoCurriculumRows.map((item) => (
+              <tr key={item.cpl} className="border-b border-[#EEF2F7] last:border-0">
+                <td className="py-4 font-semibold text-[#142B4A]">{item.cpl}</td>
+                <td className="py-4 text-[#142B4A]">{item.name}</td>
+                <td className="py-4 text-[#64748B]">{item.ik}</td>
+                <td className="py-4 text-[#64748B]">{item.cpmk}</td>
+                <td className="py-4"><Badge tone="success">{item.status}</Badge></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </SectionCard>
+
+      <SectionCard
+        title="Arah kerja"
+        description={currentRole === 'dosen' ? 'Dosen melihat kurikulum dalam mode baca saja.' : 'Admin Prodi dapat melakukan CRUD penuh pada kurikulum OBE.'}
+        action={currentRole === 'dosen' ? <Badge>Mode Lihat</Badge> : null}
+      >
+        <div className="grid gap-4 lg:grid-cols-3">
+          {[
+            { title: 'CPL', value: '8' },
+            { title: 'IK', value: '35' },
+            { title: 'CPMK', value: '60' },
+          ].map((item) => (
+            <div key={item.title} className="rounded-lg border border-[#E2E8F0] bg-white p-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6D778E]">{item.title}</div>
+              <div className="mt-2 text-2xl font-semibold text-[#142B4A]">{item.value}</div>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  )
 }

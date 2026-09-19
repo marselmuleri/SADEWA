@@ -1,4 +1,107 @@
-import { useEffect, useState } from 'react'
-import api from '../services/api'
+import { CheckCircle2, Plus, RotateCcw, Send } from 'lucide-react'
+import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
+import { demoReportRows, demoReportSummary } from '../data/demoUi'
 import useAuth from '../hooks/useAuth'
-export default function DokumenPage(){const {user}=useAuth();const [docs,setDocs]=useState([]);const [courses,setCourses]=useState([]);const [draft,setDraft]=useState(null);const load=async()=>{const[a,b]=await Promise.all([api.get('/dokumen'),api.get('/mata-kuliah')]);setDocs(a.data);setCourses(b.data)};useEffect(()=>{load().catch(()=>{})},[]);const generate=async jenis=>{const d=(await api.post('/dokumen/generate',{jenis,mata_kuliah_id:courses[0]?.id})).data;setDraft(d);load()};const save=async()=>{await api.put(`/dokumen/${draft.id}`,{jenis:draft.jenis,konten:draft.konten,judul:draft.judul});load()};const decide=async(id,approved)=>{const remarks=approved?'':'Mohon lengkapi analisis dan tindak lanjut.';await api.post(`/dokumen/${id}/decision?approved=${approved}&remarks=${encodeURIComponent(remarks)}`);load()};return <div className="space-y-5"><header><h1 className="text-2xl font-bold text-primary">Generasi & Validasi Dokumen</h1><p className="text-sm text-slate-500">Draf bantuan AI wajib ditinjau dan diedit sebelum diajukan.</p></header><div className="flex gap-2"><button onClick={()=>generate('RPS')} className="bg-primary text-white rounded px-3 py-2">Generate RPS</button><button onClick={()=>generate('EVALUASI')} className="border rounded px-3 py-2">Generate Laporan Evaluasi</button></div>{draft&&<section className="bg-white border rounded-xl p-5"><input className="w-full text-lg font-semibold border-b mb-3" value={draft.judul} onChange={e=>setDraft({...draft,judul:e.target.value})}/><textarea className="w-full border rounded p-3 h-48" value={draft.konten} onChange={e=>setDraft({...draft,konten:e.target.value})}/><div className="mt-3 flex gap-2"><button onClick={save} className="border rounded px-3 py-2">Simpan draf</button><button onClick={async()=>{await save();await api.post(`/dokumen/${draft.id}/submit`);setDraft(null);load()}} className="bg-primary text-white rounded px-3 py-2">Ajukan validasi</button></div></section>}<section className="bg-white border rounded-xl p-5"><h2 className="font-semibold mb-3">Daftar dokumen</h2><table className="w-full text-sm"><thead className="text-left border-b"><tr><th>Dokumen</th><th>Jenis</th><th>Status</th><th>Catatan</th><th /></tr></thead><tbody>{docs.map(x=><tr className="border-b" key={x.id}><td className="py-3">{x.judul}</td><td>{x.jenis}</td><td>{x.status}</td><td>{x.catatan||'—'}</td><td className="flex gap-2 py-2">{x.status==='DRAFT'&&<button className="text-primary" onClick={()=>setDraft(x)}>Edit</button>}{['kaprodi','dekan'].includes(user?.role)&&x.status==='SUBMITTED'&&<><button className="text-emerald-700" onClick={()=>decide(x.id,true)}>Setujui</button><button className="text-red-600" onClick={()=>decide(x.id,false)}>Kembalikan</button></>}<button onClick={()=>window.print()} className="text-slate-600">PDF/Cetak</button></td></tr>)}</tbody></table></section></div>}
+import { useRole } from '../hooks/useRole'
+
+export default function DokumenPage() {
+  const { user, activeRole } = useAuth()
+  const { role } = useRole()
+  const currentRole = activeRole || role || user?.role || 'admin'
+  const isDosen = currentRole === 'dosen'
+  const canDecide = currentRole === 'kaprodi' || currentRole === 'dekan'
+
+  const pageTitle = isDosen ? 'Laporan Saya' : 'Validasi Laporan'
+  const description = isDosen
+    ? 'Dosen dapat melihat status laporan miliknya, mengirim dokumen baru, dan meninjau tindak lanjut.'
+    : 'Kaprodi dan Dekan melakukan approve/reject terhadap laporan evaluasi yang masuk.'
+
+  return (
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Validasi Laporan"
+        title={pageTitle}
+        description={description}
+        badge={isDosen ? 'Mode Dosen' : 'Mode Validasi'}
+        actions={isDosen ? (
+          <ActionButton data-testid="report-create">
+            <Plus className="h-4 w-4" />
+            Buat Laporan Baru
+          </ActionButton>
+        ) : null}
+      />
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        {demoReportSummary.map((item) => (
+          <StatCard key={item.label} label={item.label} value={item.value} caption={isDosen && item.label === 'Pending review' ? 'Laporan terkirim dari akun Anda' : 'Semester aktif'} />
+        ))}
+      </div>
+
+      <SectionCard title={pageTitle} description="Daftar laporan dibuat sebagai table institusional yang mudah dipindai.">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-[#E2E8F0] text-left text-[10px] uppercase tracking-[0.14em] text-[#6D778E]">
+              <th className="pb-3">Dosen pengampu</th>
+              <th className="pb-3">Mata kuliah</th>
+              <th className="pb-3">Tanggal dikirim</th>
+              <th className="pb-3">Status</th>
+              <th className="pb-3">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {demoReportRows.map((item) => (
+              <tr key={`${item.lecturer}-${item.course}`} className="border-b border-[#EEF2F7] last:border-0">
+                <td className="py-4 font-semibold text-[#142B4A]">{item.lecturer}</td>
+                <td className="py-4 text-[#142B4A]">{item.course}</td>
+                <td className="py-4 text-[#64748B]">{item.date}</td>
+                <td className="py-4">
+                  <Badge tone={item.status === 'Disetujui' ? 'success' : item.status === 'Perlu Revisi' ? 'danger' : 'warning'}>{item.status}</Badge>
+                </td>
+                <td className="py-4">
+                  {canDecide ? (
+                    <div className="flex flex-wrap gap-2">
+                      <ActionButton variant="secondary" data-testid={`report-approve-${item.course}`}>
+                        <CheckCircle2 className="h-4 w-4" />
+                        Setujui
+                      </ActionButton>
+                      <ActionButton variant="secondary" data-testid={`report-return-${item.course}`}>
+                        <RotateCcw className="h-4 w-4" />
+                        Kembalikan
+                      </ActionButton>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-sm text-[#64748B]">
+                      <Badge>{item.status}</Badge>
+                      <span>·</span>
+                      <button type="button" className="text-[#1A3A6B] hover:text-[#F4A300]">Lihat detail</button>
+                    </div>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </SectionCard>
+
+      {isDosen ? (
+        <SectionCard title="Alur Dosen" description="Generate laporan evaluasi dan kirim ke Kaprodi untuk validasi.">
+          <div className="flex flex-wrap gap-2">
+            <ActionButton data-testid="report-draft">
+              <Send className="h-4 w-4" />
+              Submit laporan
+            </ActionButton>
+            <ActionButton variant="secondary">Lihat arsip</ActionButton>
+          </div>
+        </SectionCard>
+      ) : (
+        <SectionCard title="Aksi cepat" description="Workflow validasi berjalan pada ringkasan status berikut.">
+          <div className="flex flex-wrap gap-2">
+            <Badge tone="success">Disetujui bulan ini</Badge>
+            <Badge tone="warning">Menunggu review</Badge>
+            <Badge tone="danger">Perlu revisi</Badge>
+          </div>
+        </SectionCard>
+      )}
+    </div>
+  )
+}

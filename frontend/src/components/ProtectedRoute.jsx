@@ -5,7 +5,7 @@ export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
 
   if (loading) {
-    return <div className="p-8">Loading...</div>
+    return <div className="flex min-h-screen items-center justify-center bg-background text-[#64748B]">Memuat SADEWA...</div>
   }
 
   if (!user) {

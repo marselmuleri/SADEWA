@@ -1,8 +1,8 @@
 export default function ToastContainer({ toasts = [] }) {
   return (
-    <div className="fixed top-4 right-4 z-[60] space-y-2">
+    <div className="fixed right-4 top-4 z-[80] space-y-2">
       {toasts.map((t) => (
-        <div key={t.id} className={`px-4 py-2 rounded shadow text-white text-sm ${t.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}>
+        <div key={t.id} className={`rounded-md border px-4 py-3 text-sm shadow-sm ${t.type === 'success' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
           {t.message}
         </div>
       ))}
