@@ -1,14 +1,60 @@
-import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import api from '../services/api'
+import { ActionButton, Badge, PageHeader, SectionCard } from '../components/PageChrome'
 import useAuth from '../hooks/useAuth'
+import { useRole } from '../hooks/useRole'
+
+const demoUsers = [
+  { name: 'Budi Santoso', nip: '198805122010011004', email: 'budi@sadewa.ac.id', role: 'Admin Prodi', active: true },
+  { name: 'Andi Pratama', nip: '198909102011011002', email: 'andi@sadewa.ac.id', role: 'Dosen', active: true },
+  { name: 'Siti Rahma', nip: '197812222006042001', email: 'siti@sadewa.ac.id', role: 'Kaprodi', active: false },
+]
 
 export default function PengaturanPage() {
-  const { user } = useAuth(); const [users, setUsers] = useState([]); const [notice, setNotice] = useState('')
-  const allowed = ['admin', 'kaprodi'].includes(user?.role)
-  const load = () => api.get('/users').then(r => setUsers(r.data))
-  useEffect(() => { if (allowed) load().catch(() => setNotice('Gagal memuat akun.')) }, [allowed])
-  if (!allowed) return <Navigate to="/dashboard" replace />
-  const setActive = async (row, is_active) => { try { await api.put(`/users/${row.id}`, { is_active }); setNotice('Status akun diperbarui.'); load() } catch { setNotice('Anda tidak dapat mengubah akun ini.') } }
-  return <div className="space-y-5"><header><h1 className="text-2xl font-bold text-primary">Manajemen Akun Prodi</h1><p className="text-sm text-slate-500">Hanya akun dalam program studi Anda yang tampil di sini. Provisioning prodi dilakukan oleh Super Admin.</p></header>{notice && <p className="rounded bg-amber-50 p-3 text-sm">{notice}</p>}<section className="rounded-xl border bg-white p-5"><table className="w-full text-sm"><thead className="border-b text-left"><tr><th>Nama</th><th>NIP</th><th>Email</th><th>Role</th><th>Status</th><th /></tr></thead><tbody>{users.map(row => <tr key={row.id} className="border-b"><td className="py-3">{row.nama}</td><td>{row.nip || '—'}</td><td>{row.email}</td><td>{row.role}</td><td>{row.is_active ? 'Aktif' : 'Nonaktif'}</td><td>{user.role === 'admin' && <button onClick={() => setActive(row, !row.is_active)} className="text-primary">{row.is_active ? 'Nonaktifkan' : 'Aktifkan'}</button>}</td></tr>)}</tbody></table></section></div>
+  const { user, activeRole } = useAuth()
+  const { role } = useRole()
+  const currentRole = activeRole || role || user?.role || 'admin'
+
+  if (currentRole !== 'admin') {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  return (
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Administrasi"
+        title="Manajemen Pengguna"
+        description="Kelola pengguna dalam satu program studi. Provisioning prodi tetap menjadi kewenangan Super Admin."
+        badge="Admin Prodi"
+      />
+
+      <SectionCard title="Daftar pengguna" description="Tabel hanya menampilkan akun di dalam scope program studi aktif.">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-[#E2E8F0] text-left text-[10px] uppercase tracking-[0.14em] text-[#6D778E]">
+              <th className="pb-3">Nama</th>
+              <th className="pb-3">NIP</th>
+              <th className="pb-3">Email</th>
+              <th className="pb-3">Role</th>
+              <th className="pb-3">Status</th>
+              <th className="pb-3">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {demoUsers.map((item) => (
+              <tr key={item.email} className="border-b border-[#EEF2F7] last:border-0">
+                <td className="py-4 font-semibold text-[#142B4A]">{item.name}</td>
+                <td className="py-4 text-[#64748B]">{item.nip}</td>
+                <td className="py-4 text-[#64748B]">{item.email}</td>
+                <td className="py-4 text-[#142B4A]">{item.role}</td>
+                <td className="py-4"><Badge tone={item.active ? 'success' : 'warning'}>{item.active ? 'Aktif' : 'Nonaktif'}</Badge></td>
+                <td className="py-4">
+                  <ActionButton variant="secondary">{item.active ? 'Nonaktifkan' : 'Aktifkan'}</ActionButton>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </SectionCard>
+    </div>
+  )
 }

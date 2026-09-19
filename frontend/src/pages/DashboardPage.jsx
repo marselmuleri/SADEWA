@@ -1,14 +1,176 @@
-import { useEffect, useState } from 'react'
-import api from '../services/api'
+import { useNavigate } from 'react-router-dom'
+import { ArrowUpRight, FileText, Layers3, Users, Download, Printer } from 'lucide-react'
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import useAuth from '../hooks/useAuth'
+import { useRole } from '../hooks/useRole'
+import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
+import {
+  demoDashboard,
+  demoCpl,
+  demoCplBars,
+  demoLatestActivities,
+  demoProfiles,
+} from '../data/demoUi'
 
-const badge = (s) => s === 'Achieved' ? 'bg-emerald-100 text-emerald-700' : s === 'Critical' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+function pillTone(status) {
+  return status === 'Tercapai' ? 'success' : 'warning'
+}
+
 export default function DashboardPage() {
-  const [cpl, setCpl] = useState([]); const [selected, setSelected] = useState(null); const [iks, setIks] = useState([]); const [detail, setDetail] = useState(null)
-  useEffect(() => { api.get('/dashboard/cpl-overview').then(r => setCpl(r.data)).catch(() => setCpl([])) }, [])
-  const openCpl = async (row) => { setSelected(row); setDetail(null); setIks((await api.get(`/dashboard/ik-breakdown/${row.cpl_id}`)).data.ik_list) }
-  const exportCsv = () => { const content=['Kode,Nama,Ketercapaian,Target', ...cpl.map(x=>`${x.kode},"${x.name}",${x.achievement},${x.target}`)].join('\n'); const link=document.createElement('a'); link.href=URL.createObjectURL(new Blob([content],{type:'text/csv'})); link.download='dashboard-cpl.csv'; link.click() }
-  return <div className="space-y-5"><header className="flex flex-wrap justify-between gap-3"><div><h1 className="text-2xl font-bold text-primary">Dashboard Ketercapaian OBE</h1><p className="text-sm text-slate-500">CPL → IK → CPMK · Semester aktif</p></div><div className="flex gap-2"><button onClick={exportCsv} className="border rounded px-3 py-2 text-sm">Export Excel (CSV)</button><button onClick={()=>window.print()} className="bg-primary text-white rounded px-3 py-2 text-sm">Cetak</button></div></header>
-  {!selected && <><div className="flex gap-2 text-sm"><select className="border rounded px-3"><option>2025/2026 Ganjil</option></select><select className="border rounded px-3"><option>Urutkan: Ketercapaian</option></select></div><div className="grid md:grid-cols-3 gap-4">{cpl.map(x=><button key={x.cpl_id} onClick={()=>openCpl(x)} className="text-left bg-white border rounded-xl p-5 hover:border-primary"><div className="flex justify-between"><b>{x.kode}</b><span className={`text-xs rounded px-2 py-1 ${badge(x.status)}`}>{x.status}</span></div><p className="text-sm mt-2 h-10">{x.name}</p><p className="text-3xl font-bold text-primary mt-3">{x.achievement}%</p><p className="text-xs text-slate-500 mt-2">{x.students_achieved} dari {x.students_total} mahasiswa mencapai target {x.target}%</p></button>)}{!cpl.length&&<div className="bg-white border rounded-xl p-6 text-slate-500">Belum ada ketercapaian. Atur CPL, IK, CPMK, lalu masukkan nilai.</div>}</div></>}
-  {selected&&!detail&&<section className="bg-white border rounded-xl p-5"><button onClick={()=>setSelected(null)} className="text-primary text-sm mb-4">← Semua CPL</button><h2 className="font-bold text-xl">{selected.kode}: {selected.name}</h2><p className="text-sm text-slate-500 mb-4">Level 2 · Indikator Kinerja</p><table className="w-full text-sm"><thead className="text-left border-b"><tr><th className="py-2">IK</th><th>Ketercapaian</th><th>Status</th><th /></tr></thead><tbody>{iks.map(x=><tr key={x.ik_id} className="border-b"><td className="py-3"><b>{x.kode}</b><br/><span className="text-slate-500">{x.name}</span></td><td>{x.achievement}%</td><td><span className={`text-xs rounded px-2 py-1 ${badge(x.status)}`}>{x.status}</span></td><td><button onClick={async()=>setDetail({...((await api.get(`/dashboard/cpmk-detail/${x.ik_id}`)).data),ik:x})} className="text-primary">Lihat CPMK →</button></td></tr>)}</tbody></table></section>}
-  {detail&&<section className="bg-white border rounded-xl p-5"><button onClick={()=>setDetail(null)} className="text-primary text-sm mb-4">← {selected.kode}</button><h2 className="font-bold text-xl">{detail.ik.kode}: {detail.ik.name}</h2><p className="my-3">Nilai IK (rata-rata CPMK pendukung): <b>{detail.achievement}%</b></p><div className="grid md:grid-cols-2 gap-3">{detail.cpmk_list.map(x=><div key={x.cpmk_id} className="border rounded p-4"><b>{x.kode}</b><p className="text-sm">{x.name}</p><p className="text-sm text-slate-500">{x.mata_kuliah}</p><p className="text-xl text-primary font-bold mt-2">{x.achievement}%</p></div>)}</div></section>}</div>
+  const navigate = useNavigate()
+  const { user, activeRole } = useAuth()
+  const { role } = useRole()
+  const currentRole = activeRole || role || user?.role || 'admin'
+  const profile = demoProfiles[currentRole] || demoProfiles.admin
+
+  const metricCards = [
+    {
+      label: 'Ketercapaian OBE',
+      value: `${demoDashboard.overall}%`,
+      caption: `Target institusi ${demoDashboard.target}%`,
+      icon: <Layers3 className="h-4 w-4" />,
+    },
+    {
+      label: 'Mahasiswa dievaluasi',
+      value: demoDashboard.students,
+      caption: 'Pada semester berjalan',
+      icon: <Users className="h-4 w-4" />,
+    },
+    {
+      label: 'Mata kuliah aktif',
+      value: demoDashboard.activeCourses,
+      caption: 'Dengan pemetaan CPMK',
+      icon: <FileText className="h-4 w-4" />,
+    },
+    {
+      label: 'Laporan menunggu',
+      value: demoDashboard.pendingReports,
+      caption: currentRole === 'dosen' ? 'Laporan yang Anda kirim' : 'Perlu validasi Kaprodi',
+      icon: <ArrowUpRight className="h-4 w-4" />,
+    },
+  ]
+
+  return (
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Dashboard Operasional"
+        title={`Selamat pagi, ${profile.name}`}
+        description="Pantau ketercapaian OBE dan aktivitas akademik program studi Anda dalam tampilan formal, terstruktur, dan data-dense."
+        actions={(
+          <>
+            <ActionButton variant="secondary" onClick={() => window.print()} data-testid="dashboard-print">
+              <Printer className="h-4 w-4" />
+              Print
+            </ActionButton>
+            <ActionButton onClick={() => window.alert('Export demo dashboard')} data-testid="dashboard-export">
+              <Download className="h-4 w-4" />
+              Export
+            </ActionButton>
+          </>
+        )}
+      />
+
+      <div className="grid gap-4 xl:grid-cols-4">
+        {metricCards.map((item) => (
+          <StatCard key={item.label} {...item} />
+        ))}
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.4fr_0.9fr]">
+        <SectionCard
+          title="Ringkasan ketercapaian CPL"
+          description="CPL-A sampai CPL-F dibandingkan dengan target 70%."
+        >
+          <div className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={demoCplBars} margin={{ left: -12, right: 8, top: 10, bottom: 0 }}>
+                <CartesianGrid stroke="#E2E8F0" vertical={false} />
+                <XAxis dataKey="name" tickLine={false} axisLine={false} />
+                <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
+                <Tooltip />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {demoCplBars.map((entry) => (
+                    <Cell key={entry.name} fill={entry.value >= entry.target ? '#1A3A6B' : '#F4A300'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </SectionCard>
+
+        <SectionCard title="Aktivitas terbaru" description="Timeline singkat yang menunjukkan alur kerja terkini.">
+          <div className="space-y-4">
+            {demoLatestActivities.map((item, index) => (
+              <div key={item.time} className="flex gap-4">
+                <div className="flex flex-col items-center">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[#E2E8F0] bg-[#F8FAFC] text-[11px] font-semibold text-[#1A3A6B]">{index + 1}</span>
+                  {index < demoLatestActivities.length - 1 ? <span className="mt-1 h-full w-px bg-[#E2E8F0]" /> : null}
+                </div>
+                <div className="pb-4">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6D778E]">{item.time}</div>
+                  <p className="mt-1 text-sm leading-6 text-[#142B4A]">{item.text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      </div>
+
+      <SectionCard
+        title="CPL Overview"
+        description="Klik kartu untuk membuka analitik OBE dengan CPL terpilih."
+      >
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {demoCpl.map((item) => (
+            <button
+              key={item.code}
+              type="button"
+              data-testid={`cpl-card-${item.code.toLowerCase()}`}
+              onClick={() => navigate('/analisis')}
+              className="rounded-lg border border-[#E2E8F0] bg-white p-5 text-left transition-transform hover:-translate-y-px hover:shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6D778E]">{item.code}</div>
+                  <div className="mt-2 text-[17px] font-semibold text-[#142B4A]">{item.name}</div>
+                </div>
+                <Badge tone={pillTone(item.status)}>{item.status}</Badge>
+              </div>
+              <div className="mt-5 text-3xl font-semibold tracking-tight text-[#142B4A]">{item.achievement}%</div>
+              <div className="mt-3 h-1.5 rounded-full bg-[#F2F4F7]">
+                <div className={`h-1.5 rounded-full ${item.achievement >= demoDashboard.target ? 'bg-[#1A3A6B]' : 'bg-[#F4A300]'}`} style={{ width: `${item.achievement}%` }} />
+              </div>
+              <div className="mt-3 flex items-center justify-between text-sm text-[#64748B]">
+                <span>{item.students}</span>
+                <span className={item.trend >= 0 ? 'text-[#10B981]' : 'text-[#EF4444]'}>
+                  {item.trend >= 0 ? '↑' : '↓'} {Math.abs(item.trend)}%
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Konteks Program Studi"
+        description="Ringkasan konteks akademik untuk memastikan data selalu terbaca dalam skope program studi yang benar."
+        className="bg-[#132D50] text-white"
+      >
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+          <div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#C8D3E1]">{demoDashboard.faculty}</div>
+            <div className="mt-2 text-2xl font-semibold">{demoDashboard.program}</div>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#D7E0EB]">
+              Semester {demoDashboard.semester} · {demoDashboard.version} · Sinkron terakhir {demoDashboard.lastSync}
+            </p>
+          </div>
+          <div className="flex items-center justify-start lg:justify-end">
+            <ActionButton variant="secondary" onClick={() => navigate('/kurikulum')} data-testid="dashboard-context-action">
+              Lihat struktur kurikulum
+            </ActionButton>
+          </div>
+        </div>
+      </SectionCard>
+    </div>
+  )
 }

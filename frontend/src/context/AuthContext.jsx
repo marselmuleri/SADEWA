@@ -5,6 +5,7 @@ export const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [activeRole, setActiveRole] = useState(() => localStorage.getItem('sadewa.activeRole') || '')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -24,6 +25,19 @@ export function AuthProvider({ children }) {
   }, [])
 
   useEffect(() => {
+    if (!user) {
+      setActiveRole('')
+      localStorage.removeItem('sadewa.activeRole')
+      return
+    }
+
+    if (!activeRole) {
+      setActiveRole(user.role)
+      localStorage.setItem('sadewa.activeRole', user.role)
+    }
+  }, [user])
+
+  useEffect(() => {
     if (!user) return undefined
     let timer
     const reset = () => { clearTimeout(timer); timer = setTimeout(logout, 30 * 60 * 1000) }
@@ -36,15 +50,23 @@ export function AuthProvider({ children }) {
     localStorage.setItem('token', data.access_token)
     const me = await api.get('/auth/me')
     setUser(me.data)
+    setActiveRole(me.data.role)
+    localStorage.setItem('sadewa.activeRole', me.data.role)
   }
 
   const logout = () => {
     localStorage.removeItem('token')
+    localStorage.removeItem('sadewa.activeRole')
     setUser(null)
   }
 
+  const switchRole = (role) => {
+    setActiveRole(role)
+    localStorage.setItem('sadewa.activeRole', role)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, activeRole, switchRole }}>
       {children}
     </AuthContext.Provider>
   )

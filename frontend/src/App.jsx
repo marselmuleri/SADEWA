@@ -12,12 +12,7 @@ import DokumenPage from './pages/DokumenPage'
 import SuperAdminPage from './pages/SuperAdminPage'
 
 function AppLayout({ children }) {
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <Navbar />
-      <main className="p-6">{children}</main>
-    </div>
-  )
+  return <Navbar>{children}</Navbar>
 }
 
 export default function App() {
