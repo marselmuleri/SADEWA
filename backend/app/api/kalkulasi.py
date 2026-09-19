@@ -18,7 +18,7 @@ def validasi_bobot(mata_kuliah_id: int, db: Session = Depends(get_db), _: User =
 
 
 @router.post("/run/{matkul_id}", response_model=KalkulasiRunResponse)
-def run(matkul_id: int, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin, UserRole.dosen))):
+def run(matkul_id: int, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen))):
     result = run_kalkulasi(db, matkul_id)
     return result
 

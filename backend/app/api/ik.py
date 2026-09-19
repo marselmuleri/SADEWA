@@ -27,7 +27,7 @@ def list_ik(
 def create_ik(
     payload: IKCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(require_roles(UserRole.admin)),
+    user: User = Depends(require_roles(UserRole.admin_prodi)),
 ):
     data = IK(**payload.model_dump(), created_by=user.id)
     db.add(data)
@@ -41,7 +41,7 @@ def update_ik(
     ik_id: int,
     payload: IKUpdate,
     db: Session = Depends(get_db),
-    _: User = Depends(require_roles(UserRole.admin)),
+    _: User = Depends(require_roles(UserRole.admin_prodi)),
 ):
     data = db.query(IK).filter(IK.id == ik_id).first()
     if not data:
@@ -57,7 +57,7 @@ def update_ik(
 def delete_ik(
     ik_id: int,
     db: Session = Depends(get_db),
-    _: User = Depends(require_roles(UserRole.admin)),
+    _: User = Depends(require_roles(UserRole.admin_prodi)),
 ):
     data = db.query(IK).filter(IK.id == ik_id).first()
     if not data:

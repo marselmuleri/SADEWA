@@ -2,11 +2,11 @@ import enum
 
 
 class UserRole(str, enum.Enum):
-    super_admin = "Super Admin"
-    admin = "Admin"
-    dosen = "Dosen"
-    kaprodi = "Kaprodi"
-    dekan = "Dekan"
+    super_admin = "super_admin"
+    admin_prodi = "admin_prodi"
+    kaprodi = "kaprodi"
+    dekan = "dekan"
+    dosen = "dosen"
 
 
 class StatusMasuk(str, enum.Enum):

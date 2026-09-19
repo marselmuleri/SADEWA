@@ -11,3 +11,4 @@ class Fakultas(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     program_studi = relationship("ProgramStudi", back_populates="fakultas")
+    users = relationship("User", back_populates="fakultas")

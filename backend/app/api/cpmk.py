@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.deps import allowed_program_ids, get_current_user, require_program_access, require_roles
+from app.core.deps import get_current_user, require_roles
 from app.models.enums import UserRole
 from app.models.cpmk import CPMK
 from app.models.cpmk_ik_map import CPMKIKMap
@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.post("", response_model=CPMKResponse)
-def create_cpmk(payload: CPMKCreate, db: Session = Depends(get_db), user: User = Depends(require_roles(UserRole.admin, UserRole.dosen))):
+def create_cpmk(payload: CPMKCreate, db: Session = Depends(get_db), user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen))):
     data = CPMK(**payload.model_dump(), created_by=user.id)
     db.add(data)
     db.commit()
@@ -29,11 +29,10 @@ def list_cpmk(mata_kuliah_id: int | None = None, db: Session = Depends(get_db), 
 
 
 @router.put("/{cpmk_id}", response_model=CPMKResponse)
-def update_cpmk(cpmk_id: int, payload: CPMKUpdate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin, UserRole.dosen))):
+def update_cpmk(cpmk_id: int, payload: CPMKUpdate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen))):
     data = db.query(CPMK).filter(CPMK.id == cpmk_id).first()
     if not data:
         raise HTTPException(status_code=404, detail="CPMK tidak ditemukan")
-    require_program_access(user, data.mata_kuliah.program_studi_id)
     for key, value in payload.model_dump(exclude_unset=True).items():
         setattr(data, key, value)
     db.commit()
@@ -42,7 +41,7 @@ def update_cpmk(cpmk_id: int, payload: CPMKUpdate, db: Session = Depends(get_db)
 
 
 @router.put("/{cpmk_id}/map-ik")
-def map_ik(cpmk_id: int, payload: CPMKMapIKRequest, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin, UserRole.dosen))):
+def map_ik(cpmk_id: int, payload: CPMKMapIKRequest, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen))):
     cpmk = db.query(CPMK).filter(CPMK.id == cpmk_id).first()
     if not cpmk:
         raise HTTPException(status_code=404, detail="CPMK tidak ditemukan")

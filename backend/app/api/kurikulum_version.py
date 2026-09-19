@@ -28,7 +28,7 @@ def list_versions(
 def create_version(
     payload: KurikulumVersionCreate,
     db: Session = Depends(get_db),
-    user: User = Depends(require_roles(UserRole.admin)),
+    user: User = Depends(require_roles(UserRole.admin_prodi)),
 ):
     data = KurikulumVersion(**payload.model_dump(), status="draft", created_by=user.id)
     db.add(data)
@@ -41,7 +41,7 @@ def create_version(
 def publish_version(
     version_id: int,
     db: Session = Depends(get_db),
-    _: User = Depends(require_roles(UserRole.admin)),
+    _: User = Depends(require_roles(UserRole.admin_prodi)),
 ):
     data = db.query(KurikulumVersion).filter(KurikulumVersion.id == version_id).first()
     if not data:
