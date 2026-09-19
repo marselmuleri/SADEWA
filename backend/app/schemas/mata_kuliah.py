@@ -1,14 +1,16 @@
+from typing import Literal
 from pydantic import BaseModel
 from app.schemas.common import ORMBaseModel
 
 
 class MataKuliahBase(BaseModel):
-    kode_mk: str
-    nama_mk: str
+    kurikulum_version_id: int
+    kode: str
+    nama: str
     sks: int
-    semester: int
+    semester: Literal["Ganjil", "Genap"]
+    tahun_ajaran: str
     program_studi_id: int
-    dosen_id: int | None = None
 
 
 class MataKuliahCreate(MataKuliahBase):
@@ -16,12 +18,11 @@ class MataKuliahCreate(MataKuliahBase):
 
 
 class MataKuliahUpdate(BaseModel):
-    kode_mk: str | None = None
-    nama_mk: str | None = None
+    kode: str | None = None
+    nama: str | None = None
     sks: int | None = None
-    semester: int | None = None
-    program_studi_id: int | None = None
-    dosen_id: int | None = None
+    semester: Literal["Ganjil", "Genap"] | None = None
+    tahun_ajaran: str | None = None
 
 
 class MataKuliahResponse(MataKuliahBase, ORMBaseModel):

@@ -1,12 +1,14 @@
+from decimal import Decimal
 from pydantic import BaseModel
 from app.schemas.common import ORMBaseModel
 
 
 class CPMKBase(BaseModel):
-    kode_cpmk: str
-    deskripsi: str
     mata_kuliah_id: int
-    bobot_ke_cpl: dict[str, float]
+    kode: str
+    deskripsi: str
+    level_taksonomi: str
+    bobot: Decimal
 
 
 class CPMKCreate(CPMKBase):
@@ -14,11 +16,20 @@ class CPMKCreate(CPMKBase):
 
 
 class CPMKUpdate(BaseModel):
-    kode_cpmk: str | None = None
+    kode: str | None = None
     deskripsi: str | None = None
-    mata_kuliah_id: int | None = None
-    bobot_ke_cpl: dict[str, float] | None = None
+    level_taksonomi: str | None = None
+    bobot: Decimal | None = None
 
 
 class CPMKResponse(CPMKBase, ORMBaseModel):
     id: int
+
+
+class IKMapItem(BaseModel):
+    ik_id: int
+    bobot: Decimal
+
+
+class CPMKMapIKRequest(BaseModel):
+    mappings: list[IKMapItem]

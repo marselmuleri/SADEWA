@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.post("", response_model=MahasiswaResponse)
-def create_mahasiswa(payload: MahasiswaCreate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin, UserRole.kaprodi))):
+def create_mahasiswa(payload: MahasiswaCreate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin_prodi, UserRole.kaprodi))):
     data = Mahasiswa(**payload.model_dump())
     db.add(data)
     db.commit()
@@ -46,7 +46,7 @@ def get_mahasiswa(mahasiswa_id: int, db: Session = Depends(get_db), _: User = De
 
 
 @router.put("/{mahasiswa_id}", response_model=MahasiswaResponse)
-def update_mahasiswa(mahasiswa_id: int, payload: MahasiswaUpdate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin, UserRole.kaprodi))):
+def update_mahasiswa(mahasiswa_id: int, payload: MahasiswaUpdate, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin_prodi, UserRole.kaprodi))):
     data = db.query(Mahasiswa).filter(Mahasiswa.id == mahasiswa_id, Mahasiswa.is_active.is_(True)).first()
     if not data:
         raise HTTPException(status_code=404, detail="Mahasiswa tidak ditemukan")
@@ -58,7 +58,7 @@ def update_mahasiswa(mahasiswa_id: int, payload: MahasiswaUpdate, db: Session = 
 
 
 @router.delete("/{mahasiswa_id}")
-def delete_mahasiswa(mahasiswa_id: int, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin, UserRole.kaprodi))):
+def delete_mahasiswa(mahasiswa_id: int, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin_prodi, UserRole.kaprodi))):
     data = db.query(Mahasiswa).filter(Mahasiswa.id == mahasiswa_id, Mahasiswa.is_active.is_(True)).first()
     if not data:
         raise HTTPException(status_code=404, detail="Mahasiswa tidak ditemukan")

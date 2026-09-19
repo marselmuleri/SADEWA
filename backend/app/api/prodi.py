@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.deps import allowed_program_ids, get_current_user, require_program_access, require_roles
+from app.core.deps import get_current_user, require_roles
 from app.models.enums import UserRole
 from app.models.program_studi import ProgramStudi
 from app.models.user import User
@@ -12,9 +12,8 @@ router = APIRouter()
 
 
 @router.get("", response_model=list[ProgramStudiResponse])
-def list_prodi(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    # Clients only need their own prodi(s); Super Admin uses the metadata-only panel.
-    return db.query(ProgramStudi).filter(ProgramStudi.id.in_(allowed_program_ids(user) or [])).order_by(ProgramStudi.nama.asc()).all()
+def list_prodi(db: Session = Depends(get_db), _: User = Depends(get_current_user)):
+    return db.query(ProgramStudi).order_by(ProgramStudi.nama.asc()).all()
 
 
 @router.post("", response_model=ProgramStudiResponse)

@@ -1,11 +1,15 @@
+from datetime import datetime
+from decimal import Decimal
 from pydantic import BaseModel
 from app.schemas.common import ORMBaseModel
 
 
 class CPLBase(BaseModel):
-    kode_cpl: str
+    kurikulum_version_id: int
+    kode: str
     deskripsi: str
     program_studi_id: int
+    threshold_capaian: Decimal = Decimal("70.0")
 
 
 class CPLCreate(CPLBase):
@@ -13,10 +17,14 @@ class CPLCreate(CPLBase):
 
 
 class CPLUpdate(BaseModel):
-    kode_cpl: str | None = None
+    kode: str | None = None
     deskripsi: str | None = None
-    program_studi_id: int | None = None
+
+
+class CPLThresholdUpdate(BaseModel):
+    threshold_capaian: Decimal
 
 
 class CPLResponse(CPLBase, ORMBaseModel):
     id: int
+    created_at: datetime
