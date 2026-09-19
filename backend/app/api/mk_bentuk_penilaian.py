@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 @router.post("", response_model=MKBentukPenilaianResponse)
-def create(payload: MKBentukPenilaianCreate, db: Session = Depends(get_db), user: User = Depends(require_roles(UserRole.admin, UserRole.dosen))):
+def create(payload: MKBentukPenilaianCreate, db: Session = Depends(get_db), user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen))):
     data = MKBentukPenilaian(**payload.model_dump(), created_by=user.id)
     db.add(data)
     db.commit()
@@ -31,7 +31,7 @@ def list_all(mata_kuliah_id: int, semester: str | None = None, db: Session = Dep
 
 
 @router.put("/{id}/map-ik")
-def map_ik(id: int, payload: MKBentukPenilaianMapIKRequest, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin, UserRole.dosen))):
+def map_ik(id: int, payload: MKBentukPenilaianMapIKRequest, db: Session = Depends(get_db), _: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen))):
     mbp = db.query(MKBentukPenilaian).filter(MKBentukPenilaian.id == id).first()
     if not mbp:
         raise HTTPException(status_code=404, detail="Tidak ditemukan")
