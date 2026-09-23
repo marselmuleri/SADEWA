@@ -3,7 +3,6 @@ from app.schemas.common import ORMBaseModel
 
 
 class JenisEvaluasiBase(BaseModel):
-    program_studi_id: int
     nama: str
     urutan: int | None = None
 
@@ -19,3 +18,4 @@ class JenisEvaluasiUpdate(BaseModel):
 
 class JenisEvaluasiResponse(JenisEvaluasiBase, ORMBaseModel):
     id: int
+    program_studi_id: int
