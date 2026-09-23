@@ -2,13 +2,21 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.core.deps import AcademicScope, get_academic_scope, get_current_user, get_scoped_prodi_id
+from app.core.deps import AcademicScope, get_academic_scope, get_scoped_prodi_id, require_roles
 from app.models.cpl import CPL
+from app.models.enums import UserRole
 from app.models.program_studi import ProgramStudi
 from app.models.user import User
 from app.schemas.cpl import CPLCreate, CPLResponse, CPLThresholdUpdate, CPLUpdate
 
 router = APIRouter()
+
+
+def _require_prodi_scope(user: User) -> int:
+    # Sesuai kode asli: create/update/delete CPL hanya Admin Prodi (bukan Kaprodi).
+    if not user.program_studi_id:
+        raise HTTPException(status_code=400, detail="Akun ini belum terhubung ke Program Studi manapun")
+    return user.program_studi_id
 
 
 @router.get("", response_model=list[CPLResponse])
@@ -43,9 +51,9 @@ def get_cpl(cpl_id: int, db: Session = Depends(get_db), scope: AcademicScope = D
 def create_cpl(
     payload: CPLCreate,
     db: Session = Depends(get_db),
-    prodi_id: int = Depends(get_scoped_prodi_id),
-    user: User = Depends(get_current_user),
+    user: User = Depends(require_roles(UserRole.admin_prodi)),
 ):
+    prodi_id = _require_prodi_scope(user)
     data = CPL(**{**payload.model_dump(), "program_studi_id": prodi_id}, created_by=user.id)
     db.add(data)
     db.commit()
@@ -58,8 +66,9 @@ def update_cpl(
     cpl_id: int,
     payload: CPLUpdate,
     db: Session = Depends(get_db),
-    prodi_id: int = Depends(get_scoped_prodi_id),
+    user: User = Depends(require_roles(UserRole.admin_prodi)),
 ):
+    prodi_id = _require_prodi_scope(user)
     data = db.query(CPL).filter(CPL.id == cpl_id).first()
     if not data:
         raise HTTPException(status_code=404, detail="CPL tidak ditemukan")
@@ -79,6 +88,7 @@ def update_threshold(
     db: Session = Depends(get_db),
     prodi_id: int = Depends(get_scoped_prodi_id),
 ):
+    # Threshold: Admin Prodi & Kaprodi boleh, sesuai kode asli.
     data = db.query(CPL).filter(CPL.id == cpl_id).first()
     if not data:
         raise HTTPException(status_code=404, detail="CPL tidak ditemukan")
@@ -94,8 +104,9 @@ def update_threshold(
 def delete_cpl(
     cpl_id: int,
     db: Session = Depends(get_db),
-    prodi_id: int = Depends(get_scoped_prodi_id),
+    user: User = Depends(require_roles(UserRole.admin_prodi)),
 ):
+    prodi_id = _require_prodi_scope(user)
     data = db.query(CPL).filter(CPL.id == cpl_id).first()
     if not data:
         raise HTTPException(status_code=404, detail="CPL tidak ditemukan")

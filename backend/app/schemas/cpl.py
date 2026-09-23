@@ -8,7 +8,6 @@ class CPLBase(BaseModel):
     kurikulum_version_id: int
     kode: str
     deskripsi: str
-    program_studi_id: int
     threshold_capaian: Decimal = Decimal("70.0")
 
 
@@ -27,4 +26,5 @@ class CPLThresholdUpdate(BaseModel):
 
 class CPLResponse(CPLBase, ORMBaseModel):
     id: int
+    program_studi_id: int
     created_at: datetime
