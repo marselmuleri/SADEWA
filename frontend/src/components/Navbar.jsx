@@ -1,10 +1,10 @@
-import { Bell, ChevronDown, LogOut, Search, SquareKanban, Building2, Layers, Users, FileCheck, BookOpen, ShieldAlert } from 'lucide-react'
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { Bell, LogOut, Search, SquareKanban } from 'lucide-react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useMemo } from 'react'
 import useAuth from '../hooks/useAuth'
 import useToast from '../hooks/useToast'
 import { Badge } from './PageChrome'
-import { demoProfiles, getRoleLabel, roleOptions } from '../data/demoUi'
+import { getRoleLabel } from '../data/demoUi'
 
 const pageTitles = {
   '/dashboard': 'Ikhtisar',
@@ -12,13 +12,15 @@ const pageTitles = {
   '/kurikulum': 'Kurikulum OBE',
   '/dokumen': 'Validasi Laporan',
   '/pengaturan': 'Manajemen Pengguna',
-  '/super-admin': 'Panel Super Admin',
+  '/super-admin/prodi': 'Daftar Prodi',
+  '/super-admin/fakultas': 'Daftar Fakultas',
+  '/super-admin/users': 'Manajemen Pengguna Lintas Prodi',
 }
 
 function SidebarLink({ item, active, onClick }) {
   return (
     <Link
-      to={item.tab ? `${item.path}?tab=${item.tab}` : item.path}
+      to={item.path}
       onClick={onClick}
       data-testid={`nav-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
       className={`group flex items-center justify-between rounded-[6px] border px-3 py-2 text-sm font-medium transition-colors ${
@@ -43,10 +45,9 @@ function SidebarLink({ item, active, onClick }) {
 }
 
 export default function Navbar({ children }) {
-  const { user, logout, activeRole, switchRole } = useAuth()
+  const { user, logout, activeRole } = useAuth()
   const { pushToast, toasts } = useToast()
   const location = useLocation()
-  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
 
   const currentRole = activeRole || user?.role || 'admin_prodi'
@@ -54,12 +55,20 @@ export default function Navbar({ children }) {
   const isAdminProdi = currentRole === 'admin_prodi'
   const isDosen = currentRole === 'dosen'
 
-  const profile = demoProfiles[currentRole] || demoProfiles.admin_prodi
-  const currentTab = searchParams.get('tab') || ''
+  const profileProgram = user?.program_studi_nama || user?.fakultas_nama || 'Platform Administrator'
+  const profileFaculty = user?.fakultas_nama || ''
+  const profileCode = user?.program_studi_kode || user?.kode_program_studi || user?.kode_fakultas || ''
 
-  // Academic menus
-  const academicMenus = useMemo(() => {
-    return [
+  const menuItems = useMemo(() => {
+    if (isSuperAdmin) {
+      return [
+        { label: 'Daftar Prodi', path: '/super-admin/prodi' },
+        { label: 'Daftar Fakultas', path: '/super-admin/fakultas' },
+        { label: 'Manajemen Pengguna Lintas Prodi', path: '/super-admin/users' },
+      ]
+    }
+
+    const baseMenus = [
       { label: 'Ikhtisar', path: '/dashboard' },
       { label: 'Analitik OBE', path: '/analisis' },
       {
@@ -72,35 +81,20 @@ export default function Navbar({ children }) {
         path: '/dokumen',
       },
     ]
-  }, [currentRole, isDosen])
 
-  // Super Admin menus
-  const superAdminMenus = useMemo(() => {
-    return [
-      { label: 'Daftar Prodi', path: '/super-admin', tab: 'programs' },
-      { label: 'Pengajuan Onboarding', path: '/super-admin', tab: 'onboarding', badge: '2' },
-      { label: 'Manajemen Pengguna Lintas Prodi', path: '/super-admin', tab: 'users' },
-    ]
-  }, [])
-
-  const activePage = pageTitles[
-    Object.keys(pageTitles).find((path) => location.pathname.startsWith(path)) || '/dashboard'
-  ] || 'Ikhtisar'
-
-  const handleRoleChange = (event) => {
-    const nextRole = event.target.value
-    switchRole(nextRole)
-    pushToast(`Beralih tampilan ke ${getRoleLabel(nextRole)}`)
-
-    // Role-aligned routing enforcement
-    if (nextRole === 'super_admin' && !location.pathname.startsWith('/super-admin')) {
-      navigate('/super-admin')
-    } else if (nextRole !== 'super_admin' && location.pathname.startsWith('/super-admin')) {
-      navigate('/dashboard')
-    } else if (nextRole !== 'admin_prodi' && location.pathname.startsWith('/pengaturan')) {
-      navigate('/dashboard')
+    if (isAdminProdi) {
+      baseMenus.push({ label: 'Manajemen Pengguna', path: '/pengaturan' })
     }
-  }
+
+    return baseMenus
+  }, [currentRole, isAdminProdi, isDosen, isSuperAdmin])
+
+  const activePage = useMemo(() => {
+    const matched = Object.keys(pageTitles)
+      .sort((left, right) => right.length - left.length)
+      .find((path) => location.pathname.startsWith(path))
+    return pageTitles[matched] || 'Ikhtisar'
+  }, [location.pathname])
 
   const handleLogout = () => {
     logout()
@@ -132,68 +126,36 @@ export default function Navbar({ children }) {
 
         {/* Sidebar Nav Items */}
         <nav className="flex-1 space-y-6 overflow-y-auto px-4 py-5">
-          {isSuperAdmin ? (
-            /* Super Admin Workspace (Completely isolated per PRD 3.2) */
-            <div className="space-y-1.5">
-              <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#93A7C3]">
-                Ruang Kerja Super Admin
-              </div>
-              {superAdminMenus.map((item) => {
-                const isActive = location.pathname === item.path && (item.tab ? currentTab === item.tab || (!currentTab && item.tab === 'programs') : true)
-                return (
-                  <SidebarLink
-                    key={`${item.path}-${item.tab || ''}-${item.label}`}
-                    item={item}
-                    active={isActive}
-                  />
-                )
-              })}
+          <div className="space-y-1.5">
+            <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#93A7C3]">
+              {isSuperAdmin ? 'Ruang Kerja Super Admin' : 'Ruang Kerja'}
             </div>
-          ) : (
-            /* Academic Workspace (Admin Prodi, Dosen, Kaprodi, Dekan) */
-            <>
-              <div className="space-y-1.5">
-                <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#93A7C3]">
-                  Ruang Kerja
-                </div>
-                {academicMenus.map((item) => (
-                  <SidebarLink
-                    key={`${item.path}-${item.label}`}
-                    item={item}
-                    active={location.pathname === item.path}
-                  />
-                ))}
+            {menuItems.map((item) => (
+              <SidebarLink
+                key={`${item.path}-${item.label}`}
+                item={item}
+                active={location.pathname === item.path}
+              />
+            ))}
+          </div>
+
+          {!isSuperAdmin ? (
+            <div className="mt-4 rounded-[6px] border border-white/10 bg-white/5 p-3.5">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#93A7C3]">
+                Program Studi
               </div>
-
-              {/* Administrasi Group: HANYA MUNCUL UNTUK ADMIN PRODI (DESIGN.md Section 4) */}
-              {isAdminProdi && (
-                <div className="space-y-1.5 border-t border-white/10 pt-4">
-                  <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#93A7C3]">
-                    Administrasi
-                  </div>
-                  <SidebarLink
-                    item={{ label: 'Manajemen Pengguna', path: '/pengaturan' }}
-                    active={location.pathname === '/pengaturan'}
-                  />
-                </div>
-              )}
-
-              {/* Program Context Card (Only for non-superadmin) */}
-              <div className="mt-4 rounded-[6px] border border-white/10 bg-white/5 p-3.5">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#93A7C3]">
-                  Program Studi
-                </div>
-                <div className="mt-1.5 text-sm font-semibold truncate">{profile.program}</div>
-                <div className="mt-0.5 text-xs text-[#D7E0EB] truncate">{profile.faculty}</div>
-                <div className="mt-2.5 flex items-center gap-2">
+              <div className="mt-1.5 text-sm font-semibold truncate">{profileProgram}</div>
+              <div className="mt-0.5 text-xs text-[#D7E0EB] truncate">{profileFaculty || ' '}</div>
+              <div className="mt-2.5 flex items-center gap-2">
+                {profileCode ? (
                   <span className="rounded-[4px] bg-[#F4A300] px-1.5 py-0.5 text-[10px] font-bold text-[#142B4A]">
-                    {profile.code || 'TK'}
+                    {profileCode}
                   </span>
-                  <span className="text-[11px] text-[#C8D3E1]">Semester 2024 Genap</span>
-                </div>
+                ) : null}
+                <span className="text-[11px] text-[#C8D3E1]">Semester 2024 Genap</span>
               </div>
-            </>
-          )}
+            </div>
+          ) : null}
         </nav>
 
         {/* User Profile Card at Sidebar Footer */}
@@ -202,7 +164,7 @@ export default function Navbar({ children }) {
             <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#93A7C3]">
               Pengguna Aktif
             </div>
-            <div className="mt-1 text-sm font-semibold truncate">{user?.nama || profile.name}</div>
+            <div className="mt-1 text-sm font-semibold truncate">{user?.nama || 'Pengguna'}</div>
             <div className="mt-0.5 flex items-center justify-between text-xs text-[#D7E0EB]">
               <span>{getRoleLabel(currentRole)}</span>
               {isSuperAdmin && (
@@ -225,13 +187,12 @@ export default function Navbar({ children }) {
               SADEWA &gt; {activePage}
             </div>
             <div className="text-xs text-[#64748B]">
-              {isSuperAdmin ? 'Platform Administrator' : profile.program} · <span className="font-medium text-[#142B4A]">{getRoleLabel(currentRole)}</span>
+              {isSuperAdmin ? 'Platform Administrator' : profileProgram} · <span className="font-medium text-[#142B4A]">{getRoleLabel(currentRole)}</span>
             </div>
           </div>
 
           {/* Action Zone */}
           <div className="flex items-center gap-3">
-            {/* Search: Disembunyikan pada tampilan Super Admin per DESIGN.md */}
             {!isSuperAdmin && (
               <label className="relative hidden lg:block" data-testid="topbar-search">
                 <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#94A3B8]" />
@@ -258,30 +219,11 @@ export default function Navbar({ children }) {
             <div className="hidden items-center gap-2 rounded-[6px] border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1.5 text-xs lg:flex">
               <SquareKanban className="h-3.5 w-3.5 text-[#1A3A6B]" />
               <span className="font-semibold text-[#142B4A]">{getRoleLabel(currentRole)}</span>
-              {!isSuperAdmin && profile.code ? (
+              {!isSuperAdmin && profileCode ? (
                 <span className="rounded-[4px] border border-[#CBD5E1] bg-white px-1.5 py-0.5 text-[10px] font-bold text-[#142B4A]">
-                  {profile.code}
+                  {profileCode}
                 </span>
               ) : null}
-            </div>
-
-            {/* Role Switcher (Wajib untuk demo visual per DESIGN.md Section 0 & 25) */}
-            <div className="flex items-center gap-2 rounded-[6px] border border-[#CBD5E1] bg-white px-2.5 py-1.5 text-xs">
-              <Building2 className="h-3.5 w-3.5 text-[#1A3A6B]" />
-              <span className="text-[#64748B]">Lihat sebagai:</span>
-              <select
-                value={currentRole}
-                onChange={handleRoleChange}
-                className="bg-transparent text-xs font-semibold text-[#142B4A] outline-none cursor-pointer"
-                data-testid="role-switcher"
-              >
-                {roleOptions.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="h-3.5 w-3.5 text-[#94A3B8]" />
             </div>
 
             {/* Logout Button */}
@@ -310,7 +252,7 @@ export default function Navbar({ children }) {
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto flex items-center gap-2 rounded-[6px] border px-4 py-2.5 text-xs font-medium shadow-sm transition-all ${
+            className={`pointer-events-auto flex items-center gap-2 rounded-[6px] border px-4 py-2.5 text-xs font-medium shadow-sm transition-colors ${
               toast.type === 'error'
                 ? 'border-red-200 bg-red-50 text-red-800'
                 : 'border-emerald-200 bg-emerald-50 text-emerald-800'
