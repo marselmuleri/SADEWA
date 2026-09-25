@@ -7,7 +7,7 @@ import { useRole } from '../hooks/useRole'
 export default function DokumenPage() {
   const { user, activeRole } = useAuth()
   const { role } = useRole()
-  const currentRole = activeRole || role || user?.role || 'admin'
+  const currentRole = activeRole || role || user?.role || 'admin_prodi'
   const isDosen = currentRole === 'dosen'
   const canDecide = currentRole === 'kaprodi' || currentRole === 'dekan'
 

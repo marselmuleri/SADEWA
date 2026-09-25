@@ -20,8 +20,8 @@ export default function DashboardPage() {
   const navigate = useNavigate()
   const { user, activeRole } = useAuth()
   const { role } = useRole()
-  const currentRole = activeRole || role || user?.role || 'admin'
-  const profile = demoProfiles[currentRole] || demoProfiles.admin
+  const currentRole = activeRole || role || user?.role || 'admin_prodi'
+  const profile = demoProfiles[currentRole] || demoProfiles.admin_prodi
 
   const metricCards = [
     {
@@ -166,7 +166,7 @@ export default function DashboardPage() {
           </div>
           <div className="flex items-center justify-start lg:justify-end">
             <ActionButton variant="secondary" onClick={() => navigate('/kurikulum')} data-testid="dashboard-context-action">
-              Lihat struktur kurikulum
+              {currentRole === 'dosen' ? 'Lihat kurikulum' : 'Lihat struktur kurikulum'}
             </ActionButton>
           </div>
         </div>

@@ -1,13 +1,13 @@
 export const roleLabels = {
-  admin: 'Admin Prodi',
-  dosen: 'Dosen',
+  super_admin: 'Super Admin',
+  admin_prodi: 'Admin Prodi',
   kaprodi: 'Kaprodi',
   dekan: 'Dekan',
-  super_admin: 'Super Admin',
+  dosen: 'Dosen',
 }
 
 export const roleOptions = [
-  { value: 'admin', label: 'Admin Prodi' },
+  { value: 'admin_prodi', label: 'Admin Prodi' },
   { value: 'dosen', label: 'Dosen' },
   { value: 'kaprodi', label: 'Kaprodi' },
   { value: 'dekan', label: 'Dekan' },
@@ -15,42 +15,107 @@ export const roleOptions = [
 ]
 
 export const demoProfiles = {
-  super_admin: { name: 'Tim IT SADEWA', program: null, faculty: null, code: null },
-  admin: { name: 'Budi Santoso', program: 'Teknik Komputer', faculty: 'Fakultas Teknik', code: 'TK' },
-  dosen: { name: 'Andi Pratama', program: 'Teknik Komputer', faculty: 'Fakultas Teknik', code: 'TK' },
-  kaprodi: { name: 'Dr. Bima', program: 'Teknik Komputer', faculty: 'Fakultas Teknik', code: 'TK' },
-  dekan: { name: 'Prof. Citra', program: 'Fakultas Teknik', faculty: 'Fakultas Teknik', code: 'FT' },
+  super_admin: {
+    name: 'Tim IT SADEWA',
+    email: 'superadmin@sadewa.ac.id',
+    nip: '198501012010011001',
+    role: 'super_admin',
+    program: null,
+    faculty: null,
+    code: null,
+  },
+  admin_prodi: {
+    name: 'Budi Santoso',
+    email: 'admin@sadewa.ac.id',
+    nip: '198805122010011004',
+    role: 'admin_prodi',
+    program: 'Teknik Komputer',
+    faculty: 'Fakultas Teknik',
+    code: 'TK',
+    program_studi_id: 1,
+    program_studi_nama: 'Teknik Komputer',
+    fakultas_id: 1,
+    fakultas_nama: 'Fakultas Teknik',
+  },
+  dosen: {
+    name: 'Andi Pratama, M.Kom.',
+    email: 'dosen@sadewa.ac.id',
+    nip: '198909102011011002',
+    role: 'dosen',
+    program: 'Teknik Komputer',
+    faculty: 'Fakultas Teknik',
+    code: 'TK',
+    program_studi_id: null,
+    program_studi_nama: null,
+    fakultas_id: null,
+    fakultas_nama: null,
+  },
+  kaprodi: {
+    name: 'Dr. Bima Wicaksana, M.T.',
+    email: 'kaprodi@sadewa.ac.id',
+    nip: '197812222006041001',
+    role: 'kaprodi',
+    program: 'Teknik Komputer',
+    faculty: 'Fakultas Teknik',
+    code: 'TK',
+    program_studi_id: 1,
+    program_studi_nama: 'Teknik Komputer',
+    fakultas_id: 1,
+    fakultas_nama: 'Fakultas Teknik',
+  },
+  dekan: {
+    name: 'Prof. Dr. Ir. Citra Dewi, M.Sc.',
+    email: 'dekan@sadewa.ac.id',
+    nip: '196903151994032001',
+    role: 'dekan',
+    program: 'Fakultas Teknik',
+    faculty: 'Fakultas Teknik',
+    code: 'FT',
+    program_studi_id: null,
+    program_studi_nama: null,
+    fakultas_id: 1,
+    fakultas_nama: 'Fakultas Teknik',
+  },
 }
 
+export const demoCredentials = [
+  { role: 'super_admin', email: 'superadmin@sadewa.ac.id', password: 'admin123' },
+  { role: 'admin_prodi', email: 'admin@sadewa.ac.id', password: 'admin123' },
+  { role: 'dosen', email: 'dosen@sadewa.ac.id', password: 'dosen123' },
+  { role: 'kaprodi', email: 'kaprodi@sadewa.ac.id', password: 'kaprodi123' },
+  { role: 'dekan', email: 'dekan@sadewa.ac.id', password: 'admin123' },
+]
+
 export const sidebarMenus = {
-  admin: [
+  super_admin: [
+    { label: 'Daftar Prodi', path: '/super-admin', tab: 'programs' },
+    { label: 'Pengajuan Onboarding', path: '/super-admin', tab: 'onboarding', badge: '2' },
+    { label: 'Manajemen Pengguna Lintas Prodi', path: '/super-admin', tab: 'users' },
+  ],
+  admin_prodi: [
     { label: 'Ikhtisar', path: '/dashboard' },
     { label: 'Analitik OBE', path: '/analisis' },
     { label: 'Kurikulum OBE', path: '/kurikulum' },
-    { label: 'Laporan Saya', path: '/dokumen' },
-    { label: 'Manajemen Pengguna', path: '/pengaturan' },
+    { label: 'Validasi Laporan', path: '/dokumen' },
+    { label: 'Manajemen Pengguna', path: '/pengaturan', isAdminGroup: true },
   ],
   dosen: [
     { label: 'Ikhtisar', path: '/dashboard' },
     { label: 'Analitik OBE', path: '/analisis' },
-    { label: 'Kurikulum OBE', path: '/kurikulum', suffix: 'Read only' },
+    { label: 'Kurikulum OBE', path: '/kurikulum', suffix: 'Mode Lihat' },
     { label: 'Laporan Saya', path: '/dokumen' },
   ],
   kaprodi: [
     { label: 'Ikhtisar', path: '/dashboard' },
     { label: 'Analitik OBE', path: '/analisis' },
-    { label: 'Kurikulum OBE', path: '/kurikulum' },
+    { label: 'Kurikulum OBE', path: '/kurikulum', suffix: 'Mode Lihat' },
     { label: 'Validasi Laporan', path: '/dokumen' },
   ],
   dekan: [
     { label: 'Ikhtisar', path: '/dashboard' },
     { label: 'Analitik OBE', path: '/analisis' },
+    { label: 'Kurikulum OBE', path: '/kurikulum', suffix: 'Mode Lihat' },
     { label: 'Validasi Laporan', path: '/dokumen' },
-  ],
-  super_admin: [
-    { label: 'Daftar Prodi', path: '/super-admin' },
-    { label: 'Pengajuan Onboarding', path: '/super-admin', badge: '2' },
-    { label: 'Manajemen Pengguna Lintas Prodi', path: '/super-admin' },
   ],
 }
 
@@ -141,20 +206,44 @@ export const demoReportSummary = [
 ]
 
 export const demoReportRows = [
-  { lecturer: 'Andi Pratama', course: 'IF301 - Struktur Data', date: '18 Sep 2026', status: 'Menunggu Validasi' },
-  { lecturer: 'Siti Rahma', course: 'IF302 - Basis Data', date: '17 Sep 2026', status: 'Disetujui' },
-  { lecturer: 'Fajar Hidayat', course: 'IF303 - Jaringan Komputer', date: '16 Sep 2026', status: 'Perlu Revisi' },
+  { lecturer: 'Andi Pratama, M.Kom.', course: 'IF301 - Struktur Data', date: '18 Sep 2026', status: 'Menunggu Validasi' },
+  { lecturer: 'Siti Rahma, S.T., M.T.', course: 'IF302 - Basis Data', date: '17 Sep 2026', status: 'Disetujui' },
+  { lecturer: 'Fajar Hidayat, M.Kom.', course: 'IF303 - Jaringan Komputer', date: '16 Sep 2026', status: 'Perlu Revisi' },
 ]
 
 export const demoPrograms = [
-  { name: 'Teknik Komputer', faculty: 'Fakultas Teknik', onboardedAt: '2024-07-04', activeUsers: 24, cplCount: 8, courseCount: 12 },
-  { name: 'Teknik Lingkungan', faculty: 'Fakultas Sains', onboardedAt: '2024-08-20', activeUsers: 18, cplCount: 7, courseCount: 11 },
-  { name: 'Statistika', faculty: 'Fakultas Matematika', onboardedAt: '2025-01-12', activeUsers: 15, cplCount: 9, courseCount: 10 },
+  { id: 1, name: 'Teknik Komputer', code: 'TK', faculty: 'Fakultas Teknik', facultyId: 1, onboardedAt: '2024-07-04', activeUsers: 24, cplCount: 8, courseCount: 12 },
+  { id: 2, name: 'Teknik Lingkungan', code: 'TL', faculty: 'Fakultas Sains', facultyId: 2, onboardedAt: '2024-08-20', activeUsers: 18, cplCount: 7, courseCount: 11 },
+  { id: 3, name: 'Statistika', code: 'STAT', faculty: 'Fakultas Matematika', facultyId: 3, onboardedAt: '2025-01-12', activeUsers: 15, cplCount: 9, courseCount: 10 },
+]
+
+export const demoFaculties = [
+  { id: 1, nama: 'Fakultas Teknik', kode: 'FT' },
+  { id: 2, nama: 'Fakultas Sains', kode: 'FS' },
+  { id: 3, nama: 'Fakultas Matematika', kode: 'FM' },
 ]
 
 export const demoProvisioningRequests = [
-  { ref: 'REQ-240615-001', program: 'Teknik Lingkungan', requester: 'Rina A.', email: 'rina@contoh.ac.id', date: '15 Jun 2024', status: 'REVIEW' },
-  { ref: 'REQ-240610-002', program: 'Statistika', requester: 'Dewi P.', email: 'dewi@contoh.ac.id', date: '10 Jun 2024', status: 'DISETUJUI' },
+  { ref: 'REQ-240615-001', program: 'Teknik Lingkungan', faculty: 'Fakultas Sains', requester: 'Rina A.', email: 'rina@contoh.ac.id', date: '15 Jun 2024', status: 'REVIEW' },
+  { ref: 'REQ-240610-002', program: 'Statistika', faculty: 'Fakultas Matematika', requester: 'Dewi P.', email: 'dewi@contoh.ac.id', date: '10 Jun 2024', status: 'DISETUJUI' },
+]
+
+// Scoped users for Admin Prodi (Teknik Komputer)
+export const demoProdiUsers = [
+  { id: 2, nama: 'Andi Pratama, M.Kom.', nip: '198909102011011002', email: 'dosen@sadewa.ac.id', role: 'dosen', is_active: true, program_studi_id: 1, program_studi_nama: 'Teknik Komputer' },
+  { id: 3, nama: 'Dr. Bima Wicaksana, M.T.', nip: '197812222006041001', email: 'kaprodi@sadewa.ac.id', role: 'kaprodi', is_active: true, program_studi_id: 1, program_studi_nama: 'Teknik Komputer' },
+  { id: 4, nama: 'Siti Rahma, S.T., M.T.', nip: '198504142010012003', email: 'siti.rahma@sadewa.ac.id', role: 'dosen', is_active: true, program_studi_id: 1, program_studi_nama: 'Teknik Komputer' },
+  { id: 5, nama: 'Fajar Hidayat, M.Kom.', nip: '199203112019031005', email: 'fajar.h@sadewa.ac.id', role: 'dosen', is_active: false, program_studi_id: 1, program_studi_nama: 'Teknik Komputer' },
+]
+
+// Cross-prodi users for Super Admin
+export const demoCrossProdiUsers = [
+  { id: 1, nama: 'Tim IT SADEWA', nip: '198501012010011001', email: 'superadmin@sadewa.ac.id', role: 'super_admin', is_active: true, program_studi_id: null, program_studi_nama: null, fakultas_id: null, fakultas_nama: null },
+  { id: 6, nama: 'Budi Santoso', nip: '198805122010011004', email: 'admin@sadewa.ac.id', role: 'admin_prodi', is_active: true, program_studi_id: 1, program_studi_nama: 'Teknik Komputer', fakultas_id: 1, fakultas_nama: 'Fakultas Teknik' },
+  { id: 7, nama: 'Prof. Dr. Ir. Citra Dewi, M.Sc.', nip: '196903151994032001', email: 'dekan@sadewa.ac.id', role: 'dekan', is_active: true, program_studi_id: null, program_studi_nama: null, fakultas_id: 1, fakultas_nama: 'Fakultas Teknik' },
+  { id: 2, nama: 'Andi Pratama, M.Kom.', nip: '198909102011011002', email: 'dosen@sadewa.ac.id', role: 'dosen', is_active: true, program_studi_id: null, program_studi_nama: 'Teknik Komputer (Pengampu)', fakultas_id: null, fakultas_nama: null },
+  { id: 3, nama: 'Dr. Bima Wicaksana, M.T.', nip: '197812222006041001', email: 'kaprodi@sadewa.ac.id', role: 'kaprodi', is_active: true, program_studi_id: 1, program_studi_nama: 'Teknik Komputer', fakultas_id: 1, fakultas_nama: 'Fakultas Teknik' },
+  { id: 8, nama: 'Hendrawan, S.T., M.T.', nip: '198207192008121002', email: 'admin.tl@sadewa.ac.id', role: 'admin_prodi', is_active: true, program_studi_id: 2, program_studi_nama: 'Teknik Lingkungan', fakultas_id: 2, fakultas_nama: 'Fakultas Sains' },
 ]
 
 export function getRoleLabel(role) {
@@ -166,5 +255,5 @@ export function getRoleProgram(role) {
 }
 
 export function getMenuItems(role) {
-  return sidebarMenus[role] || sidebarMenus.admin
+  return sidebarMenus[role] || sidebarMenus.admin_prodi
 }

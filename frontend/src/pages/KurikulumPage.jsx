@@ -7,8 +7,8 @@ import { useRole } from '../hooks/useRole'
 export default function KurikulumPage() {
   const { user, activeRole } = useAuth()
   const { role } = useRole()
-  const currentRole = activeRole || role || user?.role || 'admin'
-  const canEdit = currentRole === 'admin'
+  const currentRole = activeRole || role || user?.role || 'admin_prodi'
+  const canEdit = currentRole === 'admin_prodi'
 
   return (
     <div className="space-y-8">
