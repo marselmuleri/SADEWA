@@ -30,6 +30,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -49,5 +50,3 @@ def check_ai_health():
     """Endpoint untuk memantau status kesehatan ChromaDB vectorstore dan Qwen LLM."""
     return ai_health()
 
-
-app.include_router(api_v1_router)

@@ -30,6 +30,11 @@ class NarasiGenerateRequest(BaseModel):
     )
 
 
+class NarasiGenerateRequest(BaseModel):
+    tipe: Literal["rekomendasi_umum", "per_mahasiswa"]
+    peserta_mata_kuliah_id: int | None = None
+
+
 class NarasiUpdate(BaseModel):
     konten: str
 

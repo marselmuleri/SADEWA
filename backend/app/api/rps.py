@@ -1,7 +1,6 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
-
 from app.core.database import get_db
 from app.core.deps import AcademicScope, get_academic_scope, require_roles
 from app.models.enums import UserRole
@@ -15,16 +14,13 @@ from app.services import rag_service
 
 logger = logging.getLogger(__name__)
 
+
 router = APIRouter()
 
 
 def _check_write_access(db: Session, user: User, mata_kuliah_id: int) -> MataKuliah:
-    mk = (
-        db.query(MataKuliah)
-        .options(joinedload(MataKuliah.program_studi))
-        .filter(MataKuliah.id == mata_kuliah_id)
-        .first()
-    )
+
+    mk = db.query(MataKuliah).filter(MataKuliah.id == mata_kuliah_id).first()
     if not mk:
         raise HTTPException(status_code=404, detail="Mata kuliah tidak ditemukan")
     if user.role == UserRole.admin_prodi:
@@ -42,6 +38,7 @@ def _check_write_access(db: Session, user: User, mata_kuliah_id: int) -> MataKul
 
 @router.post("/generate/{matkul_id}", response_model=RPSResponse)
 async def generate_rps(
+
     matkul_id: int,
     payload: RPSGenerateRequest,
     db: Session = Depends(get_db),

@@ -29,6 +29,7 @@ def _check_write_access(db: Session, user: User, mata_kuliah_id: int) -> MataKul
         .filter(MataKuliah.id == mata_kuliah_id)
         .first()
     )
+
     if not mk:
         raise HTTPException(status_code=404, detail="Mata kuliah tidak ditemukan")
     if user.role == UserRole.admin_prodi:
@@ -78,11 +79,13 @@ def _build_capaian_context(
 
 @router.post("/generate/{matkul_id}", response_model=NarasiResponse)
 async def generate_narasi(
+
     matkul_id: int,
     payload: NarasiGenerateRequest,
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen)),
 ):
+
     """
     Generate narasi evaluasi kurikulum/wawancara akademik melalui pipeline RAG.
     Alur: Request -> RAG Service -> ChromaDB (Retrieval) -> Qwen LLM -> DB -> Response JSON.
@@ -111,6 +114,7 @@ async def generate_narasi(
 
     # Simpan hasil narasi terstruktur (JSON) ke tabel narasi_evaluasi
     konten_str = json.dumps(ai_result.get("data", {}), ensure_ascii=False)
+
 
     data = NarasiEvaluasi(
         mata_kuliah_id=matkul_id,
