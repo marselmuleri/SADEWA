@@ -88,9 +88,9 @@ export const demoCredentials = [
 
 export const sidebarMenus = {
   super_admin: [
-    { label: 'Daftar Prodi', path: '/super-admin', tab: 'programs' },
-    { label: 'Pengajuan Onboarding', path: '/super-admin', tab: 'onboarding', badge: '2' },
-    { label: 'Manajemen Pengguna Lintas Prodi', path: '/super-admin', tab: 'users' },
+    { label: 'Daftar Prodi', path: '/super-admin/prodi' },
+    { label: 'Daftar Fakultas', path: '/super-admin/fakultas' },
+    { label: 'Manajemen Pengguna Lintas Prodi', path: '/super-admin/users' },
   ],
   admin_prodi: [
     { label: 'Ikhtisar', path: '/dashboard' },

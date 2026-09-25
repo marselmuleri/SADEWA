@@ -1,24 +1,15 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LockKeyhole, ShieldCheck, University, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { LockKeyhole, ShieldCheck, University, Loader2, ArrowRight } from 'lucide-react'
 import useAuth from '../hooks/useAuth'
-import { demoCredentials, roleLabels } from '../data/demoUi'
 
 export default function LoginPage() {
   const { login } = useAuth()
   const navigate = useNavigate()
-  const [email, setEmail] = useState('admin@sadewa.ac.id')
-  const [password, setPassword] = useState('admin123')
-  const [selectedRole, setSelectedRole] = useState('admin_prodi')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-
-  const handleSelectCredential = (cred) => {
-    setEmail(cred.email)
-    setPassword(cred.password)
-    setSelectedRole(cred.role)
-    setError('')
-  }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -27,9 +18,9 @@ export default function LoginPage() {
 
     try {
       const result = await login(email, password)
-      const userRole = result?.user?.role || selectedRole
+      const userRole = result?.user?.role
       if (userRole === 'super_admin') {
-        navigate('/super-admin')
+        navigate('/super-admin/prodi')
       } else {
         navigate('/dashboard')
       }
@@ -111,44 +102,8 @@ export default function LoginPage() {
                 Masuk ke SADEWA
               </h2>
               <p className="text-xs leading-relaxed text-[#64748B]">
-                Pilih peran demo di bawah untuk mengisi kredensial otomatis, atau masukkan akun aktif Anda.
+                Masukkan kredensial akun aktif Anda untuk masuk langsung ke ruang kerja yang sesuai.
               </p>
-            </div>
-
-            {/* Role Preset Quick Switcher */}
-            <div className="mb-5 space-y-2">
-              <div className="flex items-center justify-between text-[11px] font-semibold text-[#6D778E]">
-                <span>PILIH ROLE DEMO</span>
-                <span className="text-[10px] text-[#94A3B8]">5 Hak Akses</span>
-              </div>
-              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                {demoCredentials.map((cred) => {
-                  const isActive = selectedRole === cred.role
-                  return (
-                    <button
-                      key={cred.role}
-                      type="button"
-                      onClick={() => handleSelectCredential(cred)}
-                      data-testid={`quick-role-${cred.role}`}
-                      className={`flex flex-col items-start rounded-[6px] border p-2 text-left transition-colors ${
-                        isActive
-                          ? 'border-[#1A3A6B] bg-[#F8FAFC] shadow-sm'
-                          : 'border-[#E2E8F0] bg-white hover:border-[#CBD5E1]'
-                      }`}
-                    >
-                      <div className="flex w-full items-center justify-between">
-                        <span className={`text-xs font-semibold ${isActive ? 'text-[#1A3A6B]' : 'text-[#142B4A]'}`}>
-                          {roleLabels[cred.role]}
-                        </span>
-                        {isActive ? <CheckCircle2 className="h-3 w-3 text-[#1A3A6B]" /> : null}
-                      </div>
-                      <span className="mt-0.5 truncate text-[10px] text-[#64748B]">
-                        {cred.email.split('@')[0]}
-                      </span>
-                    </button>
-                  )
-                })}
-              </div>
             </div>
 
             {/* Login Form */}
@@ -208,7 +163,7 @@ export default function LoginPage() {
                 ) : (
                   <>
                     <LockKeyhole className="h-4 w-4" />
-                    <span>Masuk sebagai {roleLabels[selectedRole] || 'Pengguna'}</span>
+                    <span>Masuk</span>
                     <ArrowRight className="h-4 w-4" />
                   </>
                 )}
@@ -217,7 +172,7 @@ export default function LoginPage() {
               <div className="flex items-start gap-2.5 rounded-[6px] border border-[#E2E8F0] bg-white p-3 text-xs text-[#64748B]">
                 <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#10B981]" />
                 <p className="leading-normal">
-                  Sistem mendukung autentikasi JWT langsung ke backend serta demo visual terpadu. Role switcher di topbar dapat digunakan sewaktu-waktu untuk menguji pemisahan halaman.
+                  Sistem menggunakan autentikasi JWT langsung ke backend. Setelah login, Anda akan diarahkan ke ruang kerja sesuai role akun.
                 </p>
               </div>
             </form>

@@ -9,7 +9,9 @@ import AnalisisPage from './pages/AnalisisPage'
 import PengaturanPage from './pages/PengaturanPage'
 import KurikulumPage from './pages/KurikulumPage'
 import DokumenPage from './pages/DokumenPage'
-import SuperAdminPage from './pages/SuperAdminPage'
+import FakultasPage from './pages/FakultasPage'
+import ProdiPage from './pages/ProdiPage'
+import UserManagementSAPage from './pages/UserManagementSAPage'
 import useAuth from './hooks/useAuth'
 
 function AppLayout({ children }) {
@@ -21,7 +23,7 @@ function RoleBasedHomeRedirect() {
   const currentRole = activeRole || user?.role || 'admin_prodi'
 
   if (currentRole === 'super_admin') {
-    return <Navigate to="/super-admin" replace />
+    return <Navigate to="/super-admin/prodi" replace />
   }
   return <Navigate to="/dashboard" replace />
 }
@@ -108,13 +110,41 @@ export default function App() {
           }
         />
 
-        {/* Super Admin Panel Route: Exclusively for Super Admin (PRD Feature 12, PRD Section 3.2) */}
+        {/* Super Admin Panel Routes: Exclusively for Super Admin (PRD Feature 12, PRD Section 3.2) */}
         <Route
           path="/super-admin"
           element={
             <ProtectedRoute allowedRoles={['super_admin']}>
+              <Navigate to="/super-admin/prodi" replace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/super-admin/prodi"
+          element={
+            <ProtectedRoute allowedRoles={['super_admin']}>
               <AppLayout>
-                <SuperAdminPage />
+                <ProdiPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/super-admin/fakultas"
+          element={
+            <ProtectedRoute allowedRoles={['super_admin']}>
+              <AppLayout>
+                <FakultasPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/super-admin/users"
+          element={
+            <ProtectedRoute allowedRoles={['super_admin']}>
+              <AppLayout>
+                <UserManagementSAPage />
               </AppLayout>
             </ProtectedRoute>
           }
