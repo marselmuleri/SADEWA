@@ -10,7 +10,6 @@ class MataKuliahBase(BaseModel):
     sks: int
     semester: Literal["Ganjil", "Genap"]
     tahun_ajaran: str
-    program_studi_id: int
 
 
 class MataKuliahCreate(MataKuliahBase):
@@ -27,3 +26,4 @@ class MataKuliahUpdate(BaseModel):
 
 class MataKuliahResponse(MataKuliahBase, ORMBaseModel):
     id: int
+    program_studi_id: int
