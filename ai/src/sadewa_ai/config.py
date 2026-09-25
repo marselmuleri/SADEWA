@@ -14,6 +14,15 @@ Alasan pindah ke pydantic-settings (bukan `os.getenv` manual):
   traceback mentah dari client OpenAI.
 
 Nilai default mengikuti Tabel 23, 24, dan 26 pada dokumen C300.
+
+Catatan path (penting): docs_dir, vectorstore_dir, dan env_file dulunya
+relatif ("./docs", "./vectorstore", ".env"), sehingga resolusinya bergantung
+pada current working directory proses yang menjalankan Python -- bukan lokasi
+file config.py ini. Ini menyebabkan folder vectorstore "tidak ditemukan" saat
+sadewa-ingest dijalankan dari folder ai/ tapi server FastAPI dijalankan dari
+folder backend/ (dua cwd berbeda -> dua path berbeda yang ditunjuk).
+Sekarang PROJECT_ROOT dihitung dari lokasi file ini sendiri (Path(__file__)),
+jadi hasilnya konsisten dari folder mana pun proses dijalankan.
 """
 
 from functools import lru_cache
@@ -22,6 +31,10 @@ from typing import Tuple
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# config.py ada di ai/src/sadewa_ai/config.py, jadi tiga level ke atas -> ai/
+# Sesuaikan jumlah .parent kalau struktur foldermu berbeda.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 class ConfigError(RuntimeError):
@@ -32,15 +45,19 @@ class Settings(BaseSettings):
     """Seluruh konfigurasi modul AI, dibaca dari environment variable / .env."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(PROJECT_ROOT / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
         populate_by_name=True,
     )
 
     # --- Path & koleksi ------------------------------------------------
-    docs_dir: str = Field(default="./docs", alias="SADEWA_DOCS_DIR")
-    vectorstore_dir: str = Field(default="./vectorstore", alias="SADEWA_VECTORSTORE_DIR")
+    docs_dir: str = Field(
+        default=str(PROJECT_ROOT / "docs"), alias="SADEWA_DOCS_DIR"
+    )
+    vectorstore_dir: str = Field(
+        default=str(PROJECT_ROOT / "vectorstore"), alias="SADEWA_VECTORSTORE_DIR"
+    )
     collection_name: str = "sadewa_kurikulum"
 
     # --- Embedding & chunking (C300 Tabel 24) ---------------------------
