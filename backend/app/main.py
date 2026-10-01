@@ -50,4 +50,3 @@ def root():
 def check_ai_health():
     """Endpoint untuk memantau status kesehatan ChromaDB vectorstore dan Qwen LLM."""
     return ai_health()
-
