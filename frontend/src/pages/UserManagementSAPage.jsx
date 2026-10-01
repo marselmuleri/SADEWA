@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Building2, Loader2, Plus, Search, Pencil, Trash2, Shield, UserCog } from 'lucide-react'
+import { Building2, Loader2, Plus, Search, Pencil, Trash2, Shield, UserCog, UserCheck, UserX, Eye, EyeOff } from 'lucide-react'
 import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
 import Modal from '../components/Modal'
 import useToast from '../hooks/useToast'
@@ -88,6 +88,7 @@ export default function UserManagementSAPage() {
   const [facultyFilter, setFacultyFilter] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [fieldErrors, setFieldErrors] = useState({})
+  const [showPassword, setShowPassword] = useState(false)
 
   const loadData = async () => {
     setLoading(true)
@@ -135,6 +136,7 @@ export default function UserManagementSAPage() {
     setForm(emptyForm)
     setFacultyFilter('')
     setFieldErrors({})
+    setShowPassword(false)
     setFormOpen(true)
   }
 
@@ -153,6 +155,7 @@ export default function UserManagementSAPage() {
       program_studi_id: user.program_studi_id || '',
       is_active: user.is_active,
     })
+    setShowPassword(false)
     setFormOpen(true)
   }
 
@@ -162,6 +165,7 @@ export default function UserManagementSAPage() {
     setFieldErrors({})
     setForm(emptyForm)
     setFacultyFilter('')
+    setShowPassword(false)
   }
 
   const availableProdi = useMemo(() => {
@@ -259,6 +263,23 @@ export default function UserManagementSAPage() {
     }
   }
 
+  const handleToggleStatus = async (userItem) => {
+    const nextStatus = !userItem.is_active
+    try {
+      if (!nextStatus) {
+        await api.delete(`/users/${userItem.id}`)
+      } else {
+        await api.put(`/users/${userItem.id}`, { is_active: true })
+      }
+      setUsers((current) =>
+        current.map((item) => (item.id === userItem.id ? { ...item, is_active: nextStatus } : item))
+      )
+      pushToast(`Akun ${userItem.nama} ${nextStatus ? 'diaktifkan' : 'dinonaktifkan'}`)
+    } catch (error) {
+      pushToast(getApiErrorMessage(error, 'Gagal mengubah status akun'), 'error')
+    }
+  }
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -329,6 +350,7 @@ export default function UserManagementSAPage() {
                 <th className="pb-3 font-semibold">Email</th>
                 <th className="pb-3 font-semibold">Role</th>
                 <th className="pb-3 font-semibold">Scope</th>
+                <th className="pb-3 font-semibold">Status</th>
                 <th className="pb-3 font-semibold text-right">Aksi</th>
               </tr>
             </thead>
@@ -349,25 +371,43 @@ export default function UserManagementSAPage() {
                     <td className="py-3.5 text-[#64748B]">
                       {user.role === 'admin_prodi' ? `Prodi: ${user.program_studi_nama || '-'}` : `Fakultas: ${user.fakultas_nama || '-'}`}
                     </td>
+                    <td className="py-3.5">
+                      <Badge tone={user.is_active ? 'success' : 'danger'}>
+                        {user.is_active ? 'Aktif' : 'Nonaktif'}
+                      </Badge>
+                    </td>
                     <td className="py-3.5 text-right">
-                      <div className="inline-flex items-center gap-2">
+                      <div className="inline-flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => openEdit(user)}
-                          className="inline-flex h-8 items-center gap-1.5 rounded-[4px] border border-[#CBD5E1] bg-white px-3 text-[11px] font-medium text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B]"
+                          className="inline-flex h-7 items-center gap-1 rounded-[4px] border border-[#CBD5E1] bg-white px-2 text-[11px] font-medium text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B]"
                           data-testid={`user-edit-${user.id}`}
                         >
-                          <Pencil className="h-3.5 w-3.5" />
-                          Edit
+                          <Pencil className="h-3 w-3" />
+                          <span>Edit</span>
                         </button>
                         <button
                           type="button"
-                          onClick={() => setDeleteTarget(user)}
-                          className="inline-flex h-8 items-center gap-1.5 rounded-[4px] border border-red-200 bg-white px-3 text-[11px] font-medium text-red-700 hover:bg-red-50"
-                          data-testid={`user-deactivate-${user.id}`}
+                          onClick={() => handleToggleStatus(user)}
+                          className={`inline-flex h-7 items-center gap-1 rounded-[4px] border px-2 text-[11px] font-medium transition-colors ${
+                            user.is_active
+                              ? 'border-red-200 text-red-700 hover:bg-red-50'
+                              : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
+                          }`}
+                          data-testid={`user-toggle-${user.id}`}
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Nonaktifkan
+                          {user.is_active ? (
+                            <>
+                              <UserX className="h-3 w-3" />
+                              <span>Nonaktifkan</span>
+                            </>
+                          ) : (
+                            <>
+                              <UserCheck className="h-3 w-3" />
+                              <span>Aktifkan</span>
+                            </>
+                          )}
                         </button>
                       </div>
                     </td>
@@ -375,7 +415,7 @@ export default function UserManagementSAPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="py-10 text-center text-sm text-[#64748B]">
+                  <td colSpan={6} className="py-10 text-center text-sm text-[#64748B]">
                     Tidak ada akun yang cocok dengan filter ini.
                   </td>
                 </tr>
@@ -424,13 +464,26 @@ export default function UserManagementSAPage() {
 
           <label className="block space-y-1">
             <span className="text-xs font-semibold text-[#142B4A]">Password {mode === 'edit' ? '(kosongkan jika tidak diubah)' : ''}</span>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-              className="h-10 w-full rounded-[6px] border border-[#CBD5E1] bg-white px-3 text-sm focus:border-[#1A3A6B] focus:outline-none"
-              data-testid="user-form-password"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={form.password}
+                onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+                placeholder={mode === 'edit' ? 'Kosongkan jika tidak diubah' : 'Minimal 6 karakter'}
+                className="h-10 w-full rounded-[6px] border border-[#CBD5E1] bg-white pl-3 pr-10 text-sm focus:border-[#1A3A6B] focus:outline-none"
+                data-testid="user-form-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-[#64748B] hover:text-[#142B4A] focus:outline-none"
+                aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
+                title={showPassword ? 'Sembunyikan password' : 'Lihat password'}
+                data-testid="toggle-password-visibility"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
             {fieldErrors.password ? <p className="text-xs text-red-700">{fieldErrors.password}</p> : null}
           </label>
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { Plus, Search, Filter, UserCheck, UserX, Edit2, ShieldAlert, Loader2, Users, GraduationCap } from 'lucide-react'
+import { Plus, Search, Filter, UserCheck, UserX, Edit2, ShieldAlert, Loader2, Users, GraduationCap, Eye, EyeOff } from 'lucide-react'
 import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
 import Modal from '../components/Modal'
 import useAuth from '../hooks/useAuth'
@@ -26,6 +26,8 @@ export default function PengaturanPage() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [showAddPassword, setShowAddPassword] = useState(false)
+  const [showEditPassword, setShowEditPassword] = useState(false)
 
   // Form state
   const [form, setForm] = useState({
@@ -101,6 +103,7 @@ export default function PengaturanPage() {
       password: 'password123',
       role: 'dosen',
     })
+    setShowAddPassword(false)
     setIsAddOpen(true)
   }
 
@@ -149,9 +152,11 @@ export default function PengaturanPage() {
       nama: userItem.nama,
       nip: userItem.nip || '',
       email: userItem.email,
+      password: '',
       role: userItem.role,
       is_active: userItem.is_active,
     })
+    setShowEditPassword(false)
     setIsEditOpen(true)
   }
 
@@ -167,6 +172,9 @@ export default function PengaturanPage() {
         email: form.email,
         role: form.role,
         is_active: form.is_active,
+      }
+      if (form.password && form.password.trim()) {
+        payload.password = form.password.trim()
       }
 
       try {
@@ -441,16 +449,28 @@ export default function PengaturanPage() {
 
           <label className="block space-y-1">
             <span className="text-xs font-semibold text-[#142B4A]">Password Awal</span>
-            <input
-              type="password"
-              required
-              minLength={6}
-              className="h-9 w-full rounded-[6px] border border-[#CBD5E1] bg-white px-3 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
-              placeholder="Minimal 6 karakter"
-              value={form.password}
-              onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-              data-testid="modal-add-password"
-            />
+            <div className="relative">
+              <input
+                type={showAddPassword ? 'text' : 'password'}
+                required
+                minLength={6}
+                className="h-9 w-full rounded-[6px] border border-[#CBD5E1] bg-white pl-3 pr-10 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
+                placeholder="Minimal 6 karakter"
+                value={form.password}
+                onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                data-testid="modal-add-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowAddPassword((prev) => !prev)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-[#64748B] hover:text-[#142B4A] focus:outline-none"
+                aria-label={showAddPassword ? 'Sembunyikan password' : 'Lihat password'}
+                title={showAddPassword ? 'Sembunyikan password' : 'Lihat password'}
+                data-testid="toggle-add-password-visibility"
+              >
+                {showAddPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </label>
 
           <label className="block space-y-1">
@@ -516,6 +536,33 @@ export default function PengaturanPage() {
               onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
               data-testid="modal-edit-email"
             />
+          </label>
+
+          <label className="block space-y-1">
+            <span className="text-xs font-semibold text-[#142B4A]">
+              Password Baru <span className="font-normal text-[#64748B]">(kosongkan jika tidak diubah)</span>
+            </span>
+            <div className="relative">
+              <input
+                type={showEditPassword ? 'text' : 'password'}
+                minLength={6}
+                className="h-9 w-full rounded-[6px] border border-[#CBD5E1] bg-white pl-3 pr-10 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
+                placeholder="Kosongkan jika tidak diubah"
+                value={form.password || ''}
+                onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                data-testid="modal-edit-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowEditPassword((prev) => !prev)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-1 text-[#64748B] hover:text-[#142B4A] focus:outline-none"
+                aria-label={showEditPassword ? 'Sembunyikan password' : 'Lihat password'}
+                title={showEditPassword ? 'Sembunyikan password' : 'Lihat password'}
+                data-testid="toggle-edit-password-visibility"
+              >
+                {showEditPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </label>
 
           <label className="block space-y-1">
