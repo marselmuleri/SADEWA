@@ -3,3 +3,9 @@ sadewa.db
 __pycache__/
 **/__pycache__/
 *.pyc
+.venv/
+.codebuddy/
+frontend/dist/
+frontend/node_modules/
+.DS_Store
+.vscode/
