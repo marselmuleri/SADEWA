@@ -136,6 +136,7 @@ class AIResponse(BaseModel):
     error: Optional[str] = None
     duration_seconds: float = 0.0
     warnings: List[str] = Field(default_factory=list)
+    sumber_dokumen: Optional[List[Dict[str, Any]]] = None
 
 
 class HealthStatus(BaseModel):

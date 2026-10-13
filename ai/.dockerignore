@@ -1,0 +1,6 @@
+# File dan direktori yang diabaikan oleh Docker
+__pycache__
+.venv
+.env
+*.pyc
+.git

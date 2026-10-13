@@ -50,6 +50,7 @@ def _jalankan(fungsi: Callable[..., Dict[str, Any]], **kwargs: Any) -> AIRespons
             data=hasil["data"],
             duration_seconds=round(durasi, 2),
             warnings=hasil.get("pelanggaran_validasi", []),
+            sumber_dokumen=hasil.get("sumber_dokumen"),
         )
     except (ConfigError, VectorstoreNotFoundError, LLMError, JSONExtractionError) as exc:
         return AIResponse(success=False, error=str(exc), duration_seconds=round(time.time() - mulai, 2))

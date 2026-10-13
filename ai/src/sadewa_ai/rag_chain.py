@@ -17,7 +17,7 @@ from typing import Any, Dict, List
 from . import prompts
 from .config import settings
 from .llm_client import chat, extract_json
-from .retriever import retrieve_context
+from .retriever import retrieve_context_with_metadata
 from .validators import validate_narasi, validate_rps
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ def generate_rps(
     logger.info("Memulai RAG pipeline RPS untuk: %s", mk_name)
 
     query = f"RPS {mk_name} {prodi} CPL CPMK capaian pembelajaran OBE"
-    context_kurikulum = retrieve_context(query)
+    context_kurikulum, sources = retrieve_context_with_metadata(query)
     logger.info("Konteks diambil (%d karakter)", len(context_kurikulum))
 
     prompt = prompts.build_rps_prompt(
@@ -70,6 +70,7 @@ def generate_rps(
         "data": data,
         "valid": valid,
         "pelanggaran_validasi": errors,
+        "sumber_dokumen": sources,
     }
 
 
@@ -101,7 +102,7 @@ def generate_narasi_evaluasi(
         f"evaluasi ketercapaian CPL CPMK {mk_name} {prodi} "
         "laporan borang akreditasi rekomendasi perbaikan"
     )
-    context_kurikulum = retrieve_context(query)
+    context_kurikulum, sources = retrieve_context_with_metadata(query)
     logger.info("Konteks diambil (%d karakter)", len(context_kurikulum))
 
     prompt = prompts.build_narasi_prompt(
@@ -132,4 +133,5 @@ def generate_narasi_evaluasi(
         "data": data,
         "valid": valid,
         "pelanggaran_validasi": errors,
+        "sumber_dokumen": sources,
     }

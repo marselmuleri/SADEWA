@@ -15,7 +15,7 @@ permanen (proses tampak "menggantung" tanpa pernah traceback).
 
 import os
 import threading
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -121,6 +121,44 @@ def retrieve_context(query: str, k: Optional[int] = None) -> str:
     k = k or settings.top_k_chunks
     docs = get_vectorstore().similarity_search(query, k=k)
     return format_context(docs)
+
+
+def _extract_sources(docs: List) -> List[Dict[str, Any]]:
+    """Ekstrak metadata sumber dari daftar Document hasil retrieval.
+
+    Mengembalikan list of dict dengan kunci:
+      - file    : nama file sumber dokumen
+      - page    : nomor halaman (1-indexed), atau None jika tidak tersedia
+      - snippet : potongan awal konten dokumen (maks 200 karakter)
+    """
+    sources: List[Dict[str, Any]] = []
+    for doc in docs:
+        source_file = doc.metadata.get("source_file", "unknown")
+        raw_page = doc.metadata.get("page")
+        page = (raw_page + 1) if raw_page is not None else None
+        snippet = doc.page_content[:200].strip() if doc.page_content else ""
+        sources.append({
+            "file": source_file,
+            "page": page,
+            "snippet": snippet,
+        })
+    return sources
+
+
+def retrieve_context_with_metadata(
+    query: str, k: Optional[int] = None,
+) -> Tuple[str, List[Dict[str, Any]]]:
+    """Ambil konteks kurikulum beserta metadata sumber dokumen.
+
+    Mengembalikan tuple (context_text, sources) di mana:
+      - context_text : string konteks yang sudah diformat (sama seperti
+                       retrieve_context())
+      - sources      : list of dict metadata sumber, masing-masing berisi
+                       kunci 'file', 'page', dan 'snippet'
+    """
+    k = k or settings.top_k_chunks
+    docs = get_vectorstore().similarity_search(query, k=k)
+    return format_context(docs), _extract_sources(docs)
 
 
 def retrieve_documents(query: str, k: Optional[int] = None) -> List:

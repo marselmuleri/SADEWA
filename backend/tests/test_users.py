@@ -184,7 +184,23 @@ def test_admin_prodi_cannot_see_users_outside_own_prodi(client):
 
 def test_dosen_cannot_create_prodi(client):
     token = _bootstrap_super_admin(client)
-    _setup_fakultas_dan_prodi(client, token)
+    fakultas_id, prodi_id = _setup_fakultas_dan_prodi(client, token)
+
+    # Super admin membuat admin_prodi
+    client.post(
+        "/api/v1/users",
+        json={
+            "nama": "Admin Prodi IF",
+            "email": "adminprodi_if@undip.ac.id",
+            "password": "password123",
+            "role": "admin_prodi",
+            "program_studi_id": prodi_id,
+        },
+        headers=_auth_headers(token),
+    )
+    admin_token = _login(client, "adminprodi_if@undip.ac.id", "password123")
+
+    # Admin prodi membuat dosen
     client.post(
         "/api/v1/users",
         json={
@@ -192,14 +208,16 @@ def test_dosen_cannot_create_prodi(client):
             "email": "dosenbebas@undip.ac.id",
             "password": "password123",
             "role": "dosen",
+            "program_studi_id": prodi_id,
         },
-        headers=_auth_headers(token),
+        headers=_auth_headers(admin_token),
     )
     dosen_token = _login(client, "dosenbebas@undip.ac.id", "password123")
 
     response = client.post(
         "/api/v1/prodi",
-        json={"nama": "Teknik Komputer", "kode": "TK", "fakultas_id": 1},
+        json={"nama": "Teknik Komputer", "kode": "TK", "fakultas_id": fakultas_id},
         headers=_auth_headers(dosen_token),
     )
     assert response.status_code == 403
+
