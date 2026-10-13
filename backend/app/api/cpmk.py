@@ -9,7 +9,7 @@ from app.models.mata_kuliah import MataKuliah
 from app.models.pengampu_mata_kuliah import PengampuMataKuliah
 from app.models.program_studi import ProgramStudi
 from app.models.user import User
-from app.schemas.cpmk import CPMKCreate, CPMKMapIKRequest, CPMKResponse, CPMKUpdate
+from app.schemas.cpmk import CPMKCreate, CPMKIKMapItem, CPMKMapIKRequest, CPMKResponse, CPMKUpdate
 
 router = APIRouter()
 
@@ -100,3 +100,24 @@ def map_ik(
         db.add(CPMKIKMap(cpmk_id=cpmk_id, ik_id=m.ik_id, bobot=m.bobot))
     db.commit()
     return {"message": "Mapping IK berhasil disimpan"}
+
+
+@router.get("/{cpmk_id}/map-ik", response_model=list[CPMKIKMapItem])
+def get_map_ik(
+    cpmk_id: int,
+    db: Session = Depends(get_db),
+    scope: AcademicScope = Depends(get_academic_scope),
+):
+    cpmk = db.query(CPMK).filter(CPMK.id == cpmk_id).first()
+    if not cpmk:
+        raise HTTPException(status_code=404, detail="CPMK tidak ditemukan")
+    if scope.program_studi_id and cpmk.mata_kuliah.program_studi_id != scope.program_studi_id:
+        raise HTTPException(status_code=403, detail="CPMK ini di luar prodi Anda")
+    if scope.fakultas_id and cpmk.mata_kuliah.program_studi.fakultas_id != scope.fakultas_id:
+        raise HTTPException(status_code=403, detail="CPMK ini di luar fakultas Anda")
+
+    mapping = db.query(CPMKIKMap).filter(CPMKIKMap.cpmk_id == cpmk_id).all()
+    return [
+        CPMKIKMapItem(ik_id=m.ik_id, ik_kode=m.ik.kode, bobot=m.bobot)
+        for m in mapping
+    ]

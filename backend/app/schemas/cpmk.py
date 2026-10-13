@@ -33,3 +33,9 @@ class IKMapItem(BaseModel):
 
 class CPMKMapIKRequest(BaseModel):
     mappings: list[IKMapItem]
+
+
+class CPMKIKMapItem(BaseModel):
+    ik_id: int
+    ik_kode: str
+    bobot: Decimal

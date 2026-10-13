@@ -1,9 +1,51 @@
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+
+# Environment Variables (JANGAN PERNAH COMMIT .env)
+.env
+.env.*
+*.env
+backend/.env
+frontend/.env
+ai/.env
+backend/.env.backup
+!*.env.example
+
+# Virtual Environments
 .venv/
-.codebuddy/
+venv/
+env/
+ENV/
+
+# Distribution / Build / Node
 frontend/dist/
 frontend/node_modules/
-.DS_Store
+dist/
+build/
+*.egg-info/
+
+# Databases & local storage
+*.db
+*.sqlite
+*.sqlite3
+sadewa.db
+backend/sadewa.db
+
+# Vector store & model caches
+vectorstore/
+ai/vectorstore/
+.cache/
+
+# IDE & OS
 .vscode/
-backend/.env.backup
+.idea/
+.codebuddy/
+.DS_Store
+Thumbs.db
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+htmlcov/

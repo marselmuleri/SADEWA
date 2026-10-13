@@ -1,12 +1,12 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Dict, List, Literal, Optional, Union
 from pydantic import BaseModel, ConfigDict
 
 
 class RPSGenerateRequest(BaseModel):
     tahun_ajaran: str
     semester: Literal["Ganjil", "Genap"]
-    topik: str | None = None
+    topik: Optional[str] = None
 
 
 class RPSResponse(BaseModel):
@@ -17,5 +17,6 @@ class RPSResponse(BaseModel):
     tahun_ajaran: str
     semester: str
     status: str
-    sumber_dokumen_rag: dict | list | None = None
+    konten: Optional[Union[Dict[str, Any], List[Any], str]] = None
+    sumber_dokumen_rag: Optional[Union[Dict[str, Any], List[Any]]] = None
     created_at: datetime

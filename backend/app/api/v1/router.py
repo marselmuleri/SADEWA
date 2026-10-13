@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 
 from app.api import (
-    auth, bentuk_penilaian, cpl, cpmk, dashboard, fakultas, ik, jenis_evaluasi,
+    auth, bentuk_penilaian, cpl, cpmk, dashboard, dokumen, fakultas, ik, jenis_evaluasi,
     kalkulasi, kurikulum_version, laporan, mahasiswa, mata_kuliah, mk_bentuk_penilaian,
-    narasi, nilai, peserta_mata_kuliah, prodi, rps, trending, users, validasi,
+    narasi, nilai, pengampu_mata_kuliah, peserta_mata_kuliah, prodi, rapor, rps, trending, users, validasi,
 )
 
 
@@ -17,6 +17,7 @@ api_v1_router.include_router(kurikulum_version.router, prefix="/kurikulum/versio
 api_v1_router.include_router(cpl.router, prefix="/cpl", tags=["cpl"])
 api_v1_router.include_router(ik.router, prefix="/ik", tags=["ik"])
 api_v1_router.include_router(mata_kuliah.router, prefix="/mata-kuliah", tags=["mata-kuliah"])
+api_v1_router.include_router(pengampu_mata_kuliah.router, prefix="/pengampu-mata-kuliah", tags=["pengampu-mata-kuliah"])
 api_v1_router.include_router(cpmk.router, prefix="/cpmk", tags=["cpmk"])
 api_v1_router.include_router(jenis_evaluasi.router, prefix="/jenis-evaluasi", tags=["jenis-evaluasi"])
 api_v1_router.include_router(bentuk_penilaian.router, prefix="/bentuk-penilaian", tags=["bentuk-penilaian"])
@@ -30,3 +31,5 @@ api_v1_router.include_router(narasi.router, prefix="/narasi", tags=["narasi"])
 api_v1_router.include_router(laporan.router, prefix="/laporan", tags=["laporan"])
 api_v1_router.include_router(validasi.router, prefix="/validasi", tags=["validasi"])
 api_v1_router.include_router(rps.router, prefix="/rps", tags=["rps"])
+api_v1_router.include_router(dokumen.router, prefix="/dokumen", tags=["dokumen"])
+api_v1_router.include_router(rapor.router, prefix="/rapor", tags=["rapor"])

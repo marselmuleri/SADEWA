@@ -7,11 +7,12 @@ from app.models.enums import SemesterEnum
 class RPS(Base):
     __tablename__ = "rps"
     id = Column(BigInteger, primary_key=True, autoincrement=True)
-    mata_kuliah_id = Column(BigInteger, ForeignKey("mata_kuliah.id"))
+    mata_kuliah_id = Column(BigInteger, ForeignKey("mata_kuliah.id"), nullable=False)
     tahun_ajaran = Column(String)
     semester = Column(SAEnum(SemesterEnum, name="semester_rps_enum", values_callable=lambda e: [x.value for x in e]))
-    status = Column(Text)
-    sumber_dokumen_rag = Column(JSON)
+    status = Column(Text, default="draft")
+    konten = Column(JSON, nullable=True)
+    sumber_dokumen_rag = Column(JSON, nullable=True)
     created_by = Column(BigInteger, ForeignKey("users.id"))
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
