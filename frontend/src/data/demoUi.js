@@ -101,6 +101,8 @@ export const sidebarMenus = {
   ],
   dosen: [
     { label: 'Ikhtisar', path: '/dashboard' },
+    { label: 'Peserta Kuliah', path: '/peserta' },
+    { label: 'Input Nilai', path: '/nilai' },
     { label: 'Analitik OBE', path: '/analisis' },
     { label: 'Kurikulum OBE', path: '/kurikulum', suffix: 'Mode Lihat' },
     { label: 'Laporan Saya', path: '/dokumen' },

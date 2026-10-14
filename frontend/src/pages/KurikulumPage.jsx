@@ -15,6 +15,8 @@ import {
   Loader2,
   ArrowRight,
   Sparkles,
+  Sliders,
+  Building2,
 } from 'lucide-react'
 import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
 import Modal from '../components/Modal'
@@ -22,6 +24,9 @@ import useAuth from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
 import useToast from '../hooks/useToast'
 import api from '../services/api'
+import { getApiErrorMessage } from './superAdminHelpers'
+import { useDekanScope } from '../context/DekanScopeContext'
+import ProdiSelector from '../components/ProdiSelector'
 
 // Fallback demo data jika backend belum memiliki data awal
 const defaultVersions = [
@@ -155,7 +160,16 @@ export default function KurikulumPage() {
   const { pushToast } = useToast()
 
   const currentRole = activeRole || role || user?.role || 'admin_prodi'
+  const isDekan = currentRole === 'dekan'
   const canEdit = currentRole === 'admin_prodi'
+  const isKaprodi = currentRole === 'kaprodi'
+  const { selectedProdiId, selectedProdi } = useDekanScope()
+
+  // Threshold edit for Kaprodi
+  const [thresholdModalOpen, setThresholdModalOpen] = useState(false)
+  const [targetCplForThreshold, setTargetCplForThreshold] = useState(null)
+  const [thresholdValue, setThresholdValue] = useState('')
+  const [thresholdSubmitting, setThresholdSubmitting] = useState(false)
 
   // Navigation tab
   const [activeTab, setActiveTab] = useState('cpl') // 'cpl' | 'mk' | 'matrix'
@@ -212,18 +226,20 @@ export default function KurikulumPage() {
     setLoadingVersions(true)
     try {
       const res = await api.get('/kurikulum/versions')
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        setVersions(res.data)
-        if (!selectedVersionId) {
-          setSelectedVersionId(res.data[0].id)
-        }
+      let list = Array.isArray(res.data) ? res.data : []
+      if (isDekan && selectedProdiId) {
+        list = list.filter((v) => String(v.program_studi_id) === String(selectedProdiId))
+      }
+      if (list.length > 0) {
+        setVersions(list)
+        setSelectedVersionId(list[0].id)
       } else {
-        setVersions(defaultVersions)
-        setSelectedVersionId(defaultVersions[0].id)
+        setVersions([])
+        setSelectedVersionId(null)
       }
     } catch {
-      setVersions(defaultVersions)
-      setSelectedVersionId(defaultVersions[0].id)
+      setVersions([])
+      setSelectedVersionId(null)
     } finally {
       setLoadingVersions(false)
     }
@@ -231,7 +247,13 @@ export default function KurikulumPage() {
 
   // 2. Fetch CPL, IK, MK, CPMK for selected version
   const fetchCurriculumData = async (versionId) => {
-    if (!versionId) return
+    if (!versionId) {
+      setCplList([])
+      setIkList([])
+      setMkList([])
+      setCpmkList([])
+      return
+    }
     setLoadingData(true)
     try {
       const [cplRes, ikRes, mkRes, cpmkRes] = await Promise.allSettled([
@@ -241,33 +263,42 @@ export default function KurikulumPage() {
         api.get('/cpmk'),
       ])
 
-      const fetchedCpl = cplRes.status === 'fulfilled' && Array.isArray(cplRes.value.data) ? cplRes.value.data : []
-      const fetchedIk = ikRes.status === 'fulfilled' && Array.isArray(ikRes.value.data) ? ikRes.value.data : []
-      const fetchedMk = mkRes.status === 'fulfilled' && Array.isArray(mkRes.value.data) ? mkRes.value.data : []
-      const fetchedCpmk = cpmkRes.status === 'fulfilled' && Array.isArray(cpmkRes.value.data) ? cpmkRes.value.data : []
+      let fetchedCpl = cplRes.status === 'fulfilled' && Array.isArray(cplRes.value.data) ? cplRes.value.data : []
+      let fetchedIk = ikRes.status === 'fulfilled' && Array.isArray(ikRes.value.data) ? ikRes.value.data : []
+      let fetchedMk = mkRes.status === 'fulfilled' && Array.isArray(mkRes.value.data) ? mkRes.value.data : []
+      let fetchedCpmk = cpmkRes.status === 'fulfilled' && Array.isArray(cpmkRes.value.data) ? cpmkRes.value.data : []
 
+      if (isDekan && selectedProdiId) {
+        fetchedCpl = fetchedCpl.filter((c) => String(c.program_studi_id) === String(selectedProdiId))
+        fetchedMk = fetchedMk.filter((m) => String(m.program_studi_id) === String(selectedProdiId))
+      }
+
+      // Filter IK by matching CPL IDs
+      const cplIdSet = new Set(fetchedCpl.map((c) => c.id))
+      fetchedIk = fetchedIk.filter((ik) => cplIdSet.has(ik.cpl_id))
+
+      // Filter CPMK by matching MK IDs
+      const mkIdSet = new Set(fetchedMk.map((m) => m.id))
+      fetchedCpmk = fetchedCpmk.filter((cpmk) => mkIdSet.has(cpmk.mata_kuliah_id))
+
+      setCplList(fetchedCpl)
       if (fetchedCpl.length > 0) {
-        setCplList(fetchedCpl)
         setExpandedCplIds(new Set([fetchedCpl[0].id]))
-      } else {
-        setCplList(defaultCplList)
       }
 
-      setIkList(fetchedIk.length > 0 ? fetchedIk : defaultIkList)
+      setIkList(fetchedIk)
 
+      setMkList(fetchedMk)
       if (fetchedMk.length > 0) {
-        setMkList(fetchedMk)
         setExpandedMkIds(new Set([fetchedMk[0].id]))
-      } else {
-        setMkList(defaultMataKuliahList)
       }
 
-      setCpmkList(fetchedCpmk.length > 0 ? fetchedCpmk : defaultCpmkList)
+      setCpmkList(fetchedCpmk)
     } catch {
-      setCplList(defaultCplList)
-      setIkList(defaultIkList)
-      setMkList(defaultMataKuliahList)
-      setCpmkList(defaultCpmkList)
+      setCplList([])
+      setIkList([])
+      setMkList([])
+      setCpmkList([])
     } finally {
       setLoadingData(false)
     }
@@ -275,7 +306,7 @@ export default function KurikulumPage() {
 
   useEffect(() => {
     fetchVersions()
-  }, [])
+  }, [isDekan, selectedProdiId])
 
   useEffect(() => {
     if (selectedVersionId) {
@@ -414,6 +445,44 @@ export default function KurikulumPage() {
       pushToast(`CPL ${kode} berhasil dihapus`)
     } catch {
       pushToast('Gagal menghapus CPL', 'error')
+    }
+  }
+
+  // --- KAPRODI THRESHOLD ACTION ---
+  const handleOpenThresholdModal = (cpl) => {
+    setTargetCplForThreshold(cpl)
+    setThresholdValue(cpl.threshold_capaian || 70)
+    setThresholdModalOpen(true)
+  }
+
+  const handleSubmitThreshold = async (e) => {
+    e.preventDefault()
+    if (!targetCplForThreshold) return
+    const val = Number(thresholdValue)
+    if (isNaN(val) || val < 0 || val > 100) {
+      pushToast('Nilai threshold harus berupa angka antara 0 dan 100', 'error')
+      return
+    }
+
+    setThresholdSubmitting(true)
+    try {
+      const res = await api.put(`/cpl/${targetCplForThreshold.id}/threshold`, {
+        threshold_capaian: val,
+      })
+      const updated = res.data
+      setCplList((prev) =>
+        prev.map((item) =>
+          item.id === targetCplForThreshold.id
+            ? { ...item, threshold_capaian: updated.threshold_capaian }
+            : item
+        )
+      )
+      pushToast(`Target threshold ${targetCplForThreshold.kode} berhasil diubah ke ${val}%`)
+      setThresholdModalOpen(false)
+    } catch (err) {
+      pushToast(getApiErrorMessage(err, 'Gagal mengubah threshold CPL'), 'error')
+    } finally {
+      setThresholdSubmitting(false)
     }
   }
 
@@ -705,24 +774,26 @@ export default function KurikulumPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {/* Version Selector */}
-            <div className="flex items-center gap-2 rounded-[6px] border border-[#CBD5E1] bg-white px-3 py-1.5 shadow-sm">
-              <span className="text-xs font-semibold text-[#6D778E]">Versi:</span>
-              <select
-                value={selectedVersionId || ''}
-                onChange={(e) => setSelectedVersionId(Number(e.target.value))}
-                className="bg-transparent text-xs font-bold text-[#142B4A] focus:outline-none cursor-pointer"
-                data-testid="version-select"
-              >
-                {versions.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.version_label} ({v.semester}) — {v.status.toUpperCase()}
-                  </option>
-                ))}
-              </select>
-              <Badge tone={currentVersion?.status === 'published' ? 'success' : 'warning'}>
-                {currentVersion?.status === 'published' ? 'Published' : 'Draft'}
-              </Badge>
-            </div>
+            {versions.length > 0 && (
+              <div className="flex items-center gap-2 rounded-[6px] border border-[#CBD5E1] bg-white px-3 py-1.5 shadow-sm">
+                <span className="text-xs font-semibold text-[#6D778E]">Versi:</span>
+                <select
+                  value={selectedVersionId || ''}
+                  onChange={(e) => setSelectedVersionId(Number(e.target.value))}
+                  className="bg-transparent text-xs font-bold text-[#142B4A] focus:outline-none cursor-pointer"
+                  data-testid="version-select"
+                >
+                  {versions.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.version_label} ({v.semester}) — {v.status.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+                <Badge tone={currentVersion?.status === 'published' ? 'success' : 'warning'}>
+                  {currentVersion?.status === 'published' ? 'Published' : 'Draft'}
+                </Badge>
+              </div>
+            )}
 
             {canEdit && currentVersion?.status === 'draft' && (
               <ActionButton
@@ -750,7 +821,22 @@ export default function KurikulumPage() {
         }
       />
 
-      {/* Summary Stat Cards */}
+      {isDekan && <ProdiSelector />}
+
+      {isDekan && !selectedProdiId ? (
+        <div
+          data-testid="dekan-kurikulum-empty-prodi"
+          className="rounded-[6px] border border-dashed border-[#94A3B8] bg-white p-12 text-center"
+        >
+          <Building2 className="mx-auto h-10 w-10 text-[#64748B]" />
+          <h3 className="mt-3 text-sm font-bold text-[#142B4A]">Pilih Program Studi</h3>
+          <p className="mt-1 text-xs text-[#64748B] max-w-md mx-auto">
+            Silakan pilih salah satu program studi di atas untuk melihat struktur kurikulum OBE, daftar CPL, IK, dan pemetaan CPMK mata kuliah.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Summary Stat Cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Capaian Pembelajaran (CPL)"
@@ -934,6 +1020,21 @@ export default function KurikulumPage() {
                                 data-testid={`btn-delete-cpl-${cpl.id}`}
                               >
                                 <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Kaprodi Threshold Action */}
+                          {isKaprodi && (
+                            <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenThresholdModal(cpl)}
+                                className="inline-flex h-7 items-center gap-1.5 rounded-[4px] border border-[#CBD5E1] bg-white px-2.5 text-[11px] font-semibold text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B] transition-colors"
+                                data-testid={`btn-edit-threshold-${cpl.id}`}
+                              >
+                                <Sliders className="h-3 w-3 text-[#F4A300]" />
+                                <span>Ubah Target Threshold</span>
                               </button>
                             </div>
                           )}
@@ -1294,6 +1395,8 @@ export default function KurikulumPage() {
               )}
             </SectionCard>
           )}
+        </>
+      )}
         </>
       )}
 
@@ -1802,6 +1905,57 @@ export default function KurikulumPage() {
               data-testid="modal-mapping-submit"
             >
               {submitting ? 'Menyimpan...' : 'Simpan Pemetaan IK'}
+            </ActionButton>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ============================================================== */}
+      {/* MODAL 7: UBAH THRESHOLD CPL (KHUSUS KAPRODI) */}
+      {/* ============================================================== */}
+      <Modal
+        open={thresholdModalOpen}
+        onClose={() => setThresholdModalOpen(false)}
+        title={`Ubah Target Threshold Capaian: ${targetCplForThreshold?.kode || ''}`}
+      >
+        <form onSubmit={handleSubmitThreshold} className="space-y-4">
+          <div>
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              Ketua Program Studi memiliki wewenang untuk menetapkan batas minimal (threshold) persentase ketercapaian kompetensi lulusan.
+            </p>
+            <div className="mt-3 rounded-[6px] border border-[#E2E8F0] bg-[#F8FAFC] p-3 text-xs">
+              <span className="font-semibold text-[#142B4A]">{targetCplForThreshold?.kode}</span>
+              <p className="mt-1 text-[#64748B] leading-relaxed">{targetCplForThreshold?.deskripsi}</p>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-[#142B4A]">
+              Batas Minimal Ketercapaian (%) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.1"
+              required
+              value={thresholdValue}
+              onChange={(e) => setThresholdValue(e.target.value)}
+              className="mt-1 h-9 w-full rounded-[6px] border border-[#CBD5E1] bg-white px-3 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
+              placeholder="70.0"
+              data-testid="input-cpl-threshold"
+            />
+            <p className="mt-1 text-[11px] text-[#64748B]">
+              Standar institusi: 70%. Nilai ini dijadikan acuan evaluasi ketercapaian OBE.
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-[#E2E8F0]">
+            <ActionButton type="button" variant="secondary" onClick={() => setThresholdModalOpen(false)}>
+              Batal
+            </ActionButton>
+            <ActionButton type="submit" disabled={thresholdSubmitting} data-testid="btn-save-threshold">
+              {thresholdSubmitting ? 'Menyimpan...' : 'Simpan Perubahan'}
             </ActionButton>
           </div>
         </form>

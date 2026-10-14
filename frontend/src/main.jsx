@@ -3,11 +3,14 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 import { AuthProvider } from './context/AuthContext'
+import { DekanScopeProvider } from './context/DekanScopeContext'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
-      <App />
+      <DekanScopeProvider>
+        <App />
+      </DekanScopeProvider>
     </AuthProvider>
   </React.StrictMode>,
 )

@@ -5,9 +5,12 @@ import useAuth from '../hooks/useAuth'
 import useToast from '../hooks/useToast'
 import { Badge } from './PageChrome'
 import { getRoleLabel } from '../data/demoUi'
+import { useDekanScope } from '../context/DekanScopeContext'
 
 const pageTitles = {
   '/dashboard': 'Ikhtisar',
+  '/peserta': 'Peserta Kuliah',
+  '/nilai': 'Input Nilai',
   '/analisis': 'Analitik OBE',
   '/kurikulum': 'Kurikulum OBE',
   '/dokumen': 'Validasi Laporan',
@@ -47,6 +50,7 @@ function SidebarLink({ item, active, onClick }) {
 export default function Navbar({ children }) {
   const { user, logout, activeRole } = useAuth()
   const { pushToast, toasts } = useToast()
+  const { selectedProdi } = useDekanScope()
   const location = useLocation()
   const navigate = useNavigate()
 
@@ -54,10 +58,15 @@ export default function Navbar({ children }) {
   const isSuperAdmin = currentRole === 'super_admin'
   const isAdminProdi = currentRole === 'admin_prodi'
   const isDosen = currentRole === 'dosen'
+  const isDekan = currentRole === 'dekan'
 
-  const profileProgram = user?.program_studi_nama || user?.fakultas_nama || 'Platform Administrator'
+  const profileProgram = isDekan
+    ? (selectedProdi ? selectedProdi.nama : 'Pilih Program Studi')
+    : (user?.program_studi_nama || user?.fakultas_nama || 'Platform Administrator')
   const profileFaculty = user?.fakultas_nama || ''
-  const profileCode = user?.program_studi_kode || user?.kode_program_studi || user?.kode_fakultas || ''
+  const profileCode = isDekan
+    ? (selectedProdi?.kode || '')
+    : (user?.program_studi_kode || user?.kode_program_studi || user?.kode_fakultas || '')
 
   const menuItems = useMemo(() => {
     if (isSuperAdmin) {
@@ -68,17 +77,36 @@ export default function Navbar({ children }) {
       ]
     }
 
+    if (isDosen) {
+      return [
+        { label: 'Ikhtisar', path: '/dashboard' },
+        { label: 'Peserta Kuliah', path: '/peserta' },
+        { label: 'Input Nilai', path: '/nilai' },
+        { label: 'Analitik OBE', path: '/analisis' },
+        {
+          label: 'Kurikulum OBE',
+          path: '/kurikulum',
+          suffix: 'Mode Lihat',
+        },
+        {
+          label: 'Laporan Saya',
+          path: '/dokumen',
+        },
+      ]
+    }
+
     const baseMenus = [
       { label: 'Ikhtisar', path: '/dashboard' },
       { label: 'Analitik OBE', path: '/analisis' },
       {
         label: 'Kurikulum OBE',
         path: '/kurikulum',
-        suffix: isDosen || currentRole === 'kaprodi' || currentRole === 'dekan' ? 'Mode Lihat' : undefined,
+        suffix: currentRole === 'kaprodi' || currentRole === 'dekan' ? 'Mode Lihat' : undefined,
       },
       {
-        label: isDosen ? 'Laporan Saya' : 'Validasi Laporan',
+        label: 'Validasi Laporan',
         path: '/dokumen',
+        suffix: currentRole === 'dekan' ? 'Mode Lihat' : undefined,
       },
     ]
 
@@ -93,8 +121,9 @@ export default function Navbar({ children }) {
     const matched = Object.keys(pageTitles)
       .sort((left, right) => right.length - left.length)
       .find((path) => location.pathname.startsWith(path))
+    if (isDosen && matched === '/dokumen') return 'Laporan Saya'
     return pageTitles[matched] || 'Ikhtisar'
-  }, [location.pathname])
+  }, [location.pathname, isDosen])
 
   const handleLogout = () => {
     logout()
@@ -152,7 +181,7 @@ export default function Navbar({ children }) {
                     {profileCode}
                   </span>
                 ) : null}
-                <span className="text-[11px] text-[#C8D3E1]">Semester 2024 Genap</span>
+                <span className="text-[11px] text-[#C8D3E1]">Tahun Berjalan</span>
               </div>
             </div>
           ) : null}

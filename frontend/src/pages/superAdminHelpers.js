@@ -1,5 +1,15 @@
 export function getApiErrorMessage(error, fallback) {
-  return error?.response?.data?.detail || error?.response?.data?.message || error?.message || fallback
+  const detail = error?.response?.data?.detail
+  if (detail) {
+    if (typeof detail === 'string') return detail
+    if (Array.isArray(detail)) {
+      return detail.map((d) => (typeof d === 'string' ? d : d.msg || JSON.stringify(d))).join(', ')
+    }
+    if (typeof detail === 'object') {
+      return detail.message || JSON.stringify(detail)
+    }
+  }
+  return error?.response?.data?.message || error?.message || fallback
 }
 
 export function toId(value) {

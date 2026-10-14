@@ -66,6 +66,9 @@ export function AuthProvider({ children }) {
   }
 
   const logout = () => {
+    if (user?.id) {
+      localStorage.removeItem(`sadewa.dekanSelectedProdiId.${user.id}`)
+    }
     localStorage.removeItem('token')
     localStorage.removeItem('sadewa.activeRole')
     setUser(null)

@@ -5,6 +5,8 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import MataKuliahPage from './pages/MataKuliahPage'
 import MataKuliahDetailPage from './pages/MataKuliahDetailPage'
+import PesertaMataKuliahPage from './pages/PesertaMataKuliahPage'
+import NilaiPage from './pages/NilaiPage'
 import AnalisisPage from './pages/AnalisisPage'
 import PengaturanPage from './pages/PengaturanPage'
 import KurikulumPage from './pages/KurikulumPage'
@@ -43,6 +45,26 @@ export default function App() {
             <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
               <AppLayout>
                 <DashboardPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/peserta"
+          element={
+            <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
+              <AppLayout>
+                <PesertaMataKuliahPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/nilai"
+          element={
+            <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
+              <AppLayout>
+                <NilaiPage />
               </AppLayout>
             </ProtectedRoute>
           }
