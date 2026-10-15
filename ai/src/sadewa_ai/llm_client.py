@@ -7,15 +7,33 @@ Dua hal yang ditangani di sini:
 2. Ekstraksi JSON yang tahan banting. Model kadang tetap menambahkan kalimat
    pembuka atau pagar markdown walau sudah dilarang di prompt, sehingga parsing
    yang hanya mengandalkan split("```") mudah gagal total.
+
+Perubahan terbaru:
+- Pemanggilan memakai STREAMING. Uji langsung (test_qwen.py) dengan streaming
+  selesai dalam ~34 detik, sedangkan panggilan non-streaming di service sempat
+  habis waktu pada 90 detik. Pada streaming, timeout dihitung per potongan data
+  yang diterima, bukan untuk seluruh jawaban sekaligus.
+- Mode thinking Qwen3.8 dimatikan (enable_thinking=False).
+- finish_reason == "length" dideteksi dan dilaporkan dengan pesan yang jelas.
 """
 
 import json
+import logging
 import threading
+import time
 from typing import Any, Dict, List, Optional
 
-from openai import OpenAI, APIError, APITimeoutError, AuthenticationError, PermissionDeniedError
+from openai import (
+    APIError,
+    APITimeoutError,
+    AuthenticationError,
+    OpenAI,
+    PermissionDeniedError,
+)
 
 from .config import settings
+
+logger = logging.getLogger(__name__)
 
 _client: Optional[OpenAI] = None
 _lock = threading.Lock()
@@ -50,15 +68,37 @@ def chat(
     temperature: float,
     model: Optional[str] = None,
 ) -> str:
-    """Panggil LLM dan kembalikan teks jawaban, dengan error yang informatif."""
+    """Panggil LLM (streaming) dan kembalikan teks jawaban utuh, dengan error informatif."""
     client = get_client()
+    nama_model = model or settings.qwen_model
+
+    potongan: List[str] = []
+    finish_reason: Optional[str] = None
+    usage = None
+    mulai = time.time()
+
     try:
-        response = client.chat.completions.create(
-            model=model or settings.qwen_model,
+        stream = client.chat.completions.create(
+            model=nama_model,
             messages=messages,
             max_tokens=max_tokens,
             temperature=temperature,
+            stream=True,
+            stream_options={"include_usage": True},
+            # enable_thinking bukan parameter standar OpenAI, jadi lewat extra_body.
+            # Dimatikan agar generate cepat dan seluruh max_tokens dipakai untuk JSON.
+            extra_body={"enable_thinking": False},
         )
+        for chunk in stream:
+            if getattr(chunk, "usage", None):
+                usage = chunk.usage
+            if not chunk.choices:
+                continue
+            pilihan = chunk.choices[0]
+            if pilihan.delta and pilihan.delta.content:
+                potongan.append(pilihan.delta.content)
+            if pilihan.finish_reason:
+                finish_reason = pilihan.finish_reason
     except AuthenticationError as exc:
         raise LLMError(
             "API key ditolak. Periksa QWEN_API_KEY di .env dan pastikan key "
@@ -66,25 +106,41 @@ def chat(
         ) from exc
     except PermissionDeniedError as exc:
         raise LLMError(
-            f"Akses ke model '{model or settings.qwen_model}' ditolak. Kemungkinan "
+            f"Akses ke model '{nama_model}' ditolak. Kemungkinan "
             "kuota gratis habis atau model belum diaktifkan di Model Studio. "
             f"Detail: {exc}"
         ) from exc
     except APITimeoutError as exc:
         raise LLMError(
-            f"LLM tidak merespons dalam {settings.llm_timeout_seconds} detik."
+            f"LLM tidak merespons dalam {settings.llm_timeout_seconds} detik "
+            f"(sudah menerima {sum(len(p) for p in potongan)} karakter)."
         ) from exc
     except APIError as exc:
         raise LLMError(f"Panggilan LLM gagal: {exc}") from exc
 
-    if not response.choices:
-        raise LLMError("LLM mengembalikan respons kosong.")
+    durasi = time.time() - mulai
+    logger.info(
+        "LLM selesai (model=%s, finish=%s, prompt_tokens=%s, completion_tokens=%s, %.1f detik)",
+        nama_model,
+        finish_reason,
+        getattr(usage, "prompt_tokens", "?"),
+        getattr(usage, "completion_tokens", "?"),
+        durasi,
+    )
 
-    content = response.choices[0].message.content
+    # Keluaran terpotong karena kehabisan token: JSON pasti tidak lengkap.
+    if finish_reason == "length":
+        raise LLMError(
+            f"Keluaran model terpotong karena melebihi max_tokens ({max_tokens}). "
+            "Naikkan RPS_MAX_TOKENS (atau NARASI_MAX_TOKENS) di file .env "
+            "pada folder ai/, lalu restart AI service."
+        )
+
+    content = "".join(potongan).strip()
     if not content:
         raise LLMError("LLM mengembalikan konten kosong.")
 
-    return content.strip()
+    return content
 
 
 def _strip_code_fence(text: str) -> str:

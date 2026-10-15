@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
 import Modal from '../components/Modal'
+import RpsList from '../components/RpsList'
 import useAuth from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
 import useDosenCourses from '../hooks/useDosenCourses'
@@ -58,6 +59,7 @@ export default function DokumenPage() {
   const [editContent, setEditContent] = useState('')
   const [aiPrompt, setAiPrompt] = useState({ topik: '', tahun_ajaran: '2025/2026' })
   const [generatingAi, setGeneratingAi] = useState(false)
+  const [rpsRefresh, setRpsRefresh] = useState(0)
 
   // Modals for Kaprodi / Validation
   const [detailModalOpen, setDetailModalOpen] = useState(false)
@@ -202,6 +204,7 @@ export default function DokumenPage() {
       })
       pushToast('Draf dokumen RPS berhasil digenerate oleh AI Service')
       setOpenAiModal(false)
+      setRpsRefresh((n) => n + 1)
       fetchLaporan()
     } catch (err) {
       const msg = getApiErrorMessage(
@@ -449,6 +452,11 @@ export default function DokumenPage() {
             )}
           </div>
         </SectionCard>
+      )}
+
+      {/* Draf RPS hasil AI Assist (khusus Dosen) */}
+      {isDosen && selectedMkId && (
+        <RpsList mataKuliahId={selectedMkId} refreshKey={rpsRefresh} />
       )}
 
       {/* Tabel Laporan Evaluasi */}
@@ -946,11 +954,24 @@ export default function DokumenPage() {
             AI Service akan membantu menyusun draf capaian dan bahan kajian berdasarkan silabus mata kuliah.
           </p>
 
+          <div className="rounded-md border border-[#CBD5E1] bg-[#F8FAFC] px-3 py-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6D778E]">
+              Mata kuliah yang akan digenerate
+            </p>
+            <p className="mt-1 text-sm font-semibold text-[#142B4A]">
+              {currentCourse ? `${currentCourse.kode} - ${currentCourse.nama}` : 'Belum ada mata kuliah dipilih'}
+            </p>
+            <p className="mt-1 text-[11px] text-[#64748B]">
+              Mata kuliah mengikuti pilihan pada bagian "Mata Kuliah Yang Dipantau". Untuk mata kuliah lain,
+              tutup jendela ini dan ganti pilihannya dulu.
+            </p>
+          </div>
+
           <div>
-            <label className="block text-xs font-semibold text-[#142B4A]">Topik / Bahan Kajian Tambahan</label>
+            <label className="block text-xs font-semibold text-[#142B4A]">Topik / Fokus Materi (opsional)</label>
             <input
               type="text"
-              placeholder="Contoh: Pengantar Cloud Native & Microservices"
+              placeholder="Contoh: Penerapan NoSQL dan Cloud Native (opsional)"
               value={aiPrompt.topik}
               onChange={(e) => setAiPrompt({ ...aiPrompt, topik: e.target.value })}
               className="mt-1 h-9 w-full rounded-[6px] border border-[#CBD5E1] bg-white px-3 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"

@@ -31,6 +31,29 @@ def build_rps_prompt(
     context_kurikulum: str,
 ) -> str:
     """Prompt untuk pembangkitan draf RPS 16 pertemuan."""
+    topik = (deskripsi or "").strip()
+    if topik:
+        blok_topik = (
+            "## Topik / Fokus dari Dosen (WAJIB DIPENUHI)\n"
+            f"{topik}\n"
+            "Topik ini adalah permintaan eksplisit dosen. Integrasikan ke dalam materi "
+            f"mata kuliah {mk_name}: minimal 5 pertemuan (di luar UTS dan UAS) harus "
+            "membahas topik ini secara langsung pada kolom \"materi\" dan \"sub_cpmk\". "
+            "Jika topik tidak berkaitan langsung dengan mata kuliah, jadikan studi kasus "
+            "atau penerapan dalam mata kuliah tersebut. Sisa pertemuan boleh memuat "
+            "materi inti mata kuliah."
+        )
+        aturan_topik = (
+            f'- Topik/fokus dosen ("{topik}") HARUS tercermin jelas pada materi pertemuan, '
+            "bukan hanya disebut sekilas"
+        )
+    else:
+        blok_topik = (
+            "## Topik / Fokus dari Dosen\n"
+            "(tidak ada, susun dari silabus standar mata kuliah)"
+        )
+        aturan_topik = "- Susun materi dari silabus standar mata kuliah"
+
     return f"""Kamu adalah sistem generator RPS (Rencana Pembelajaran Semester) resmi
 untuk universitas berbasis OBE (Outcome-Based Education).
 
@@ -49,7 +72,8 @@ peraturan, atau kode yang tidak ada di konteks.
 - SKS              : {sks} SKS Teori
 - Semester         : {semester}
 - Program Studi    : {prodi}
-- Deskripsi        : {deskripsi}
+
+{blok_topik}
 
 ## Instruksi Output
 Kembalikan RPS dalam format JSON yang valid.
@@ -88,6 +112,7 @@ ATURAN WAJIB:
   di array "cpmk", kecuali untuk UTS dan UAS yang memakai "-"
 - Semua konten dalam Bahasa Indonesia
 - Konten harus spesifik untuk mata kuliah {mk_name}
+{aturan_topik}
 """
 
 

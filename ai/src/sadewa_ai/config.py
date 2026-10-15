@@ -78,7 +78,7 @@ class Settings(BaseSettings):
     )
     # Snapshot bertanggal, bukan alias generik "qwen-plus", agar perilaku
     # model konsisten dan kuota yang dipakai jelas versinya.
-    qwen_model: str = Field(default="qwen-plus-2025-07-28", alias="QWEN_MODEL")
+    qwen_model: str = Field(default="qwen3.8-flash", alias="QWEN_MODEL")
 
     llm_timeout_seconds: int = 120
     llm_max_retries: int = 2

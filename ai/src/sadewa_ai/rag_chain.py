@@ -38,7 +38,10 @@ def generate_rps(
     """
     logger.info("Memulai RAG pipeline RPS untuk: %s", mk_name)
 
-    query = f"RPS {mk_name} {prodi} CPL CPMK capaian pembelajaran OBE"
+    # Topik dari dosen ikut masuk query retrieval supaya konteks dokumen yang
+    # diambil relevan dengan permintaan, bukan selalu sama untuk mata kuliah yang sama.
+    topik = (deskripsi or "").strip()
+    query = f"RPS {mk_name} {prodi} {topik} CPL CPMK capaian pembelajaran OBE".replace("  ", " ")
     context_kurikulum, sources = retrieve_context_with_metadata(query)
     logger.info("Konteks diambil (%d karakter)", len(context_kurikulum))
 
