@@ -20,3 +20,4 @@ class KurikulumVersion(Base):
     created_by_user = relationship("User")
     cpl = relationship("CPL", back_populates="kurikulum_version")
     mata_kuliah = relationship("MataKuliah", back_populates="kurikulum_version")
+    skala_nilai = relationship("SkalaNilai", back_populates="kurikulum_version", cascade="all, delete-orphan", order_by="desc(SkalaNilai.batas_min)")

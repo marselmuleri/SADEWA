@@ -33,6 +33,7 @@ class IKMapItem(BaseModel):
 
 class CPMKMapIKRequest(BaseModel):
     mappings: list[IKMapItem]
+    bobot_cpmk: Decimal | None = None
 
 
 class CPMKIKMapItem(BaseModel):

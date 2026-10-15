@@ -1,13 +1,14 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Literal
-from pydantic import BaseModel, ConfigDict
+from typing import Literal, Optional
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class NilaiRecordIn(BaseModel):
     peserta_mata_kuliah_id: int
     mk_bentuk_penilaian_id: int
-    nilai: Decimal
+    ik_id: Optional[int] = None
+    nilai: Decimal = Field(..., ge=0, le=100)
 
 
 class NilaiManualInput(BaseModel):
@@ -22,12 +23,13 @@ class NilaiResponse(BaseModel):
     id: int
     peserta_mata_kuliah_id: int
     mk_bentuk_penilaian_id: int
+    ik_id: Optional[int] = None
     nilai: Decimal
     source: str
 
 
 class NilaiUpdate(BaseModel):
-    nilai: Decimal
+    nilai: Decimal = Field(..., ge=0, le=100)
 
 
 class SyncLogResponse(BaseModel):

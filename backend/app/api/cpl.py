@@ -1,9 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import AcademicScope, get_academic_scope, get_scoped_prodi_id, require_roles
 from app.models.cpl import CPL
+from app.models.ik import IK
 from app.models.enums import UserRole
 from app.models.program_studi import ProgramStudi
 from app.models.user import User
@@ -112,6 +114,22 @@ def delete_cpl(
         raise HTTPException(status_code=404, detail="CPL tidak ditemukan")
     if data.program_studi_id != prodi_id:
         raise HTTPException(status_code=403, detail="Tidak boleh menghapus CPL di luar prodi Anda")
-    db.delete(data)
-    db.commit()
+
+    # Cek relasi anak ke IK (T6)
+    ik_count = db.query(IK).filter(IK.cpl_id == cpl_id).count()
+    if ik_count > 0:
+        raise HTTPException(
+            status_code=409,
+            detail=f"CPL '{data.kode}' tidak dapat dihapus karena masih memiliki {ik_count} Indikator Kinerja (IK) terkait"
+        )
+
+    try:
+        db.delete(data)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail=f"CPL '{data.kode}' tidak dapat dihapus karena memiliki dependensi data terkait"
+        )
     return {"message": "CPL dihapus"}

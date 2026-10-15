@@ -1,11 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import AcademicScope, get_academic_scope, require_roles
 from app.models.cpl import CPL
+from app.models.cpmk_ik_map import CPMKIKMap
 from app.models.enums import UserRole
 from app.models.ik import IK
+from app.models.mk_bentuk_penilaian_ik_map import MKBentukPenilaianIKMap
+from app.models.nilai_bentuk_penilaian import NilaiBentukPenilaian
 from app.models.program_studi import ProgramStudi
 from app.models.user import User
 from app.schemas.ik import IKCreate, IKResponse, IKUpdate
@@ -89,6 +93,38 @@ def delete_ik(
 ):
     prodi_id = _require_ik_write_scope(user)
     data = _get_ik_or_404_in_scope(db, ik_id, prodi_id)
-    db.delete(data)
-    db.commit()
+
+    # 1. Cek relasi ke CPMKIKMap (T6)
+    cpmk_map_count = db.query(CPMKIKMap).filter(CPMKIKMap.ik_id == ik_id).count()
+    if cpmk_map_count > 0:
+        raise HTTPException(
+            status_code=409,
+            detail=f"IK '{data.kode}' tidak dapat dihapus karena sedang dimapping ke {cpmk_map_count} CPMK"
+        )
+
+    # 2. Cek relasi ke MKBentukPenilaianIKMap (matriks bobot)
+    mbp_map_count = db.query(MKBentukPenilaianIKMap).filter(MKBentukPenilaianIKMap.ik_id == ik_id).count()
+    if mbp_map_count > 0:
+        raise HTTPException(
+            status_code=409,
+            detail=f"IK '{data.kode}' tidak dapat dihapus karena digunakan dalam matriks bobot penilaian kelas"
+        )
+
+    # 3. Cek relasi ke NilaiBentukPenilaian (nilai mahasiswa)
+    nilai_count = db.query(NilaiBentukPenilaian).filter(NilaiBentukPenilaian.ik_id == ik_id).count()
+    if nilai_count > 0:
+        raise HTTPException(
+            status_code=409,
+            detail=f"IK '{data.kode}' tidak dapat dihapus karena sudah memiliki rekaman nilai mahasiswa"
+        )
+
+    try:
+        db.delete(data)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail=f"IK '{data.kode}' tidak dapat dihapus karena memiliki dependensi data terkait"
+        )
     return {"message": "IK dihapus"}
