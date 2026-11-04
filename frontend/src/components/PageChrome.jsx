@@ -60,8 +60,8 @@ export function Badge({ children, tone = 'default' }) {
   return <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${toneClass}`}>{children}</span>
 }
 
-export function ActionButton({ children, variant = 'primary', ...props }) {
-  const base = 'inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A3A6B] focus-visible:ring-offset-2'
+export function ActionButton({ children, variant = 'primary', className = '', type = 'button', ...props }) {
+  const base = 'inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A3A6B] focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed'
   const styles =
     variant === 'secondary'
       ? 'border border-[#CBD5E1] bg-white text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B]'
@@ -70,7 +70,7 @@ export function ActionButton({ children, variant = 'primary', ...props }) {
         : 'bg-[#1A3A6B] text-white hover:bg-[#142B4A]'
 
   return (
-    <button className={`${base} ${styles}`} {...props}>
+    <button type={type} className={`${base} ${styles} ${className}`} {...props}>
       {children}
     </button>
   )

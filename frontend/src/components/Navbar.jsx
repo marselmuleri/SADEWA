@@ -1,6 +1,6 @@
-import { Bell, LogOut, Search, SquareKanban } from 'lucide-react'
+import { Bell, LogOut, Search, SquareKanban, ChevronDown, ChevronRight, Layers } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import useAuth from '../hooks/useAuth'
 import useToast from '../hooks/useToast'
 import { Badge } from './PageChrome'
@@ -10,8 +10,12 @@ import { useDekanScope } from '../context/DekanScopeContext'
 const pageTitles = {
   '/dashboard': 'Ikhtisar',
   '/peserta': 'Peserta Kuliah',
+  '/mahasiswa': 'Data Mahasiswa',
   '/nilai': 'Input Nilai',
   '/analisis': 'Analitik OBE',
+  '/kurikulum/cpl': 'Capaian Pembelajaran (CPL)',
+  '/kurikulum/pemetaan': 'Pemetaan IK',
+  '/kurikulum/cpmk': 'Capaian Pembelajaran Mata Kuliah (CPMK)',
   '/kurikulum': 'Kurikulum OBE',
   '/dokumen': 'Validasi Laporan',
   '/pengaturan': 'Manajemen Pengguna',
@@ -20,13 +24,15 @@ const pageTitles = {
   '/super-admin/users': 'Manajemen Pengguna Lintas Prodi',
 }
 
-function SidebarLink({ item, active, onClick }) {
+function SidebarLink({ item, active, onClick, isSubItem = false }) {
   return (
     <Link
       to={item.path}
       onClick={onClick}
       data-testid={`nav-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
       className={`group flex items-center justify-between rounded-[6px] border px-3 py-2 text-sm font-medium transition-colors ${
+        isSubItem ? 'pl-7 text-xs' : ''
+      } ${
         active
           ? 'border-white bg-white text-[#142B4A] shadow-sm font-semibold'
           : 'border-transparent text-[#E5EDF7] hover:border-white/10 hover:bg-white/10 hover:text-white'
@@ -60,6 +66,16 @@ export default function Navbar({ children }) {
   const isDosen = currentRole === 'dosen'
   const isDekan = currentRole === 'dekan'
 
+  // Admin Prodi collapsible Kurikulum group state
+  const isKurikulumActive = location.pathname.startsWith('/kurikulum')
+  const [isKurikulumGroupOpen, setIsKurikulumGroupOpen] = useState(true)
+
+  useEffect(() => {
+    if (isKurikulumActive) {
+      setIsKurikulumGroupOpen(true)
+    }
+  }, [isKurikulumActive])
+
   const profileProgram = isDekan
     ? (selectedProdi ? selectedProdi.nama : 'Pilih Program Studi')
     : (user?.program_studi_nama || user?.fakultas_nama || 'Platform Administrator')
@@ -67,6 +83,12 @@ export default function Navbar({ children }) {
   const profileCode = isDekan
     ? (selectedProdi?.kode || '')
     : (user?.program_studi_kode || user?.kode_program_studi || user?.kode_fakultas || '')
+
+  const adminKurikulumSubItems = [
+    { label: 'Capaian Pembelajaran (CPL)', path: '/kurikulum/cpl' },
+    { label: 'Pemetaan IK', path: '/kurikulum/pemetaan' },
+    { label: 'CPMK', path: '/kurikulum/cpmk' },
+  ]
 
   const menuItems = useMemo(() => {
     if (isSuperAdmin) {
@@ -95,6 +117,18 @@ export default function Navbar({ children }) {
       ]
     }
 
+    if (isAdminProdi) {
+      return [
+        { label: 'Ikhtisar', path: '/dashboard' },
+        { label: 'Peserta Kuliah', path: '/peserta' },
+        { label: 'Data Mahasiswa', path: '/mahasiswa' },
+        // Kurikulum OBE is rendered separately as collapsible group
+        { label: 'Analitik OBE', path: '/analisis' },
+        { label: 'Validasi Laporan', path: '/dokumen' },
+        { label: 'Manajemen Pengguna', path: '/pengaturan' },
+      ]
+    }
+
     const baseMenus = [
       { label: 'Ikhtisar', path: '/dashboard' },
       { label: 'Analitik OBE', path: '/analisis' },
@@ -109,10 +143,6 @@ export default function Navbar({ children }) {
         suffix: currentRole === 'dekan' ? 'Mode Lihat' : undefined,
       },
     ]
-
-    if (isAdminProdi) {
-      baseMenus.push({ label: 'Manajemen Pengguna', path: '/pengaturan' })
-    }
 
     return baseMenus
   }, [currentRole, isAdminProdi, isDosen, isSuperAdmin])
@@ -159,13 +189,77 @@ export default function Navbar({ children }) {
             <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#93A7C3]">
               {isSuperAdmin ? 'Ruang Kerja Super Admin' : 'Ruang Kerja'}
             </div>
-            {menuItems.map((item) => (
-              <SidebarLink
-                key={`${item.path}-${item.label}`}
-                item={item}
-                active={location.pathname === item.path}
-              />
-            ))}
+
+            {isAdminProdi ? (
+              <>
+                {/* Standard Admin Prodi top items */}
+                {menuItems.slice(0, 3).map((item) => (
+                  <SidebarLink
+                    key={`${item.path}-${item.label}`}
+                    item={item}
+                    active={location.pathname === item.path}
+                  />
+                ))}
+
+                {/* Collapsible Kurikulum OBE Group for Admin Prodi */}
+                <div className="space-y-1 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsKurikulumGroupOpen((prev) => !prev)}
+                    data-testid="nav-group-kurikulum"
+                    className={`w-full flex items-center justify-between rounded-[6px] border px-3 py-2 text-sm font-semibold transition-colors ${
+                      isKurikulumActive
+                        ? 'border-white/20 bg-white/10 text-white'
+                        : 'border-transparent text-[#E5EDF7] hover:border-white/10 hover:bg-white/5 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <Layers className="h-4 w-4 text-[#F4A300]" />
+                      <span>Kurikulum OBE</span>
+                    </div>
+                    {isKurikulumGroupOpen ? (
+                      <ChevronDown className="h-4 w-4 text-[#C8D3E1]" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-[#C8D3E1]" />
+                    )}
+                  </button>
+
+                  {/* Sub-items */}
+                  {isKurikulumGroupOpen && (
+                    <div className="space-y-1 pl-2 border-l border-white/10 ml-3">
+                      {adminKurikulumSubItems.map((subItem) => {
+                        const isSubActive = location.pathname.startsWith(subItem.path)
+                        return (
+                          <SidebarLink
+                            key={subItem.path}
+                            item={subItem}
+                            active={isSubActive}
+                            isSubItem={true}
+                          />
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Remaining Admin Prodi items */}
+                {menuItems.slice(3).map((item) => (
+                  <SidebarLink
+                    key={`${item.path}-${item.label}`}
+                    item={item}
+                    active={location.pathname === item.path}
+                  />
+                ))}
+              </>
+            ) : (
+              menuItems.map((item) => (
+                <SidebarLink
+                  key={`${item.path}-${item.label}`}
+                  item={item}
+                  active={location.pathname === item.path}
+                />
+              ))
+            )}
           </div>
 
           {!isSuperAdmin ? (
@@ -284,6 +378,8 @@ export default function Navbar({ children }) {
             className={`pointer-events-auto flex items-center gap-2 rounded-[6px] border px-4 py-2.5 text-xs font-medium shadow-sm transition-colors ${
               toast.type === 'error'
                 ? 'border-red-200 bg-red-50 text-red-800'
+                : toast.type === 'warning'
+                ? 'border-amber-200 bg-amber-50 text-amber-800'
                 : 'border-emerald-200 bg-emerald-50 text-emerald-800'
             }`}
           >

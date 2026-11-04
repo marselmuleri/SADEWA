@@ -3,9 +3,8 @@ import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
-import MataKuliahPage from './pages/MataKuliahPage'
-import MataKuliahDetailPage from './pages/MataKuliahDetailPage'
 import PesertaMataKuliahPage from './pages/PesertaMataKuliahPage'
+import MahasiswaPage from './pages/MahasiswaPage'
 import NilaiPage from './pages/NilaiPage'
 import AnalisisPage from './pages/AnalisisPage'
 import PengaturanPage from './pages/PengaturanPage'
@@ -14,6 +13,14 @@ import DokumenPage from './pages/DokumenPage'
 import FakultasPage from './pages/FakultasPage'
 import ProdiPage from './pages/ProdiPage'
 import UserManagementSAPage from './pages/UserManagementSAPage'
+
+// Phase A OBE Kurikulum Pages
+import CplListPage from './pages/cpl/CplListPage'
+import CplIndikatorPage from './pages/cpl/CplIndikatorPage'
+import PemetaanIkPage from './pages/cpl/PemetaanIkPage'
+import CpmkMkListPage from './pages/cpmk/CpmkMkListPage'
+import CpmkDetailPage from './pages/cpmk/CpmkDetailPage'
+
 import useAuth from './hooks/useAuth'
 
 function AppLayout({ children }) {
@@ -70,26 +77,6 @@ export default function App() {
           }
         />
         <Route
-          path="/mata-kuliah"
-          element={
-            <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
-              <AppLayout>
-                <MataKuliahPage />
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/mata-kuliah/:id"
-          element={
-            <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
-              <AppLayout>
-                <MataKuliahDetailPage />
-              </AppLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/analisis"
           element={
             <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
@@ -99,6 +86,8 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Consolidated Kurikulum OBE for Dosen, Kaprodi, Dekan (Mode Lihat) */}
         <Route
           path="/kurikulum"
           element={
@@ -109,6 +98,59 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Admin Prodi Specific Kurikulum OBE Sub-routes (PRD Feature 2 & SIMAK-NG Flow) */}
+        <Route
+          path="/kurikulum/cpl"
+          element={
+            <ProtectedRoute allowedRoles={['admin_prodi']}>
+              <AppLayout>
+                <CplListPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/kurikulum/cpl/:cplId/indikator"
+          element={
+            <ProtectedRoute allowedRoles={['admin_prodi']}>
+              <AppLayout>
+                <CplIndikatorPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/kurikulum/pemetaan"
+          element={
+            <ProtectedRoute allowedRoles={['admin_prodi']}>
+              <AppLayout>
+                <PemetaanIkPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/kurikulum/cpmk"
+          element={
+            <ProtectedRoute allowedRoles={['admin_prodi']}>
+              <AppLayout>
+                <CpmkMkListPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/kurikulum/cpmk/mk/:mkId"
+          element={
+            <ProtectedRoute allowedRoles={['admin_prodi']}>
+              <AppLayout>
+                <CpmkDetailPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/dokumen"
           element={
@@ -121,6 +163,16 @@ export default function App() {
         />
 
         {/* Administration Route: Exclusively for Admin Prodi (PRD Feature 3) */}
+        <Route
+          path="/mahasiswa"
+          element={
+            <ProtectedRoute allowedRoles={['admin_prodi']}>
+              <AppLayout>
+                <MahasiswaPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/pengaturan"
           element={
