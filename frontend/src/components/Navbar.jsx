@@ -15,6 +15,7 @@ const pageTitles = {
   '/analisis': 'Analitik OBE',
   '/kurikulum/cpl': 'Capaian Pembelajaran (CPL)',
   '/kurikulum/pemetaan': 'Pemetaan IK',
+  '/kurikulum/mata-kuliah': 'Mata Kuliah & Pengampu',
   '/kurikulum/cpmk': 'Capaian Pembelajaran Mata Kuliah (CPMK)',
   '/kurikulum': 'Kurikulum OBE',
   '/dokumen': 'Validasi Laporan',
@@ -87,6 +88,7 @@ export default function Navbar({ children }) {
   const adminKurikulumSubItems = [
     { label: 'Capaian Pembelajaran (CPL)', path: '/kurikulum/cpl' },
     { label: 'Pemetaan IK', path: '/kurikulum/pemetaan' },
+    { label: 'Mata Kuliah', path: '/kurikulum/mata-kuliah' },
     { label: 'CPMK', path: '/kurikulum/cpmk' },
   ]
 

@@ -15,7 +15,7 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 import api from '../../services/api'
 import useToast from '../../hooks/useToast'
 import useAuth from '../../hooks/useAuth'
-import { getApiErrorMessage } from '../superAdminHelpers'
+import { getApiErrorMessage, getDeleteErrorMessage } from '../superAdminHelpers'
 
 export default function CplIndikatorPage() {
   const { cplId } = useParams()
@@ -138,7 +138,8 @@ export default function CplIndikatorPage() {
       setIkToDelete(null)
       await loadData()
     } catch (err) {
-      pushToast(getApiErrorMessage(err, 'Gagal menghapus IK'), 'error')
+      pushToast(getDeleteErrorMessage(err, 'Gagal menghapus IK'), 'error')
+      setIkToDelete(null)
     } finally {
       setDeleting(false)
     }

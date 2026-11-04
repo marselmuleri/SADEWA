@@ -18,7 +18,7 @@ import KurikulumVersionSelector from '../../components/KurikulumVersionSelector'
 import api from '../../services/api'
 import useToast from '../../hooks/useToast'
 import useAuth from '../../hooks/useAuth'
-import { getApiErrorMessage } from '../superAdminHelpers'
+import { getApiErrorMessage, getDeleteErrorMessage } from '../superAdminHelpers'
 
 export default function CplListPage() {
   const navigate = useNavigate()
@@ -254,7 +254,8 @@ export default function CplListPage() {
       setCplToDelete(null)
       await fetchCplData(selectedVersionId)
     } catch (err) {
-      pushToast(getApiErrorMessage(err, 'Gagal menghapus CPL'), 'error')
+      pushToast(getDeleteErrorMessage(err, 'Gagal menghapus CPL'), 'error')
+      setCplToDelete(null)
     } finally {
       setDeleting(false)
     }

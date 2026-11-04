@@ -20,6 +20,7 @@ import CplIndikatorPage from './pages/cpl/CplIndikatorPage'
 import PemetaanIkPage from './pages/cpl/PemetaanIkPage'
 import CpmkMkListPage from './pages/cpmk/CpmkMkListPage'
 import CpmkDetailPage from './pages/cpmk/CpmkDetailPage'
+import MataKuliahListPage from './pages/mk/MataKuliahListPage'
 
 import useAuth from './hooks/useAuth'
 
@@ -126,6 +127,16 @@ export default function App() {
             <ProtectedRoute allowedRoles={['admin_prodi']}>
               <AppLayout>
                 <PemetaanIkPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/kurikulum/mata-kuliah"
+          element={
+            <ProtectedRoute allowedRoles={['admin_prodi']}>
+              <AppLayout>
+                <MataKuliahListPage />
               </AppLayout>
             </ProtectedRoute>
           }

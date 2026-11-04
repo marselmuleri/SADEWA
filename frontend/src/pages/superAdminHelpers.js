@@ -12,6 +12,13 @@ export function getApiErrorMessage(error, fallback) {
   return error?.response?.data?.message || error?.message || fallback
 }
 
+export function getDeleteErrorMessage(error, fallback = 'Gagal menghapus data') {
+  if (error?.response?.status === 500) {
+    return 'Data tidak dapat dihapus karena masih dipakai data lain. Lepaskan keterkaitannya terlebih dahulu.'
+  }
+  return getApiErrorMessage(error, fallback)
+}
+
 export function toId(value) {
   if (value === null || value === undefined || value === '') return null
   const parsed = Number(value)
