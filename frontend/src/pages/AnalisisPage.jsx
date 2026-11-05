@@ -27,6 +27,7 @@ import {
 } from 'recharts'
 import { ActionButton, Badge, PageHeader, SectionCard } from '../components/PageChrome'
 import api from '../services/api'
+import useDosenCourses from '../hooks/useDosenCourses'
 import { getApiErrorMessage } from './superAdminHelpers'
 import { exportToCsv } from '../utils/csvExport'
 import useAuth from '../hooks/useAuth'
@@ -49,7 +50,15 @@ export default function AnalisisPage() {
   const initialCplId = searchParams.get('cpl_id')
   const { user, activeRole } = useAuth()
   const currentRole = activeRole || user?.role || 'admin_prodi'
+  const isDosen = currentRole === 'dosen'
   const isDekan = currentRole === 'dekan'
+
+  // Dosen specific states
+  const { courses: dosenCourses, loading: loadingDosenCourses, error: errorDosenCourses, reload: reloadDosenCourses } = useDosenCourses()
+  const [selectedDosenMkId, setSelectedDosenMkId] = useState('')
+  const [dosenMkData, setDosenMkData] = useState(null)
+  const [loadingDosenMk, setLoadingDosenMk] = useState(false)
+  const [errorDosenMk, setErrorDosenMk] = useState(null)
   const { selectedProdiId, selectedProdi } = useDekanScope()
 
   const [activeTab, setActiveTab] = useState('drilldown') // 'drilldown' | 'trending'
@@ -86,6 +95,7 @@ export default function AnalisisPage() {
 
   // 1. Fetch CPL Overview & Courses on mount / semester change
   const fetchCplOverview = async () => {
+    if (isDosen) return
     if (isDekan && !selectedProdiId) {
       setCplList([])
       setSelectedCpl(null)
@@ -143,7 +153,7 @@ export default function AnalisisPage() {
 
   // 2. Fetch IK Breakdown when selected CPL or selectedSemester changes
   useEffect(() => {
-    if (!selectedCpl?.cpl_id) return
+    if (isDosen || !selectedCpl?.cpl_id) return
     const fetchIkBreakdown = async () => {
       setLoadingIk(true)
       setErrorIk(null)
@@ -196,6 +206,7 @@ export default function AnalisisPage() {
 
   // 4. Fetch Trending Data
   const fetchTrendingData = async () => {
+    if (isDosen) return
     if (isDekan && !selectedProdiId) {
       setTrendingRaw([])
       setLoadingTrending(false)
@@ -334,6 +345,265 @@ export default function AnalisisPage() {
       { key: 'rata_rata', label: 'Rata-Rata Capaian (%)' },
     ]
     exportToCsv(`Tren_CPL_${user?.program_studi_nama || 'Prodi'}`, headers, trendingRaw)
+  }
+
+  // Auto-select first course for Dosen
+  useEffect(() => {
+    if (isDosen && dosenCourses.length > 0 && !selectedDosenMkId) {
+      setSelectedDosenMkId(dosenCourses[0].id)
+    }
+  }, [isDosen, dosenCourses, selectedDosenMkId])
+
+  // Fetch Dosen course-level analysis from /dashboard/{matkul_id}
+  useEffect(() => {
+    if (!isDosen || !selectedDosenMkId) return
+    let cancelled = false
+    const fetchDosenMk = async () => {
+      setLoadingDosenMk(true)
+      setErrorDosenMk(null)
+      try {
+        const res = await api.get(`/dashboard/${selectedDosenMkId}`)
+        if (!cancelled) {
+          setDosenMkData(res.data)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.warn('Gagal memuat dashboard mata kuliah:', err)
+          setErrorDosenMk(getApiErrorMessage(err, 'Gagal memuat analisis mata kuliah'))
+          setDosenMkData(null)
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingDosenMk(false)
+        }
+      }
+    }
+    fetchDosenMk()
+    return () => {
+      cancelled = true
+    }
+  }, [isDosen, selectedDosenMkId])
+
+  if (isDosen) {
+    const selectedCourse = dosenCourses.find((c) => String(c.id) === String(selectedDosenMkId))
+    return (
+      <div className="space-y-6 animate-[fadeUp_200ms_ease]">
+        <PageHeader
+          eyebrow="Analitik Capaian Mata Kuliah"
+          title="Analisis Ketercapaian Pembelajaran"
+          description="Evaluasi ketercapaian CPMK dan Indikator Kinerja (IK) untuk mata kuliah yang Anda ampu."
+          badge="Mode Dosen Pengampu"
+        />
+
+        {/* Notice Cakupan Wewenang */}
+        <div className="rounded-lg border border-blue-200 bg-blue-50/70 p-4 text-xs text-[#142B4A]">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-[#1A3A6B] shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold block text-sm">Cakupan Analisis Dosen Pengampu</span>
+              <p className="mt-1 text-[#64748B] leading-relaxed">
+                Tampilan Ikhtisar CPL Program Studi dan Analisis Tren Lintas Angkatan merupakan wewenang Kaprodi dan Dekan. Sebagai Dosen Pengampu, Anda dapat menganalisis ketercapaian CPMK dan Indikator Kinerja (IK) secara spesifik untuk mata kuliah yang Anda ampu di bawah ini.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Course Selector */}
+        <SectionCard
+          title="Pilih Mata Kuliah Pengampu"
+          description="Pilih mata kuliah aktif untuk memuat ringkasan ketercapaian CPMK dan IK."
+          action={
+            selectedCourse && (
+              <Badge tone="default">
+                {selectedCourse.kode} · {selectedCourse.sks} SKS · {selectedCourse.semester} {selectedCourse.tahun_ajaran || '2024/2025'}
+              </Badge>
+            )
+          }
+        >
+          {loadingDosenCourses ? (
+            <div className="flex items-center gap-2 text-xs text-[#64748B] py-2">
+              <RefreshCw className="h-3.5 w-3.5 animate-spin text-[#1A3A6B]" />
+              <span>Memuat mata kuliah yang Anda ampu...</span>
+            </div>
+          ) : errorDosenCourses ? (
+            <div className="py-4 text-center text-xs">
+              <p className="font-semibold text-red-600 mb-1">Gagal memuat mata kuliah yang diampu</p>
+              <p className="text-[#64748B] mb-2">{errorDosenCourses}</p>
+              <button
+                type="button"
+                onClick={() => reloadDosenCourses()}
+                className="inline-flex items-center gap-1.5 rounded-md bg-[#1A3A6B] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#142B4A]"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span>Muat Ulang</span>
+              </button>
+            </div>
+          ) : dosenCourses.length === 0 ? (
+            <div className="py-6 text-center text-xs text-[#64748B]">
+              Anda belum terdaftar sebagai pengampu mata kuliah pada semester ini.
+            </div>
+          ) : (
+            <div className="max-w-md">
+              <label className="block text-xs font-semibold text-[#142B4A] mb-1.5">
+                Mata Kuliah Yang Diampu
+              </label>
+              <select
+                value={selectedDosenMkId}
+                onChange={(e) => setSelectedDosenMkId(e.target.value)}
+                className="w-full rounded-md border border-[#CBD5E1] bg-white px-3 py-2 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
+                data-testid="dosen-course-select"
+              >
+                {dosenCourses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.kode} - {c.nama} ({c.sks} SKS, Semester {c.semester})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </SectionCard>
+
+        {/* Course Dashboard Content */}
+        {selectedDosenMkId && (
+          loadingDosenMk ? (
+            <div className="rounded-lg border border-[#E2E8F0] bg-white p-12 text-center text-xs text-[#64748B]">
+              <RefreshCw className="h-5 w-5 animate-spin mx-auto text-[#1A3A6B] mb-2" />
+              <span>Memuat data evaluasi capaian mata kuliah...</span>
+            </div>
+          ) : errorDosenMk ? (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-center text-xs text-amber-800">
+              <AlertCircle className="h-6 w-6 mx-auto text-amber-600 mb-2" />
+              <p className="font-semibold">{errorDosenMk}</p>
+              <p className="text-[11px] text-amber-700 mt-1">
+                Pastikan mahasiswa peserta dan komponen penilaian telah dikonfigurasikan serta kalkulasi evaluasi telah dijalankan.
+              </p>
+            </div>
+          ) : dosenMkData ? (
+            <div className="space-y-6">
+              {/* Summary Stats */}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-lg border border-[#E2E8F0] bg-white p-4 shadow-sm">
+                  <span className="text-[11px] font-semibold uppercase text-[#64748B]">Total Peserta</span>
+                  <div className="mt-2 text-2xl font-bold text-[#142B4A]">
+                    {dosenMkData.jumlah_peserta ?? 0}
+                  </div>
+                  <span className="text-[10px] text-[#94A3B8]">Mahasiswa terdaftar</span>
+                </div>
+                <div className="rounded-lg border border-[#E2E8F0] bg-white p-4 shadow-sm">
+                  <span className="text-[11px] font-semibold uppercase text-[#64748B]">Rata-rata Nilai Akhir</span>
+                  <div className="mt-2 text-2xl font-bold text-[#1A3A6B]">
+                    {dosenMkData.rata_rata_nilai_akhir != null ? Number(dosenMkData.rata_rata_nilai_akhir).toFixed(1) : '-'}
+                  </div>
+                  <span className="text-[10px] text-[#94A3B8]">Skala 0 - 100</span>
+                </div>
+                <div className="rounded-lg border border-[#E2E8F0] bg-white p-4 shadow-sm">
+                  <span className="text-[11px] font-semibold uppercase text-[#64748B]">Jumlah CPMK</span>
+                  <div className="mt-2 text-2xl font-bold text-[#142B4A]">
+                    {Array.isArray(dosenMkData.cpmk_breakdown) ? dosenMkData.cpmk_breakdown.length : 0}
+                  </div>
+                  <span className="text-[10px] text-[#94A3B8]">Sub-capaian mata kuliah</span>
+                </div>
+                <div className="rounded-lg border border-[#E2E8F0] bg-white p-4 shadow-sm">
+                  <span className="text-[11px] font-semibold uppercase text-[#64748B]">Jumlah IK Terpetakan</span>
+                  <div className="mt-2 text-2xl font-bold text-[#142B4A]">
+                    {Array.isArray(dosenMkData.ik_breakdown) ? dosenMkData.ik_breakdown.length : 0}
+                  </div>
+                  <span className="text-[10px] text-[#94A3B8]">Indikator kinerja</span>
+                </div>
+              </div>
+
+              {/* CPMK Breakdown */}
+              <SectionCard
+                title="Ketercapaian CPMK (Capaian Pembelajaran Mata Kuliah)"
+                description="Rata-rata nilai dan persentase mahasiswa yang memenuhi standar ketercapaian minimal (skor >= 70)."
+              >
+                {(!dosenMkData.cpmk_breakdown || dosenMkData.cpmk_breakdown.length === 0) ? (
+                  <p className="text-xs text-[#64748B] py-4 text-center">
+                    Belum ada data capaian CPMK untuk mata kuliah ini.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#F8FAFC] text-[#142B4A] font-semibold border-b border-[#E2E8F0]">
+                        <tr>
+                          <th className="py-2.5 px-3 w-12 text-center">No</th>
+                          <th className="py-2.5 px-3 w-32">Kode CPMK</th>
+                          <th className="py-2.5 px-3 text-center w-36">Nilai Rata-rata</th>
+                          <th className="py-2.5 px-3 text-center w-44">Mahasiswa Tercapai</th>
+                          <th className="py-2.5 px-3 text-center w-32">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E2E8F0]">
+                        {dosenMkData.cpmk_breakdown.map((item, idx) => {
+                          const pct = item.jumlah_peserta > 0
+                            ? Math.round((item.jumlah_tercapai / item.jumlah_peserta) * 100)
+                            : 0
+                          const isPassed = Number(item.rata_rata) >= 70
+                          return (
+                            <tr key={item.cpmk_id || idx} className="hover:bg-[#F8FAFC]">
+                              <td className="py-2.5 px-3 text-center text-[#64748B]">{idx + 1}</td>
+                              <td className="py-2.5 px-3 font-mono font-bold text-[#1A3A6B]">{item.kode}</td>
+                              <td className="py-2.5 px-3 text-center font-mono font-semibold text-[#142B4A]">
+                                {Number(item.rata_rata).toFixed(1)}
+                              </td>
+                              <td className="py-2.5 px-3 text-center text-[#64748B]">
+                                <span className="font-semibold text-[#142B4A]">{item.jumlah_tercapai}</span> / {item.jumlah_peserta} ({pct}%)
+                              </td>
+                              <td className="py-2.5 px-3 text-center">
+                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                  isPassed ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                                }`}>
+                                  {isPassed ? 'Tercapai' : 'Perlu Evaluasi'}
+                                </span>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </SectionCard>
+
+              {/* IK Breakdown */}
+              <SectionCard
+                title="Ketercapaian Indikator Kinerja (IK)"
+                description="Kontribusi rata-rata penilaian mata kuliah terhadap Indikator Kinerja yang dipetakan."
+              >
+                {(!dosenMkData.ik_breakdown || dosenMkData.ik_breakdown.length === 0) ? (
+                  <p className="text-xs text-[#64748B] py-4 text-center">
+                    Belum ada data capaian IK untuk mata kuliah ini.
+                  </p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-[#F8FAFC] text-[#142B4A] font-semibold border-b border-[#E2E8F0]">
+                        <tr>
+                          <th className="py-2.5 px-3 w-12 text-center">No</th>
+                          <th className="py-2.5 px-3 w-36">Kode IK</th>
+                          <th className="py-2.5 px-3 text-center w-36">Rata-rata Skor</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#E2E8F0]">
+                        {dosenMkData.ik_breakdown.map((item, idx) => (
+                          <tr key={item.ik_id || idx} className="hover:bg-[#F8FAFC]">
+                            <td className="py-2.5 px-3 text-center text-[#64748B]">{idx + 1}</td>
+                            <td className="py-2.5 px-3 font-mono font-bold text-[#1A3A6B]">{item.kode}</td>
+                            <td className="py-2.5 px-3 text-center font-mono font-semibold text-[#142B4A]">
+                              {Number(item.rata_rata).toFixed(1)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </SectionCard>
+            </div>
+          ) : null
+        )}
+      </div>
+    )
   }
 
   return (

@@ -48,10 +48,11 @@ export default function DashboardPage() {
   const currentRole = activeRole || role || user?.role || 'admin_prodi'
   const isDosen = currentRole === 'dosen'
   const isDekan = currentRole === 'dekan'
+  const isKaprodi = currentRole === 'kaprodi'
   const { selectedProdiId, selectedProdi } = useDekanScope()
 
   // Dosen specific states
-  const { courses, loading: coursesLoading } = useDosenCourses()
+  const { courses, loading: coursesLoading, error: coursesError, reload: reloadCourses } = useDosenCourses()
   const [selectedMkId, setSelectedMkId] = useState('')
   const [mkDashboard, setMkDashboard] = useState(null)
   const [kalkulasiHasil, setKalkulasiHasil] = useState([])
@@ -122,7 +123,7 @@ export default function DashboardPage() {
       const [cplRes, coursesRes, validasiRes, kurikulumRes, trendingRes] = await Promise.all([
         api.get('/dashboard/cpl-overview', { params: cplParams }),
         api.get('/mata-kuliah'),
-        api.get('/validasi/laporan').catch(() => ({ data: [] })),
+        (isKaprodi || isDekan) ? api.get('/validasi/laporan').catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
         api.get('/kurikulum/versions').catch(() => ({ data: [] })),
         api.get('/trending/cpl-by-angkatan', { params: trendingParams }).catch(() => ({ data: [] })),
       ])
@@ -230,6 +231,8 @@ export default function DashboardPage() {
               >
                 {coursesLoading ? (
                   <option value="">Memuat daftar mata kuliah...</option>
+                ) : coursesError ? (
+                  <option value="">Gagal memuat mata kuliah</option>
                 ) : courses.length === 0 ? (
                   <option value="">Belum ada penugasan mata kuliah</option>
                 ) : (
@@ -245,6 +248,16 @@ export default function DashboardPage() {
               <Badge tone="default">
                 Tahun Ajaran: {selectedCourseObj.tahun_ajaran || '2025/2026'} · Semester {selectedCourseObj.semester}
               </Badge>
+            )}
+            {coursesError && (
+              <button
+                type="button"
+                onClick={() => reloadCourses()}
+                className="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
+              >
+                <RefreshCw className="h-3 w-3" />
+                <span>Muat Ulang</span>
+              </button>
             )}
           </div>
         </SectionCard>

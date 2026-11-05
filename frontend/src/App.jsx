@@ -1,4 +1,5 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import PageErrorBoundary from './components/PageErrorBoundary'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
@@ -28,7 +29,14 @@ import PenilaianPage from './pages/dosen/PenilaianPage'
 import useAuth from './hooks/useAuth'
 
 function AppLayout({ children }) {
-  return <Navbar>{children}</Navbar>
+  const location = useLocation()
+  return (
+    <Navbar>
+      <PageErrorBoundary key={location.pathname}>
+        {children}
+      </PageErrorBoundary>
+    </Navbar>
+  )
 }
 
 function RoleBasedHomeRedirect() {
@@ -72,6 +80,26 @@ export default function App() {
         />
         <Route
           path="/penilaian"
+          element={
+            <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
+              <AppLayout>
+                <PenilaianPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/penilaian/:mkId/nilai"
+          element={
+            <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
+              <AppLayout>
+                <PenilaianPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/penilaian/:mkId/hasil"
           element={
             <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
               <AppLayout>

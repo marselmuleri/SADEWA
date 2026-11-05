@@ -30,11 +30,30 @@ const MAX_CSV_ROWS = 500
 export default function PesertaMataKuliahPage() {
   const { user, activeRole } = useAuth()
   const { pushToast } = useToast()
-  const { courses, loading: coursesLoading } = useDosenCourses()
+  const { courses: dosenCourses, loading: dosenCoursesLoading } = useDosenCourses()
+  const [adminCourses, setAdminCourses] = useState([])
+  const [adminCoursesLoading, setAdminCoursesLoading] = useState(false)
 
   const currentRole = activeRole || user?.role || 'admin_prodi'
   const isDosen = currentRole === 'dosen'
   const canManage = currentRole === 'admin_prodi'
+
+  useEffect(() => {
+    if (!isDosen && user?.id) {
+      setAdminCoursesLoading(true)
+      api.get('/mata-kuliah')
+        .then((res) => {
+          if (Array.isArray(res.data)) {
+            setAdminCourses(res.data)
+          }
+        })
+        .catch(() => setAdminCourses([]))
+        .finally(() => setAdminCoursesLoading(false))
+    }
+  }, [isDosen, user?.id])
+
+  const courses = isDosen ? dosenCourses : adminCourses
+  const coursesLoading = isDosen ? dosenCoursesLoading : adminCoursesLoading
 
   const [selectedMkId, setSelectedMkId] = useState('')
   const [pesertaList, setPesertaList] = useState([])

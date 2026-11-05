@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { getApiErrorMessage } from '../pages/superAdminHelpers'
 import { ChevronDown, ChevronUp, Loader2, RefreshCw } from 'lucide-react'
 import { ActionButton, Badge, SectionCard } from './PageChrome'
 import api from '../services/api'
@@ -168,14 +169,27 @@ export default function RpsList({ mataKuliahId, refreshKey = 0 }) {
       setOpenId(list.length > 0 ? list[0].id : null)
     } catch (err) {
       console.warn('Gagal memuat daftar RPS:', err)
-      setError('Gagal memuat daftar draf RPS.')
+      if (!err.response) {
+        setError('Server error (kemungkinan error 500 di backend). Periksa log backend.')
+      } else {
+        setError(getApiErrorMessage(err, 'Gagal memuat daftar draf RPS.'))
+      }
       setItems([])
     } finally {
       setLoading(false)
     }
   }
 
+  const prevMkIdRef = useRef(null)
+  const prevRefreshKeyRef = useRef(null)
+
   useEffect(() => {
+    if (!mataKuliahId) return
+    if (prevMkIdRef.current === mataKuliahId && prevRefreshKeyRef.current === refreshKey) {
+      return
+    }
+    prevMkIdRef.current = mataKuliahId
+    prevRefreshKeyRef.current = refreshKey
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mataKuliahId, refreshKey])

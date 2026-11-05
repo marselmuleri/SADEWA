@@ -194,24 +194,32 @@ export default function DokumenPage() {
 
   // AI Assist (RPS / Narasi) Safe Trigger (Dosen)
   const handleTriggerAiAssist = async () => {
-    if (!selectedMkId) return
+    if (!selectedMkId || generatingAi) return
     setGeneratingAi(true)
     try {
-      await api.post(`/rps/${selectedMkId}/generate`, {
-        tahun_ajaran: aiPrompt.tahun_ajaran,
-        semester: currentCourse?.semester || 'Ganjil',
-        topik: aiPrompt.topik,
-      })
+      await api.post(
+        `/rps/${selectedMkId}/generate`,
+        {
+          tahun_ajaran: aiPrompt.tahun_ajaran,
+          semester: currentCourse?.semester || 'Ganjil',
+          topik: aiPrompt.topik,
+        },
+        { timeout: 120000 }
+      )
       pushToast('Draf dokumen RPS berhasil digenerate oleh AI Service')
       setOpenAiModal(false)
       setRpsRefresh((n) => n + 1)
       fetchLaporan()
     } catch (err) {
-      const msg = getApiErrorMessage(
-        err,
-        'Layanan AI Assist sedang tidak tersedia (offline). Anda dapat menyusun draf secara manual.'
-      )
-      pushToast(msg, 'error')
+      if (!err.response) {
+        pushToast('Server error (kemungkinan error 500 di backend). Periksa log backend.', 'error')
+      } else {
+        const msg = getApiErrorMessage(
+          err,
+          'Layanan AI Assist sedang tidak tersedia (offline). Anda dapat menyusun draf secara manual.'
+        )
+        pushToast(msg, 'error')
+      }
     } finally {
       setGeneratingAi(false)
     }
@@ -982,11 +990,11 @@ export default function DokumenPage() {
             <ActionButton variant="secondary" onClick={() => setOpenAiModal(false)}>
               Batal
             </ActionButton>
-            <ActionButton onClick={handleTriggerAiAssist} disabled={generatingAi}>
+            <ActionButton onClick={handleTriggerAiAssist} disabled={generatingAi || !selectedMkId}>
               {generatingAi ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Generating...
+                  <span>AI sedang menyusun draf... (bisa sampai 1 menit)</span>
                 </>
               ) : (
                 'Generate dengan AI'
