@@ -12,6 +12,7 @@ from app.models import (
     NilaiBentukPenilaian, PengampuMataKuliah, PesertaMataKuliah, ProgramStudi, User,
 )
 from app.models.enums import NilaiSource, SemesterEnum, StatusKurikulum, StatusMasuk, UserRole
+from app.services.calculation.engine import run_kalkulasi
 
 
 def seed(db: Session):
@@ -131,17 +132,15 @@ def seed(db: Session):
     db.add_all(cpmk_list_if)
     db.flush()
 
-    # Mapping tiap CPMK ke IK IF
-    # CPMK 1 ke IK[0] (bobot 50), CPMK 2 ke IK[1] (bobot 50)
-    for mk_idx, mk in enumerate(mk_list_if):
+    # Mapping CPMK ke IK: CPMK-1 ke IK[0] (50), CPMK-2 ke IK[1] (50) -> total bobot CPMK = 100%
+    for mk in mk_list_if:
         cpmks = [c for c in cpmk_list_if if c.mata_kuliah_id == mk.id]
-        if len(cpmks) >= 2:
-            db.add(CPMKIKMap(cpmk_id=cpmks[0].id, ik_id=ik_list_if[0].id, bobot=50))
-            db.add(CPMKIKMap(cpmk_id=cpmks[1].id, ik_id=ik_list_if[1].id, bobot=50))
+        db.add(CPMKIKMap(cpmk_id=cpmks[0].id, ik_id=ik_list_if[0].id, bobot=50))
+        db.add(CPMKIKMap(cpmk_id=cpmks[1].id, ik_id=ik_list_if[1].id, bobot=50))
     db.flush()
 
     # --- 5. Jenis Evaluasi & Bentuk Penilaian untuk IF ---
-    # Bobot total JenisEvaluasi = 100
+    # Bobot total JenisEvaluasi = 100% (20 + 20 + 30 + 30)
     jenis_defs_if = [("Tugas", 20), ("Kuis", 20), ("UTS", 30), ("UAS", 30)]
     jenis_list_if = [
         JenisEvaluasi(program_studi_id=prodi_if.id, nama=n, urutan=i, bobot=b)
@@ -154,7 +153,7 @@ def seed(db: Session):
     db.add_all(bentuk_list_if)
     db.flush()
 
-    # MKBentukPenilaian bobot total = 100 (20, 20, 30, 30)
+    # MKBentukPenilaian: bobot 20, 20, 30, 30 -> total 100%
     mbp_list_if = []
     for mk in mk_list_if:
         for bp, (_, b) in zip(bentuk_list_if, jenis_defs_if):
@@ -165,9 +164,18 @@ def seed(db: Session):
     db.add_all(mbp_list_if)
     db.flush()
 
-    # Matriks MKBentukPenilaian ke IK (menggunakan ik_list_if[0] dan ik_list_if[1])
+    # Matriks MKBentukPenilaianIKMap:
+    # Memenuhi Kondisi 4 (baris = bobot bentuk) dan Kondisi 5 (kolom = bobot IK mapping: 50 & 50)
+    # Tugas (20): IK[0] = 10, IK[1] = 10 -> total baris 20
+    # Kuis  (20): IK[0] = 10, IK[1] = 10 -> total baris 20
+    # UTS   (30): IK[0] = 15, IK[1] = 15 -> total baris 30
+    # UAS   (30): IK[0] = 15, IK[1] = 15 -> total baris 30
+    # Total Kolom IK[0] = 10 + 10 + 15 + 15 = 50%
+    # Total Kolom IK[1] = 10 + 10 + 15 + 15 = 50%
     for mbp in mbp_list_if:
-        db.add(MKBentukPenilaianIKMap(mk_bentuk_penilaian_id=mbp.id, ik_id=ik_list_if[0].id, bobot=mbp.bobot))
+        w_half = mbp.bobot / 2
+        db.add(MKBentukPenilaianIKMap(mk_bentuk_penilaian_id=mbp.id, ik_id=ik_list_if[0].id, bobot=w_half))
+        db.add(MKBentukPenilaianIKMap(mk_bentuk_penilaian_id=mbp.id, ik_id=ik_list_if[1].id, bobot=w_half))
     db.flush()
 
     # --- 6. Mahasiswa + Peserta + Nilai untuk IF ---
@@ -192,23 +200,35 @@ def seed(db: Session):
     for mbp in mbp_list_if:
         mbp_by_mk_if.setdefault(mbp.mata_kuliah_id, []).append(mbp)
 
+    # Input nilai mentah per IK ke tabel NilaiBentukPenilaian
     nilai_rows_if = []
     for peserta in peserta_list_if:
         for mbp in mbp_by_mk_if[peserta.mata_kuliah_id]:
-            base = random.uniform(65, 90)
+            # Nilai untuk IK[0] dan IK[1]
+            base_ik1 = random.uniform(68, 92)
+            base_ik2 = random.uniform(70, 95)
             nilai_rows_if.append(NilaiBentukPenilaian(
                 peserta_mata_kuliah_id=peserta.id,
                 mk_bentuk_penilaian_id=mbp.id,
-                ik_id=ik_list_if[0].id,  # Menggunakan model nilai per IK
+                ik_id=ik_list_if[0].id,
                 semester=SemesterEnum.ganjil,
-                nilai=round(base, 2),
+                nilai=round(base_ik1, 2),
+                source=NilaiSource.manual,
+                imported_by=dosen_if.id,
+            ))
+            nilai_rows_if.append(NilaiBentukPenilaian(
+                peserta_mata_kuliah_id=peserta.id,
+                mk_bentuk_penilaian_id=mbp.id,
+                ik_id=ik_list_if[1].id,
+                semester=SemesterEnum.ganjil,
+                nilai=round(base_ik2, 2),
                 source=NilaiSource.manual,
                 imported_by=dosen_if.id,
             ))
     db.add_all(nilai_rows_if)
     db.flush()
 
-    # --- 7. Data Minimal untuk Prodi Kedua (Teknik Elektro / EL) ---
+    # --- 7. Data Lengkap untuk Prodi Kedua (Teknik Elektro / EL) ---
     kurikulum_el = KurikulumVersion(
         program_studi_id=prodi_el.id, version_label="2025", semester=SemesterEnum.ganjil,
         status=StatusKurikulum.published, created_by=admin_el.id,
@@ -225,11 +245,9 @@ def seed(db: Session):
     db.add(cpl_el)
     db.flush()
 
-    ik_el = IK(
-        cpl_id=cpl_el.id, kode="EL-CPL-1.1", deskripsi="Indikator 1 untuk EL-CPL-1",
-        urutan=1, created_by=admin_el.id,
-    )
-    db.add(ik_el)
+    ik_el1 = IK(cpl_id=cpl_el.id, kode="EL-CPL-1.1", deskripsi="Indikator 1 untuk EL-CPL-1", urutan=1, created_by=admin_el.id)
+    ik_el2 = IK(cpl_id=cpl_el.id, kode="EL-CPL-1.2", deskripsi="Indikator 2 untuk EL-CPL-1", urutan=2, created_by=admin_el.id)
+    db.add_all([ik_el1, ik_el2])
     db.flush()
 
     mk_el = MataKuliah(
@@ -241,11 +259,39 @@ def seed(db: Session):
 
     db.add(PengampuMataKuliah(mata_kuliah_id=mk_el.id, user_id=dosen_el.id, is_koordinator=True))
 
-    jenis_el = [
-        JenisEvaluasi(program_studi_id=prodi_el.id, nama="Tugas EL", urutan=1, bobot=40),
-        JenisEvaluasi(program_studi_id=prodi_el.id, nama="UAS EL", urutan=2, bobot=60),
-    ]
-    db.add_all(jenis_el)
+    cpmk_el1 = CPMK(mata_kuliah_id=mk_el.id, kode="CPMK-EL101-1", deskripsi="Capaian 1 Rangkaian", bobot=50, created_by=dosen_el.id)
+    cpmk_el2 = CPMK(mata_kuliah_id=mk_el.id, kode="CPMK-EL101-2", deskripsi="Capaian 2 Rangkaian", bobot=50, created_by=dosen_el.id)
+    db.add_all([cpmk_el1, cpmk_el2])
+    db.flush()
+
+    db.add(CPMKIKMap(cpmk_id=cpmk_el1.id, ik_id=ik_el1.id, bobot=50))
+    db.add(CPMKIKMap(cpmk_id=cpmk_el2.id, ik_id=ik_el2.id, bobot=50))
+
+    # Jenis Evaluasi & Bentuk Penilaian EL (total 100%)
+    je_el_tugas = JenisEvaluasi(program_studi_id=prodi_el.id, nama="Tugas EL", urutan=1, bobot=40)
+    je_el_uas = JenisEvaluasi(program_studi_id=prodi_el.id, nama="UAS EL", urutan=2, bobot=60)
+    db.add_all([je_el_tugas, je_el_uas])
+    db.flush()
+
+    bp_el_tugas = BentukPenilaian(jenis_evaluasi_id=je_el_tugas.id, nama="Tugas EL")
+    bp_el_uas = BentukPenilaian(jenis_evaluasi_id=je_el_uas.id, nama="UAS EL")
+    db.add_all([bp_el_tugas, bp_el_uas])
+    db.flush()
+
+    mbp_el_tugas = MKBentukPenilaian(mata_kuliah_id=mk_el.id, bentuk_penilaian_id=bp_el_tugas.id, bobot=40, semester=SemesterEnum.ganjil, created_by=dosen_el.id)
+    mbp_el_uas = MKBentukPenilaian(mata_kuliah_id=mk_el.id, bentuk_penilaian_id=bp_el_uas.id, bobot=60, semester=SemesterEnum.ganjil, created_by=dosen_el.id)
+    db.add_all([mbp_el_tugas, mbp_el_uas])
+    db.flush()
+
+    # Matriks EL:
+    # Tugas EL (40): IK1=20, IK2=20 (baris=40)
+    # UAS EL (60): IK1=30, IK2=30 (baris=60)
+    # Kolom IK1 = 20 + 30 = 50
+    # Kolom IK2 = 20 + 30 = 50
+    db.add(MKBentukPenilaianIKMap(mk_bentuk_penilaian_id=mbp_el_tugas.id, ik_id=ik_el1.id, bobot=20))
+    db.add(MKBentukPenilaianIKMap(mk_bentuk_penilaian_id=mbp_el_tugas.id, ik_id=ik_el2.id, bobot=20))
+    db.add(MKBentukPenilaianIKMap(mk_bentuk_penilaian_id=mbp_el_uas.id, ik_id=ik_el1.id, bobot=30))
+    db.add(MKBentukPenilaianIKMap(mk_bentuk_penilaian_id=mbp_el_uas.id, ik_id=ik_el2.id, bobot=30))
     db.flush()
 
     mahasiswa_el = [
@@ -262,10 +308,31 @@ def seed(db: Session):
     db.add_all(peserta_el)
     db.flush()
 
+    nilai_rows_el = []
+    for p in peserta_el:
+        for mbp, w_half in [(mbp_el_tugas, 20), (mbp_el_uas, 30)]:
+            nilai_rows_el.append(NilaiBentukPenilaian(
+                peserta_mata_kuliah_id=p.id, mk_bentuk_penilaian_id=mbp.id, ik_id=ik_el1.id,
+                semester=SemesterEnum.ganjil, nilai=round(random.uniform(70, 90), 2),
+                source=NilaiSource.manual, imported_by=dosen_el.id,
+            ))
+            nilai_rows_el.append(NilaiBentukPenilaian(
+                peserta_mata_kuliah_id=p.id, mk_bentuk_penilaian_id=mbp.id, ik_id=ik_el2.id,
+                semester=SemesterEnum.ganjil, nilai=round(random.uniform(72, 92), 2),
+                source=NilaiSource.manual, imported_by=dosen_el.id,
+            ))
+    db.add_all(nilai_rows_el)
+    db.flush()
+
+    # --- 8. Eksekusi Kalkulasi Awal agar Capaian Langsung Tersedia ---
+    all_seeded_mks = mk_list_if + [mk_el]
+    for mk in all_seeded_mks:
+        run_kalkulasi(db, mk.id)
+
     db.commit()
 
     return {
-        "message": "Seed sukses",
+        "message": "Seed sukses: seluruh syarat bobot 100% terpenuhi dan kalkulasi awal selesai.",
         "login_password_semua_akun": "password123",
         "users": {
             "super_admin": super_admin.email,
@@ -293,8 +360,10 @@ def seed(db: Session):
         "el": {
             "mata_kuliah": 1,
             "mahasiswa": len(mahasiswa_el),
+            "peserta": len(peserta_el),
+            "nilai": len(nilai_rows_el),
         },
-        "catatan": "Jalankan POST /api/v1/kalkulasi/run/{matkul_id} untuk menghitung IK/CPMK/CPL achievement dari nilai ini.",
+        "status_obe": "Siap Dinilai (Kondisi 1-7 Terpenuhi 100%), Capaian Dashboard Langsung Tersedia.",
     }
 
 

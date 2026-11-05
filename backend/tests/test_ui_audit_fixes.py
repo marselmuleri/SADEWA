@@ -6,7 +6,8 @@ from app.core.security import create_access_token
 from app.models import (
     Fakultas, ProgramStudi, User, KurikulumVersion, MataKuliah,
     PengampuMataKuliah, CPMK, JenisEvaluasi, BentukPenilaian,
-    MKBentukPenilaian, Mahasiswa, PesertaMataKuliah, CPL, IK
+    MKBentukPenilaian, Mahasiswa, PesertaMataKuliah, CPL, IK,
+    NilaiBentukPenilaian, HasilEvaluasi
 )
 from app.models.enums import UserRole, StatusKurikulum, SemesterEnum, StatusMasuk
 from tests.conftest import TestingSessionLocal
@@ -111,18 +112,33 @@ def audit_data(db_session: Session):
     }
 
 
-def test_dosen_scope_filtering(client: TestClient, audit_data: dict):
-    """Pastikan Dosen prodi A tidak melihat data prodi B."""
+def test_dosen_scope_filtering(client: TestClient, audit_data: dict, db_session: Session):
+    """Pastikan Dosen hanya dapat melihat mata kuliah yang diampunya saja."""
     dosen_a = audit_data["dosen_a"]
     headers = auth_header(dosen_a)
+    kur_a = audit_data["kur_a"]
+    prodi_a = audit_data["prodi_a"]
 
-    # 1. Mata Kuliah
+    # Buat MK kedua di prodi A yang TIDAK diampu oleh dosen_a
+    mk_a2 = MataKuliah(
+        kurikulum_version_id=kur_a.id, kode="IF102", nama="Struktur Data", sks=3,
+        semester=SemesterEnum.ganjil, tahun_ajaran="2025/2026", program_studi_id=prodi_a.id,
+    )
+    db_session.add(mk_a2)
+    db_session.commit()
+
+    # 1. Mata Kuliah: hanya mata kuliah yang diampu (IF101) yang muncul
     res_mk = client.get("/api/v1/mata-kuliah", headers=headers)
     assert res_mk.status_code == 200
     mks = res_mk.json()
     kodes = [m["kode"] for m in mks]
     assert "IF101" in kodes
-    assert "EL101" not in kodes
+    assert "IF102" not in kodes  # MK prodi sama tapi tidak diampu TIDAK boleh muncul
+    assert "EL101" not in kodes  # MK prodi lain TIDAK boleh muncul
+
+    # Akses detail MK yang tidak diampu harus ditolak 403
+    res_detail = client.get(f"/api/v1/mata-kuliah/{mk_a2.id}", headers=headers)
+    assert res_detail.status_code == 403
 
     # 2. Jenis Evaluasi
     res_je = client.get("/api/v1/jenis-evaluasi", headers=headers)
@@ -320,3 +336,56 @@ def test_delete_protection_and_endpoints(client: TestClient, audit_data: dict, d
 
     res_del_bp = client.delete(f"/api/v1/bentuk-penilaian/{bp_a.id}", headers=headers)
     assert res_del_bp.status_code == 409
+
+
+def test_seed_data_siap_dinilai_dan_kalkulasi_langsung(client: TestClient, db_session: Session):
+    """
+    Menguji bahwa:
+    1. Data seed memiliki total bobot 100% dan bebas issue siap dinilai.
+    2. Nilai mentah tersimpan di NilaiBentukPenilaian dan capaian langsung terhitung.
+    3. Dosen hanya melihat mata kuliah yang diampunya saja.
+    4. Perhitungan ulang (run kalkulasi) dapat dipanggil langsung dari data seed.
+    """
+    from app.core.seed import seed
+    from app.services.calculation.engine import cek_siap_dinilai
+
+    result = seed(db_session)
+    assert "Seed sukses" in result["message"]
+
+    # 1. Cek semua mata kuliah seed: syarat siap dinilai terpenuhi 100%
+    mks = db_session.query(MataKuliah).all()
+    assert len(mks) == 4
+    for mk in mks:
+        issues = cek_siap_dinilai(db_session, mk.id)
+        assert issues == [], f"Mata kuliah {mk.kode} memiliki issue: {issues}"
+
+    # 2. Nilai mentah di tabel NilaiBentukPenilaian dan capaian awal langsung terisi
+    total_nilai = db_session.query(NilaiBentukPenilaian).count()
+    assert total_nilai > 0
+    total_hasil = db_session.query(HasilEvaluasi).count()
+    assert total_hasil > 0
+
+    # 3. Dosen IF hanya melihat mata kuliah yang diampunya
+    dosen_if = db_session.query(User).filter(User.email == "dosen@sadewa.ac.id").first()
+    h_dosen_if = auth_header(dosen_if)
+    res_mk_if = client.get("/api/v1/mata-kuliah", headers=h_dosen_if)
+    assert res_mk_if.status_code == 200
+    kodes_if = [m["kode"] for m in res_mk_if.json()]
+    assert set(kodes_if) == {"IF201", "IF202", "IF203"}
+    assert "EL101" not in kodes_if
+
+    # 4. Dosen EL hanya melihat EL101
+    dosen_el = db_session.query(User).filter(User.email == "dosen_el@sadewa.ac.id").first()
+    h_dosen_el = auth_header(dosen_el)
+    res_mk_el = client.get("/api/v1/mata-kuliah", headers=h_dosen_el)
+    assert res_mk_el.status_code == 200
+    kodes_el = [m["kode"] for m in res_mk_el.json()]
+    assert kodes_el == ["EL101"]
+
+    # 5. Dosen IF dapat langsung menjalankan kalkulasi ulang tanpa error
+    mk_if201 = db_session.query(MataKuliah).filter(MataKuliah.kode == "IF201").first()
+    res_calc = client.post(f"/api/v1/kalkulasi/run/{mk_if201.id}", headers=h_dosen_if)
+    assert res_calc.status_code == 200
+    data_calc = res_calc.json()
+    assert data_calc["mata_kuliah_id"] == mk_if201.id
+    assert data_calc["jumlah_peserta_diproses"] == 20

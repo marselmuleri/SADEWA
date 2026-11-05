@@ -64,7 +64,13 @@ def list_mata_kuliah(
     query = db.query(MataKuliah)
     if kurikulum_version_id:
         query = query.filter(MataKuliah.kurikulum_version_id == kurikulum_version_id)
-    if scope.program_studi_id:
+    if scope.user.role == UserRole.dosen:
+        dosen_mk_ids = [
+            pmk.mata_kuliah_id
+            for pmk in db.query(PengampuMataKuliah).filter(PengampuMataKuliah.user_id == scope.user.id).all()
+        ]
+        query = query.filter(MataKuliah.id.in_(dosen_mk_ids))
+    elif scope.program_studi_id:
         query = query.filter(MataKuliah.program_studi_id == scope.program_studi_id)
     elif scope.fakultas_id:
         query = query.join(ProgramStudi).filter(ProgramStudi.fakultas_id == scope.fakultas_id)
@@ -80,7 +86,14 @@ def get_mata_kuliah(
     data = db.query(MataKuliah).filter(MataKuliah.id == mata_kuliah_id).first()
     if not data:
         raise HTTPException(status_code=404, detail="Mata kuliah tidak ditemukan")
-    if scope.program_studi_id and data.program_studi_id != scope.program_studi_id:
+    if scope.user.role == UserRole.dosen:
+        is_pengampu = db.query(PengampuMataKuliah).filter(
+            PengampuMataKuliah.mata_kuliah_id == mata_kuliah_id,
+            PengampuMataKuliah.user_id == scope.user.id,
+        ).first()
+        if not is_pengampu:
+            raise HTTPException(status_code=403, detail="Anda bukan dosen pengampu mata kuliah ini")
+    elif scope.program_studi_id and data.program_studi_id != scope.program_studi_id:
         raise HTTPException(status_code=403, detail="Mata kuliah ini di luar prodi Anda")
     if scope.fakultas_id and data.program_studi.fakultas_id != scope.fakultas_id:
         raise HTTPException(status_code=403, detail="Mata kuliah ini di luar fakultas Anda")
