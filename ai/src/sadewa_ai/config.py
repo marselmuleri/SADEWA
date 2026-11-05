@@ -64,7 +64,7 @@ class Settings(BaseSettings):
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     chunk_size: int = 500
     chunk_overlap: int = 100
-    top_k_chunks: int = 4
+    top_k_chunks: int = 6
 
     # --- LLM Qwen --------------------------------------------------------
     # Sengaja tidak diberi default agar terlihat jelas saat kosong lewat
