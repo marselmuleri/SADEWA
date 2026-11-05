@@ -65,7 +65,8 @@ SADEWA/
 │   └── tests/
 ├── docs/PRD/                  # PRD dan design system
 ├── docker-compose.yml         # postgres + backend + ai-service
-└── start.ps1                  # Menjalankan 3 service sekaligus (Windows)
+├── start.ps1                  # Menjalankan 3 service sekaligus (Windows)
+└── start.sh                   # Menjalankan 3 service sekaligus (macOS / Linux)
 ```
 
 Dokumentasi khusus modul AI ada di [`ai/README.md`](ai/README.md).
@@ -97,25 +98,82 @@ Dokumentasi khusus modul AI ada di [`ai/README.md`](ai/README.md).
 
 Ada tiga cara. Pilih salah satu.
 
-### Opsi A — Windows: `start.ps1` (paling cepat)
+### Opsi A — Windows: `start.ps1` / macOS & Linux: `start.sh` (paling cepat)
 
-`start.ps1` mengharapkan virtual environment bernama `venv` berada **satu tingkat di atas folder `SADEWA/`**, yaitu `..\venv`.
+`start.ps1` (Windows) dan `start.sh` (macOS/Linux) mengharapkan virtual environment bernama `venv` berada **satu tingkat di atas folder `SADEWA/`**, yaitu `../venv`.
 
 ```powershell
-# Dari folder induk SADEWA/
+# Windows — dari folder induk SADEWA/
 python -m venv venv
 venv\Scripts\pip install -e "SADEWA/ai[api]"
 venv\Scripts\pip install -r SADEWA\backend\requirements.txt
 ```
 
+```bash
+# macOS / Linux — dari folder induk SADEWA/
+python3 -m venv venv
+venv/bin/pip install -e "SADEWA/ai[api]"
+venv/bin/pip install -r SADEWA/backend/requirements.txt
+```
+
 Siapkan file `.env` (lihat [Konfigurasi Environment](#konfigurasi-environment)), bangun knowledge base dan seed database (lihat Opsi B langkah 3–5), lalu:
 
 ```powershell
+# Windows
 cd SADEWA
 .\start.ps1
 ```
 
-Script membuka tiga jendela terminal: AI Service (8001), Backend (8000), dan Frontend (5173). Tutup ketiga jendela untuk menghentikan semuanya.
+```bash
+# macOS / Linux
+cd SADEWA
+chmod +x start.sh   # hanya pertama kali
+./start.sh
+```
+
+**Windows:** Script membuka 3 jendela terminal terpisah. Tutup ketiga jendela untuk menghentikan semuanya.
+
+**macOS:** Script membuka 3 tab baru di Terminal. Tutup ketiga tab untuk menghentikan semuanya.
+
+**Linux:** Script menjalankan ketiga service di background dalam satu terminal. Tekan `Ctrl+C` untuk menghentikan semuanya sekaligus.
+
+`start.ps1` (Windows) dan `start.sh` (macOS/Linux) mengharapkan virtual environment bernama `venv` berada **satu tingkat di atas folder `SADEWA/`**, yaitu `../venv`.
+
+```powershell
+# Windows — dari folder induk SADEWA/
+python -m venv venv
+venv\Scripts\pip install -e "SADEWA/ai[api]"
+venv\Scripts\pip install -r SADEWA\backend\requirements.txt
+```
+
+```bash
+# macOS / Linux — dari folder induk SADEWA/
+python3 -m venv venv
+venv/bin/pip install -e "SADEWA/ai[api]"
+venv/bin/pip install -r SADEWA/backend/requirements.txt
+```
+
+Siapkan file `.env` (lihat [Konfigurasi Environment](#konfigurasi-environment)), bangun knowledge base dan seed database (lihat Opsi B langkah 3–5), lalu:
+
+```powershell
+# Windows
+cd SADEWA
+.\start.ps1
+```
+
+```bash
+# macOS / Linux
+cd SADEWA
+chmod +x start.sh   # hanya pertama kali
+./start.sh
+```
+
+**Windows:** Script membuka 3 jendela terminal terpisah. Tutup ketiga jendela untuk menghentikan semuanya.
+
+**macOS:** Script membuka 3 tab baru di Terminal. Tutup ketiga tab untuk menghentikan semuanya.
+
+**Linux:** Script menjalankan ketiga service di background dalam satu terminal. Tekan `Ctrl+C` untuk menghentikan semuanya sekaligus.
+
 
 ### Opsi B — Manual (semua OS)
 
