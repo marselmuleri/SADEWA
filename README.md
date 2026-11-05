@@ -2,7 +2,7 @@
 
 **Sistem Analisis Data Evaluasi Wawasan Akademik** — aplikasi web multi-tenant untuk evaluasi **Outcome-Based Education (OBE)** dan penyusunan dokumen akademik (RPS dan laporan evaluasi) dengan bantuan AI.
 
-> Rancang Bangun Sistem Analisis Data Evaluasi Wawasan Akademik (SADEWA) Berbasis Web Menggunakan Random Forest dan Asisten Cerdas LLM pada Lingkungan Outcome-Based Education
+> Rancang Bangun Sistem Analisis Data Evaluasi Wawasan Akademik (SADEWA) Berbasis Web dengan Asisten Cerdas LLM pada Lingkungan Outcome-Based Education
 
 Dokumen perancangan lengkap ada di [`docs/PRD/PRD_SADEWA_v2.1.md`](docs/PRD/PRD_SADEWA_v2.1.md) dan [`docs/PRD/design/DESIGN.md`](docs/PRD/design/DESIGN.md).
 
@@ -85,8 +85,6 @@ Dokumentasi khusus modul AI ada di [`ai/README.md`](ai/README.md).
 | Generate RPS 16 pertemuan (RAG + Qwen) | Berjalan, perlu AI Service dan API key |
 | Generate narasi evaluasi dan laporan evaluasi, alur submit → approve/reject | Berjalan, perlu AI Service dan API key |
 | Sinkronisasi SIAP UNDIP | **Belum tersedia.** Endpoint hanya mencatat log `not_configured`, gunakan input manual |
-| Prediksi/early warning berbasis Random Forest | **Belum diimplementasikan di backend.** Komponen UI sudah ada, model ML belum |
-| Chatbot asisten | **Belum diimplementasikan di backend.** Frontend memanggil `/chatbot/tanya` yang belum ada |
 
 ## Prasyarat
 
