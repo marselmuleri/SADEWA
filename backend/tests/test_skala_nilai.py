@@ -210,10 +210,68 @@ def test_snapshot_nilai_final_tidak_berubah_saat_skala_diedit(client):
     Setelah nilai mahasiswa difinalkan ("Set Nilai Final"), kolom nilai_huruf
     tersimpan sebagai snapshot permanen. Mengubah skala kurikulum setelah itu
     TIDAK boleh mengubah nilai_huruf yang sudah final.
+    Catatan Pengecualian (b): Disesuaikan dengan kontrak finalisasi per peserta baru (K-B).
     """
     data = _setup_kurikulum_env(client)
     admin_token = data["admin_token"]
     kur_id = data["kur_2024"]["id"]
+
+    # Setup kelengkapan OBE agar mata kuliah siap dinilai
+    cpl = client.post("/api/v1/cpl", json={"kurikulum_version_id": kur_id, "kode": "CPL-SNAP", "deskripsi": "Desk CPL"}, headers=_auth_headers(admin_token)).json()
+    ik = client.post("/api/v1/ik", json={"cpl_id": cpl["id"], "kode": "IK-SNAP", "deskripsi": "Desk IK"}, headers=_auth_headers(admin_token)).json()
+
+    mk = client.post("/api/v1/mata-kuliah", json={
+        "kode": "MK-SNAP",
+        "nama": "Mata Kuliah Snapshot",
+        "sks": 3,
+        "semester": "Ganjil",
+        "tahun_ajaran": "2025/2026",
+        "kurikulum_version_id": kur_id,
+    }, headers=_auth_headers(admin_token)).json()
+
+    # Assign dosen IF sebagai pengampu mata kuliah (syarat siap dinilai C7)
+    users_list = client.get("/api/v1/users", headers=_auth_headers(admin_token)).json()
+    dosen_user = [u for u in users_list if u["email"] == "dosen_if_skala@undip.ac.id"][0]
+    client.post("/api/v1/pengampu-mata-kuliah", json={
+        "mata_kuliah_id": mk["id"],
+        "user_id": dosen_user["id"],
+        "is_koordinator": True,
+    }, headers=_auth_headers(admin_token))
+
+    cpmk = client.post("/api/v1/cpmk", json={
+        "mata_kuliah_id": mk["id"],
+        "kode": "CPMK-SNAP",
+        "deskripsi": "Desk CPMK",
+        "level_taksonomi": "C3",
+        "bobot": 100.0,
+    }, headers=_auth_headers(admin_token)).json()
+    client.put(f"/api/v1/cpmk/{cpmk['id']}/map-ik", json={"mappings": [{"ik_id": ik["id"], "bobot": 100.0}]}, headers=_auth_headers(admin_token))
+
+    je = client.post("/api/v1/jenis-evaluasi", json={"nama": "Evaluasi", "urutan": 1}, headers=_auth_headers(admin_token)).json()
+    bp = client.post("/api/v1/bentuk-penilaian", json={"jenis_evaluasi_id": je["id"], "nama": "Ujian Final"}, headers=_auth_headers(admin_token)).json()
+    mk_bp = client.post("/api/v1/mk-bentuk-penilaian", json={
+        "mata_kuliah_id": mk["id"],
+        "bentuk_penilaian_id": bp["id"],
+        "bobot": 100.0,
+        "semester": "Ganjil",
+    }, headers=_auth_headers(admin_token)).json()
+
+    client.put(f"/api/v1/mk-bentuk-penilaian/{mk_bp['id']}/map-ik", json={
+        "mappings": [{"ik_id": ik["id"], "bobot": 100.0}],
+    }, headers=_auth_headers(admin_token))
+
+    mhs = client.post("/api/v1/mahasiswa", json={
+        "nim": "240601240099",
+        "nama": "Mahasiswa Snapshot",
+        "semester_aktif": 1,
+        "status_masuk": "Reguler",
+    }, headers=_auth_headers(admin_token)).json()
+
+    peserta = client.post("/api/v1/peserta-mata-kuliah", json={
+        "mata_kuliah_id": mk["id"],
+        "mahasiswa_id": mhs["id"],
+        "kelas": "A",
+    }, headers=_auth_headers(admin_token)).json()
 
     # Simpan skala awal: A >= 80, B >= 70, E >= 0
     client.post(f"/api/v1/kurikulum/versions/{kur_id}/skala-nilai", json={"skala": [
@@ -222,14 +280,27 @@ def test_snapshot_nilai_final_tidak_berubah_saat_skala_diedit(client):
         {"huruf": "E", "batas_min": 0},
     ]}, headers=_auth_headers(admin_token))
 
-    # Simulasi finalisasi hasil (endpoint finalisasi nilai OBE)
-    # Nilai akhir = 82 -> snapshot huruf = "A"
-    fin_resp = client.post(f"/api/v1/kalkulasi/finalize", json={
-        "kurikulum_version_id": kur_id,
-        "nilai_akhir": 82.0,
+    # Input nilai peserta: 82.0 (sehingga nilai akhir = 82.0 -> "A")
+    inp_resp = client.post("/api/v1/nilai/manual", json={
+        "mk_id": mk["id"],
+        "semester": "Ganjil",
+        "records": [{
+            "peserta_mata_kuliah_id": peserta["id"],
+            "mk_bentuk_penilaian_id": mk_bp["id"],
+            "ik_id": ik["id"],
+            "nilai": 82.0,
+        }],
     }, headers=_auth_headers(admin_token))
+    assert inp_resp.status_code == 200
 
-    # Perbarui skala kurikulum sehingga A >= 85 (82 sekarang harusnya jadi B)
+    # Finalisasi nilai peserta via endpoint baru K-B
+    fin_resp = client.post(f"/api/v1/kalkulasi/peserta/{peserta['id']}/finalize", headers=_auth_headers(admin_token))
+    assert fin_resp.status_code == 200
+    hasil_data = fin_resp.json()
+    assert hasil_data["nilai_huruf"] == "A"
+    assert hasil_data["is_final"] is True
+
+    # Perbarui skala kurikulum sehingga A >= 85 (82 sekarang seharusnya jadi B)
     client.post(f"/api/v1/kurikulum/versions/{kur_id}/skala-nilai", json={"skala": [
         {"huruf": "A", "batas_min": 85},
         {"huruf": "B", "batas_min": 70},
@@ -237,11 +308,7 @@ def test_snapshot_nilai_final_tidak_berubah_saat_skala_diedit(client):
     ]}, headers=_auth_headers(admin_token))
 
     # Cek hasil tersimpan sebelumnya: huruf tetap 'A' (snapshot)
-    if fin_resp.status_code in (200, 201):
-        hasil_id = fin_resp.json()["id"]
-        detail = client.get(f"/api/v1/kalkulasi/hasil/{hasil_id}", headers=_auth_headers(admin_token)).json()
-        assert detail["nilai_huruf"] == "A"
-    else:
-        # Jika endpoint finalize belum dibuat, respon adalah 404 (fitur belum ada)
-        assert fin_resp.status_code == 404
+    detail = client.get(f"/api/v1/kalkulasi/hasil/{hasil_data['id']}", headers=_auth_headers(admin_token)).json()
+    assert detail["nilai_huruf"] == "A"
+
 

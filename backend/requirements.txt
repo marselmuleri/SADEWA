@@ -6,6 +6,8 @@ psycopg2-binary
 python-jose[cryptography]
 passlib[bcrypt]
 pydantic[email]
+pydantic-settings
+openai
 pandas
 numpy
 scikit-learn

@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import AcademicScope, get_academic_scope, require_roles
 from app.models.bentuk_penilaian import BentukPenilaian
 from app.models.enums import UserRole
 from app.models.jenis_evaluasi import JenisEvaluasi
+from app.models.mk_bentuk_penilaian import MKBentukPenilaian
 from app.models.program_studi import ProgramStudi
 from app.models.user import User
 from app.schemas.bentuk_penilaian import (
@@ -32,6 +34,13 @@ def create(
         raise HTTPException(status_code=404, detail="Jenis evaluasi tidak ditemukan")
     if jenis.program_studi_id != prodi_id:
         raise HTTPException(status_code=403, detail="Jenis evaluasi ini di luar prodi Anda")
+
+    existing = db.query(BentukPenilaian).filter(
+        BentukPenilaian.jenis_evaluasi_id == payload.jenis_evaluasi_id,
+        BentukPenilaian.nama == payload.nama,
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Bentuk penilaian dengan nama '{payload.nama}' sudah ada pada jenis evaluasi ini")
 
     data = BentukPenilaian(**payload.model_dump())
     db.add(data)
@@ -108,6 +117,20 @@ def delete(
     if data.jenis_evaluasi.program_studi_id != prodi_id:
         raise HTTPException(status_code=403, detail="Tidak boleh menghapus data di luar prodi Anda")
 
-    db.delete(data)
-    db.commit()
+    used_in_mk = db.query(MKBentukPenilaian).filter(MKBentukPenilaian.bentuk_penilaian_id == id).first()
+    if used_in_mk:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Bentuk penilaian '{data.nama}' tidak dapat dihapus karena masih digunakan pada penilaian mata kuliah."
+        )
+
+    try:
+        db.delete(data)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail=f"Bentuk penilaian '{data.nama}' tidak dapat dihapus karena masih memiliki relasi data."
+        )
     return {"message": "Bentuk penilaian berhasil dihapus"}

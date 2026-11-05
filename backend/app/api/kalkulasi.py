@@ -6,25 +6,29 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import AcademicScope, get_academic_scope, require_roles
+from app.models.cpmk import CPMK
+from app.models.cpmk_ik_map import CPMKIKMap
 from app.models.enums import UserRole
 from app.models.hasil_evaluasi import HasilEvaluasi
+from app.models.ik import IK
 from app.models.ik_achievement import IKAchievement
 from app.models.mata_kuliah import MataKuliah
+from app.models.mk_bentuk_penilaian import MKBentukPenilaian
+from app.models.mk_bentuk_penilaian_ik_map import MKBentukPenilaianIKMap
+from app.models.nilai_bentuk_penilaian import NilaiBentukPenilaian
 from app.models.pengampu_mata_kuliah import PengampuMataKuliah
+from app.models.peserta_mata_kuliah import PesertaMataKuliah
 from app.models.skala_nilai import SkalaNilai
 from app.models.user import User
 from app.schemas.kalkulasi import KalkulasiRunResponse, ValidasiBobotResponse, ValidasiBobotRequest
-from app.services.calculation.engine import run_kalkulasi, validasi_bobot_mata_kuliah
-from app.services.calculation.obe_formula import pilih_huruf
+from app.services.calculation.engine import cek_siap_dinilai, run_kalkulasi, validasi_bobot_mata_kuliah
+from app.services.calculation.obe_formula import compute_result, pilih_huruf
 
 router = APIRouter()
 
 
-class FinalizeRequest(BaseModel):
-    kurikulum_version_id: int
-    nilai_akhir: Decimal
-    peserta_mata_kuliah_id: int | None = None
-    mata_kuliah_id: int | None = None
+class UnlockRequest(BaseModel):
+    alasan: str
 
 
 def _check_write_access(db: Session, user: User, mata_kuliah_id: int) -> MataKuliah:
@@ -97,43 +101,166 @@ def run(
     return result
 
 
-@router.post("/finalize")
-def finalize_nilai(
-    payload: FinalizeRequest,
+@router.post("/peserta/{peserta_mata_kuliah_id}/finalize")
+def finalize_peserta(
+    peserta_mata_kuliah_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.kaprodi, UserRole.dosen)),
 ):
     """
-    Finalisasi nilai OBE mahasiswa:
-    Menghitung snapshot huruf berdasarkan konfigurasi skala kurikulum saat finalisasi,
-    lalu menyimpan snapshot tersebut secara permanen.
+    Finalisasi nilai OBE per peserta:
+    Nilai dihitung oleh server dari nilai tersimpan; disimpan sebagai snapshot.
     """
-    skala_rows = (
-        db.query(SkalaNilai)
-        .filter(SkalaNilai.kurikulum_version_id == payload.kurikulum_version_id)
-        .order_by(SkalaNilai.batas_min.desc())
-        .all()
-    )
-    skala_list = [(s.huruf, s.batas_min) for s in skala_rows]
-    huruf_snapshot = pilih_huruf(payload.nilai_akhir, skala_list)
+    peserta = db.query(PesertaMataKuliah).filter(PesertaMataKuliah.id == peserta_mata_kuliah_id).first()
+    if not peserta:
+        raise HTTPException(status_code=404, detail="Peserta mata kuliah tidak ditemukan")
 
-    hasil = HasilEvaluasi(
-        peserta_mata_kuliah_id=payload.peserta_mata_kuliah_id,
-        kurikulum_version_id=payload.kurikulum_version_id,
-        nilai_akhir=payload.nilai_akhir,
-        nilai_huruf=huruf_snapshot,
-        is_final=True,
-        finalized_at=datetime.now(timezone.utc),
-        finalized_by=user.id,
-    )
-    db.add(hasil)
+    mk = peserta.mata_kuliah
+    if user.role in (UserRole.admin_prodi, UserRole.kaprodi):
+        if mk.program_studi_id != user.program_studi_id:
+            raise HTTPException(status_code=403, detail="Mata kuliah ini di luar prodi Anda")
+    elif user.role == UserRole.dosen:
+        is_pengampu = db.query(PengampuMataKuliah).filter(
+            PengampuMataKuliah.mata_kuliah_id == mk.id,
+            PengampuMataKuliah.user_id == user.id,
+        ).first()
+        if not is_pengampu:
+            raise HTTPException(status_code=403, detail="Anda bukan dosen pengampu mata kuliah ini")
+
+    # 1. Cek kesiapan penilaian mata kuliah
+    issues = cek_siap_dinilai(db, mk.id)
+    if issues:
+        raise HTTPException(status_code=400, detail=f"Mata kuliah belum siap dinilai: {'; '.join(issues)}")
+
+    # 2. Cek apakah peserta memiliki nilai tersimpan
+    scores = db.query(NilaiBentukPenilaian).filter(NilaiBentukPenilaian.peserta_mata_kuliah_id == peserta.id).all()
+    if not scores:
+        raise HTTPException(status_code=400, detail="Peserta belum memiliki nilai tersimpan")
+
+    # 3. Cek skala nilai kurikulum
+    skala_rows = []
+    if mk.kurikulum_version_id:
+        skala_rows = (
+            db.query(SkalaNilai)
+            .filter(SkalaNilai.kurikulum_version_id == mk.kurikulum_version_id)
+            .order_by(SkalaNilai.batas_min.desc())
+            .all()
+        )
+    if not skala_rows:
+        raise HTTPException(status_code=400, detail="Kurikulum belum memiliki konfigurasi skala nilai huruf")
+    skala_list = [(s.huruf, s.batas_min) for s in skala_rows]
+
+    # 4. Idempotensi: tolak bila sudah final
+    existing = db.query(HasilEvaluasi).filter(HasilEvaluasi.peserta_mata_kuliah_id == peserta.id).first()
+    if existing and existing.is_final:
+        raise HTTPException(status_code=409, detail="Nilai peserta sudah difinalisasi")
+
+    # 5. Hitung nilai secara deterministik menggunakan pipeline yang sama
+    mbp_list = db.query(MKBentukPenilaian).filter(MKBentukPenilaian.mata_kuliah_id == mk.id).all()
+    cpmk_list = db.query(CPMK).filter(CPMK.mata_kuliah_id == mk.id).all()
+
+    matrix: dict[int, dict[int, Decimal]] = {}
+    ik_ids_in_mk: set[int] = set()
+    for mbp in mbp_list:
+        matrix[mbp.id] = {}
+        maps = db.query(MKBentukPenilaianIKMap).filter(MKBentukPenilaianIKMap.mk_bentuk_penilaian_id == mbp.id).all()
+        for m in maps:
+            matrix[mbp.id][m.ik_id] = m.bobot
+            ik_ids_in_mk.add(m.ik_id)
+
+    cpmk_ik: dict[int, dict[int, Decimal]] = {}
+    for cpmk in cpmk_list:
+        cpmk_ik[cpmk.id] = {}
+        maps = db.query(CPMKIKMap).filter(CPMKIKMap.cpmk_id == cpmk.id).all()
+        for m in maps:
+            cpmk_ik[cpmk.id][m.ik_id] = m.bobot
+            ik_ids_in_mk.add(m.ik_id)
+
+    ik_to_cpl = {ik.id: ik.cpl_id for ik in db.query(IK).filter(IK.id.in_(ik_ids_in_mk)).all()} if ik_ids_in_mk else {}
+
+    nilai_dict: dict[int, dict[int, Decimal]] = {}
+    for n in scores:
+        if n.ik_id is not None:
+            nilai_dict.setdefault(n.mk_bentuk_penilaian_id, {})[n.ik_id] = n.nilai
+
+    hasil_obe = compute_result(cpmk_ik=cpmk_ik, matrix=matrix, nilai=nilai_dict, ik_cpl=ik_to_cpl)
+    nilai_akhir = hasil_obe.nilai_akhir
+    nilai_huruf = pilih_huruf(nilai_akhir, skala_list)
+
+    if existing:
+        existing.nilai_akhir = nilai_akhir
+        existing.nilai_huruf = nilai_huruf
+        existing.nilai_bobot = nilai_akhir
+        existing.status_outcome = "Tercapai" if nilai_akhir >= Decimal("70") else "Tidak Tercapai"
+        existing.is_final = True
+        existing.finalized_at = datetime.now(timezone.utc)
+        existing.finalized_by = user.id
+        hasil = existing
+    else:
+        hasil = HasilEvaluasi(
+            peserta_mata_kuliah_id=peserta.id,
+            kurikulum_version_id=mk.kurikulum_version_id,
+            nilai_akhir=nilai_akhir,
+            nilai_huruf=nilai_huruf,
+            nilai_bobot=nilai_akhir,
+            status_outcome="Tercapai" if nilai_akhir >= Decimal("70") else "Tidak Tercapai",
+            is_final=True,
+            finalized_at=datetime.now(timezone.utc),
+            finalized_by=user.id,
+        )
+        db.add(hasil)
+
     db.commit()
     db.refresh(hasil)
     return {
         "id": hasil.id,
+        "peserta_mata_kuliah_id": hasil.peserta_mata_kuliah_id,
         "nilai_huruf": hasil.nilai_huruf,
         "nilai_akhir": float(hasil.nilai_akhir) if hasil.nilai_akhir is not None else 0.0,
         "is_final": hasil.is_final,
+        "finalized_at": hasil.finalized_at,
+    }
+
+
+@router.post("/peserta/{peserta_mata_kuliah_id}/unlock")
+def unlock_peserta(
+    peserta_mata_kuliah_id: int,
+    payload: UnlockRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.kaprodi)),
+):
+    """
+    Membuka kunci nilai peserta:
+    Hanya boleh dilakukan oleh Admin Prodi dan Kaprodi, dengan alasan yang wajib diisi.
+    """
+    peserta = db.query(PesertaMataKuliah).filter(PesertaMataKuliah.id == peserta_mata_kuliah_id).first()
+    if not peserta:
+        raise HTTPException(status_code=404, detail="Peserta mata kuliah tidak ditemukan")
+
+    mk = peserta.mata_kuliah
+    if mk.program_studi_id != user.program_studi_id:
+        raise HTTPException(status_code=403, detail="Mata kuliah ini di luar prodi Anda")
+
+    if not payload.alasan or not payload.alasan.strip():
+        raise HTTPException(status_code=400, detail="Alasan pembukaan kunci wajib diisi")
+
+    hasil = db.query(HasilEvaluasi).filter(HasilEvaluasi.peserta_mata_kuliah_id == peserta.id).first()
+    if not hasil or not hasil.is_final:
+        raise HTTPException(status_code=400, detail="Nilai peserta belum difinalisasi")
+
+    hasil.is_final = False
+    hasil.unlocked_at = datetime.now(timezone.utc)
+    hasil.unlocked_by = user.id
+    hasil.alasan_buka = payload.alasan.strip()
+    db.commit()
+    db.refresh(hasil)
+
+    return {
+        "id": hasil.id,
+        "peserta_mata_kuliah_id": hasil.peserta_mata_kuliah_id,
+        "is_final": hasil.is_final,
+        "unlocked_at": hasil.unlocked_at,
+        "alasan_buka": hasil.alasan_buka,
     }
 
 

@@ -5,6 +5,7 @@ from app.schemas.common import ORMBaseModel
 class JenisEvaluasiBase(BaseModel):
     nama: str
     urutan: int | None = None
+    bobot: float | None = None
 
 
 class JenisEvaluasiCreate(JenisEvaluasiBase):
@@ -14,6 +15,7 @@ class JenisEvaluasiCreate(JenisEvaluasiBase):
 class JenisEvaluasiUpdate(BaseModel):
     nama: str | None = None
     urutan: int | None = None
+    bobot: float | None = None
 
 
 class JenisEvaluasiResponse(JenisEvaluasiBase, ORMBaseModel):
