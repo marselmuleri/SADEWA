@@ -166,14 +166,16 @@ class AcademicScope:
         self.fakultas_id = fakultas_id
 
 
-def get_academic_scope(user: User = Depends(get_current_user)) -> AcademicScope:
+def get_academic_scope(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> AcademicScope:
     """
     Dipakai di endpoint READ data akademik (mata kuliah, cpl, ik, cpmk, dashboard,
     trending). Super Admin ditolak total (bukan wewenangnya, sesuai matriks akses).
     Admin Prodi & Kaprodi di-scope ke program_studi_id miliknya. Dekan di-scope ke
-    fakultas_id miliknya (lintas semua prodi di fakultas itu, view-only). Dosen
-    sementara tidak difilter di sini -- scope Dosen berbasis penugasan mata kuliah
-    (PengampuMataKuliah), akan ditangani terpisah per endpoint yang relevan.
+    fakultas_id miliknya (lintas semua prodi di fakultas itu, view-only).
+    Dosen di-scope ke program_studi_id miliknya (atau diturunkan dari mata kuliah yang diampu).
     """
     if user.role == UserRole.super_admin:
         raise HTTPException(status_code=403, detail="Super Admin tidak memiliki akses ke data akademik")
@@ -185,4 +187,11 @@ def get_academic_scope(user: User = Depends(get_current_user)) -> AcademicScope:
         if not user.fakultas_id:
             raise HTTPException(status_code=400, detail="Akun ini belum terhubung ke Fakultas manapun")
         return AcademicScope(user, fakultas_id=user.fakultas_id)
-    return AcademicScope(user)  # dosen: belum difilter di sini
+    if user.role == UserRole.dosen:
+        prodi_id = user.program_studi_id
+        if not prodi_id:
+            pengampu = db.query(PengampuMataKuliah).join(MataKuliah).filter(PengampuMataKuliah.user_id == user.id).first()
+            if pengampu and pengampu.mata_kuliah:
+                prodi_id = pengampu.mata_kuliah.program_studi_id
+        return AcademicScope(user, program_studi_id=prodi_id)
+    return AcademicScope(user)

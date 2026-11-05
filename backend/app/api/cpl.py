@@ -56,6 +56,16 @@ def create_cpl(
     user: User = Depends(require_roles(UserRole.admin_prodi)),
 ):
     prodi_id = _require_prodi_scope(user)
+    existing = db.query(CPL).filter(
+        CPL.program_studi_id == prodi_id,
+        CPL.kurikulum_version_id == payload.kurikulum_version_id,
+        CPL.kode == payload.kode,
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"CPL dengan kode '{payload.kode}' sudah ada pada kurikulum ini"
+        )
     data = CPL(**{**payload.model_dump(), "program_studi_id": prodi_id}, created_by=user.id)
     db.add(data)
     db.commit()

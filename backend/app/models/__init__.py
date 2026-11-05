@@ -26,3 +26,5 @@ from app.models.laporan_evaluasi import LaporanEvaluasi
 from app.models.siap_sync_log import SiapSyncLog
 from app.models.dokumen import Dokumen
 from app.models.skala_nilai import SkalaNilai
+from app.models.range_nilai_cpl import RangeNilaiCPL
+

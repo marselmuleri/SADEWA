@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import AcademicScope, get_academic_scope, require_roles
 from app.models.enums import UserRole
+from app.models.hasil_evaluasi import HasilEvaluasi
 from app.models.mata_kuliah import MataKuliah
 from app.models.mk_bentuk_penilaian import MKBentukPenilaian
 from app.models.mk_bentuk_penilaian_ik_map import MKBentukPenilaianIKMap
@@ -80,7 +81,14 @@ def get_sync_logs(mk_id: int, db: Session = Depends(get_db), scope: AcademicScop
     mk = db.query(MataKuliah).filter(MataKuliah.id == mk_id).first()
     if not mk:
         raise HTTPException(status_code=404, detail="Mata kuliah tidak ditemukan")
-    if scope.program_studi_id and mk.program_studi_id != scope.program_studi_id:
+    if scope.user.role == UserRole.dosen:
+        is_pengampu = db.query(PengampuMataKuliah).filter(
+            PengampuMataKuliah.mata_kuliah_id == mk_id,
+            PengampuMataKuliah.user_id == scope.user.id,
+        ).first()
+        if not is_pengampu:
+            raise HTTPException(status_code=403, detail="Anda bukan dosen pengampu mata kuliah ini")
+    elif scope.program_studi_id and mk.program_studi_id != scope.program_studi_id:
         raise HTTPException(status_code=403, detail="Mata kuliah ini di luar prodi Anda")
     if scope.fakultas_id and mk.program_studi.fakultas_id != scope.fakultas_id:
         raise HTTPException(status_code=403, detail="Mata kuliah ini di luar fakultas Anda")
@@ -105,6 +113,14 @@ def input_manual(payload: NilaiManualInput, db: Session = Depends(get_db), user:
         # Validasi rentang nilai 0..100 (C8)
         if record.nilai < Decimal("0") or record.nilai > Decimal("100"):
             raise HTTPException(status_code=400, detail="Nilai harus berada dalam rentang 0 sampai 100")
+
+        # Validasi peserta tidak terkunci karena sudah difinalisasi
+        he = db.query(HasilEvaluasi).filter(HasilEvaluasi.peserta_mata_kuliah_id == record.peserta_mata_kuliah_id).first()
+        if he and he.is_final:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Peserta ID {record.peserta_mata_kuliah_id} telah difinalisasi dan nilai terkunci. Buka kunci terlebih dahulu untuk mengoreksi nilai.",
+            )
 
         key = (record.peserta_mata_kuliah_id, record.mk_bentuk_penilaian_id, record.ik_id)
         if key in seen_keys:
@@ -161,7 +177,14 @@ def get_nilai(mk_id: int, db: Session = Depends(get_db), scope: AcademicScope = 
     mk = db.query(MataKuliah).filter(MataKuliah.id == mk_id).first()
     if not mk:
         raise HTTPException(status_code=404, detail="Mata kuliah tidak ditemukan")
-    if scope.program_studi_id and mk.program_studi_id != scope.program_studi_id:
+    if scope.user.role == UserRole.dosen:
+        is_pengampu = db.query(PengampuMataKuliah).filter(
+            PengampuMataKuliah.mata_kuliah_id == mk_id,
+            PengampuMataKuliah.user_id == scope.user.id,
+        ).first()
+        if not is_pengampu:
+            raise HTTPException(status_code=403, detail="Anda bukan dosen pengampu mata kuliah ini")
+    elif scope.program_studi_id and mk.program_studi_id != scope.program_studi_id:
         raise HTTPException(status_code=403, detail="Mata kuliah ini di luar prodi Anda")
     if scope.fakultas_id and mk.program_studi.fakultas_id != scope.fakultas_id:
         raise HTTPException(status_code=403, detail="Mata kuliah ini di luar fakultas Anda")
@@ -175,6 +198,12 @@ def update_nilai(nilai_id: int, payload: NilaiUpdate, db: Session = Depends(get_
         raise HTTPException(status_code=404, detail="Nilai tidak ditemukan")
     mk_id = _mata_kuliah_id_of_mk_bentuk_penilaian(db, data.mk_bentuk_penilaian_id)
     _check_write_access(db, user, mk_id)
+    he = db.query(HasilEvaluasi).filter(HasilEvaluasi.peserta_mata_kuliah_id == data.peserta_mata_kuliah_id).first()
+    if he and he.is_final:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Peserta ID {data.peserta_mata_kuliah_id} telah difinalisasi dan nilai terkunci. Buka kunci terlebih dahulu untuk mengoreksi nilai.",
+        )
     data.nilai = payload.nilai
     db.commit()
     db.refresh(data)
@@ -188,6 +217,12 @@ def delete_nilai(nilai_id: int, db: Session = Depends(get_db), user: User = Depe
         raise HTTPException(status_code=404, detail="Nilai tidak ditemukan")
     mk_id = _mata_kuliah_id_of_mk_bentuk_penilaian(db, data.mk_bentuk_penilaian_id)
     _check_write_access(db, user, mk_id)
+    he = db.query(HasilEvaluasi).filter(HasilEvaluasi.peserta_mata_kuliah_id == data.peserta_mata_kuliah_id).first()
+    if he and he.is_final:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Peserta ID {data.peserta_mata_kuliah_id} telah difinalisasi dan nilai terkunci. Buka kunci terlebih dahulu untuk menghapus nilai.",
+        )
     db.delete(data)
     db.commit()
     return {"message": "Nilai dihapus"}

@@ -10,6 +10,7 @@ class Mahasiswa(Base):
     nim = Column(String)
     nama = Column(String)
     semester_aktif = Column(SmallInteger)
+    angkatan = Column(SmallInteger, nullable=True)
     status_masuk = Column(SAEnum(StatusMasuk, name="status_masuk_enum", values_callable=lambda e: [x.value for x in e]))
     program_studi_id = Column(BigInteger, ForeignKey("program_studi.id"))
     is_active = Column(Boolean, default=True, nullable=False)

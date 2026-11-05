@@ -47,6 +47,12 @@ def assign_pengampu(
     if existing:
         raise HTTPException(status_code=400, detail="Dosen ini sudah menjadi pengampu mata kuliah ini")
 
+    if payload.is_koordinator:
+        db.query(PengampuMataKuliah).filter(
+            PengampuMataKuliah.mata_kuliah_id == payload.mata_kuliah_id,
+            PengampuMataKuliah.is_koordinator == "1",
+        ).update({"is_koordinator": "0"})
+
     data = PengampuMataKuliah(
         mata_kuliah_id=payload.mata_kuliah_id,
         user_id=payload.user_id,
@@ -60,18 +66,24 @@ def assign_pengampu(
 
 @router.get("", response_model=list[PengampuMataKuliahResponse])
 def list_pengampu(
-    mata_kuliah_id: int,
+    mata_kuliah_id: int | None = None,
+    user_id: int | None = None,
     db: Session = Depends(get_db),
     scope: AcademicScope = Depends(get_academic_scope),
 ):
-    mk = db.query(MataKuliah).filter(MataKuliah.id == mata_kuliah_id).first()
-    if not mk:
-        raise HTTPException(status_code=404, detail="Mata kuliah tidak ditemukan")
-    if scope.program_studi_id and mk.program_studi_id != scope.program_studi_id:
-        raise HTTPException(status_code=403, detail="Mata kuliah ini di luar prodi Anda")
-    if scope.fakultas_id and mk.program_studi.fakultas_id != scope.fakultas_id:
-        raise HTTPException(status_code=403, detail="Mata kuliah ini di luar fakultas Anda")
-    return db.query(PengampuMataKuliah).filter(PengampuMataKuliah.mata_kuliah_id == mata_kuliah_id).all()
+    query = db.query(PengampuMataKuliah).join(MataKuliah)
+    if mata_kuliah_id:
+        query = query.filter(PengampuMataKuliah.mata_kuliah_id == mata_kuliah_id)
+    if user_id:
+        query = query.filter(PengampuMataKuliah.user_id == user_id)
+    elif scope.user.role == UserRole.dosen and not mata_kuliah_id:
+        query = query.filter(PengampuMataKuliah.user_id == scope.user.id)
+
+    if scope.program_studi_id:
+        query = query.filter(MataKuliah.program_studi_id == scope.program_studi_id)
+    elif scope.fakultas_id:
+        query = query.join(ProgramStudi, MataKuliah.program_studi_id == ProgramStudi.id).filter(ProgramStudi.fakultas_id == scope.fakultas_id)
+    return query.all()
 
 
 @router.put("/{id}", response_model=PengampuMataKuliahResponse)
@@ -85,6 +97,12 @@ def update_pengampu(
     if not data:
         raise HTTPException(status_code=404, detail="Data pengampu tidak ditemukan")
     _require_mata_kuliah_in_own_prodi(db, user, data.mata_kuliah_id)
+    if payload.is_koordinator:
+        db.query(PengampuMataKuliah).filter(
+            PengampuMataKuliah.mata_kuliah_id == data.mata_kuliah_id,
+            PengampuMataKuliah.id != id,
+            PengampuMataKuliah.is_koordinator == "1",
+        ).update({"is_koordinator": "0"})
     data.is_koordinator = "1" if payload.is_koordinator else "0"
     db.commit()
     db.refresh(data)

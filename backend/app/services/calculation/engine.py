@@ -8,6 +8,7 @@ from app.models.cpmk_ik_map import CPMKIKMap
 from app.models.hasil_evaluasi import HasilEvaluasi
 from app.models.ik import IK
 from app.models.ik_achievement import IKAchievement
+from app.models.jenis_evaluasi import JenisEvaluasi
 from app.models.mata_kuliah import MataKuliah
 from app.models.mk_bentuk_penilaian import MKBentukPenilaian
 from app.models.mk_bentuk_penilaian_ik_map import MKBentukPenilaianIKMap
@@ -72,6 +73,16 @@ def cek_siap_dinilai(db: Session, mata_kuliah_id: int) -> list[str]:
             ik_obj = db.query(IK).filter(IK.id == ik_id).first()
             kode = ik_obj.kode if ik_obj else str(ik_id)
             issues.append(f"IK '{kode}' terdaftar dalam matriks bentuk penilaian tetapi tidak dimapping ke CPMK mata kuliah ini")
+
+    # 7. Total bobot Jenis Evaluasi prodi = 100% (jika prodi mengatur bobot jenis evaluasi)
+    mk = db.query(MataKuliah).filter(MataKuliah.id == mata_kuliah_id).first()
+    if mk and mk.program_studi_id:
+        je_list = db.query(JenisEvaluasi).filter(JenisEvaluasi.program_studi_id == mk.program_studi_id).all()
+        berbobot = [je for je in je_list if je.bobot is not None]
+        if berbobot:
+            total_je = sum(Decimal(str(je.bobot)) for je in berbobot)
+            if total_je != Decimal("100"):
+                issues.append(f"Total bobot Jenis Evaluasi prodi = {total_je}%, seharusnya 100%")
 
     return issues
 
@@ -216,6 +227,8 @@ def run_kalkulasi(db: Session, mata_kuliah_id: int) -> dict:
             ))
 
         # STEP D: Capaian CPL per mahasiswa
+        current_semester = mbp_list[0].semester if mbp_list else (mk.semester if mk else None)
+        mhs_angkatan = getattr(peserta.mahasiswa, "angkatan", None)
         for cpl_id, persen_cpl in hasil_obe.persen_cpl.items():
             existing_cpl = db.query(CPLAchievement).filter(
                 CPLAchievement.mahasiswa_id == peserta.mahasiswa_id,
@@ -223,11 +236,16 @@ def run_kalkulasi(db: Session, mata_kuliah_id: int) -> dict:
             ).first()
             if existing_cpl:
                 existing_cpl.nilai = persen_cpl
+                if current_semester:
+                    existing_cpl.semester = current_semester
+                if mhs_angkatan is not None:
+                    existing_cpl.angkatan = mhs_angkatan
             else:
                 db.add(CPLAchievement(
                     mahasiswa_id=peserta.mahasiswa_id,
                     cpl_id=cpl_id,
-                    semester=mbp_list[0].semester if mbp_list else None,
+                    semester=current_semester,
+                    angkatan=mhs_angkatan,
                     nilai=persen_cpl,
                 ))
 

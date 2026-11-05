@@ -7,8 +7,12 @@ from app.models.cpmk import CPMK
 from app.models.cpmk_ik_map import CPMKIKMap
 from app.models.ik import IK
 from app.models.enums import UserRole
+from app.models.hasil_evaluasi import HasilEvaluasi
 from app.models.mata_kuliah import MataKuliah
+from app.models.mk_bentuk_penilaian import MKBentukPenilaian
+from app.models.nilai_bentuk_penilaian import NilaiBentukPenilaian
 from app.models.pengampu_mata_kuliah import PengampuMataKuliah
+from app.models.peserta_mata_kuliah import PesertaMataKuliah
 from app.models.program_studi import ProgramStudi
 from app.models.user import User
 from app.schemas.cpmk import CPMKCreate, CPMKIKMapItem, CPMKMapIKRequest, CPMKResponse, CPMKUpdate
@@ -58,7 +62,10 @@ def list_cpmk(
     query = db.query(CPMK).join(MataKuliah)
     if mata_kuliah_id:
         query = query.filter(CPMK.mata_kuliah_id == mata_kuliah_id)
-    if scope.program_studi_id:
+    if scope.user.role == UserRole.dosen:
+        dosen_mk_ids = [p.mata_kuliah_id for p in db.query(PengampuMataKuliah).filter(PengampuMataKuliah.user_id == scope.user.id).all()]
+        query = query.filter(CPMK.mata_kuliah_id.in_(dosen_mk_ids))
+    elif scope.program_studi_id:
         query = query.filter(MataKuliah.program_studi_id == scope.program_studi_id)
     elif scope.fakultas_id:
         query = query.join(ProgramStudi, MataKuliah.program_studi_id == ProgramStudi.id).filter(ProgramStudi.fakultas_id == scope.fakultas_id)
@@ -156,7 +163,14 @@ def get_map_ik(
     cpmk = db.query(CPMK).filter(CPMK.id == cpmk_id).first()
     if not cpmk:
         raise HTTPException(status_code=404, detail="CPMK tidak ditemukan")
-    if scope.program_studi_id and cpmk.mata_kuliah.program_studi_id != scope.program_studi_id:
+    if scope.user.role == UserRole.dosen:
+        is_pengampu = db.query(PengampuMataKuliah).filter(
+            PengampuMataKuliah.mata_kuliah_id == cpmk.mata_kuliah_id,
+            PengampuMataKuliah.user_id == scope.user.id,
+        ).first()
+        if not is_pengampu:
+            raise HTTPException(status_code=403, detail="Anda bukan dosen pengampu mata kuliah ini")
+    elif scope.program_studi_id and cpmk.mata_kuliah.program_studi_id != scope.program_studi_id:
         raise HTTPException(status_code=403, detail="CPMK ini di luar prodi Anda")
     if scope.fakultas_id and cpmk.mata_kuliah.program_studi.fakultas_id != scope.fakultas_id:
         raise HTTPException(status_code=403, detail="CPMK ini di luar fakultas Anda")
@@ -166,3 +180,50 @@ def get_map_ik(
         CPMKIKMapItem(ik_id=m.ik_id, ik_kode=m.ik.kode, bobot=m.bobot)
         for m in mapping
     ]
+
+
+@router.delete("/{cpmk_id}")
+def delete_cpmk(
+    cpmk_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.kaprodi)),
+):
+    cpmk = db.query(CPMK).filter(CPMK.id == cpmk_id).first()
+    if not cpmk:
+        raise HTTPException(status_code=404, detail="CPMK tidak ditemukan")
+
+    _check_write_access(db, user, cpmk.mata_kuliah_id)
+
+    # 1. Cek apakah ada nilai mahasiswa terkait IK dari CPMK ini
+    cpmk_ik_ids = [m.ik_id for m in db.query(CPMKIKMap).filter(CPMKIKMap.cpmk_id == cpmk_id).all()]
+    if cpmk_ik_ids:
+        mbp_ids = [mbp.id for mbp in db.query(MKBentukPenilaian).filter(MKBentukPenilaian.mata_kuliah_id == cpmk.mata_kuliah_id).all()]
+        if mbp_ids:
+            ada_nilai = db.query(NilaiBentukPenilaian).filter(
+                NilaiBentukPenilaian.ik_id.in_(cpmk_ik_ids),
+                NilaiBentukPenilaian.mk_bentuk_penilaian_id.in_(mbp_ids),
+            ).first()
+            if ada_nilai:
+                raise HTTPException(
+                    status_code=409,
+                    detail="CPMK tidak dapat dihapus karena sudah memiliki rekaman nilai mahasiswa terkait pada bentuk penilaian mata kuliah ini."
+                )
+
+    # 2. Cek apakah mata kuliah sudah memiliki hasil evaluasi mahasiswa yang difinalisasi
+    ada_final = db.query(HasilEvaluasi).join(
+        PesertaMataKuliah, HasilEvaluasi.peserta_mata_kuliah_id == PesertaMataKuliah.id
+    ).filter(
+        PesertaMataKuliah.mata_kuliah_id == cpmk.mata_kuliah_id,
+        HasilEvaluasi.is_final == True,
+    ).first()
+    if ada_final:
+        raise HTTPException(
+            status_code=409,
+            detail="CPMK tidak dapat dihapus karena mata kuliah telah memiliki hasil evaluasi mahasiswa yang difinalisasi."
+        )
+
+    # 3. Bersihkan mapping IK terkait dan hapus CPMK
+    db.query(CPMKIKMap).filter(CPMKIKMap.cpmk_id == cpmk_id).delete()
+    db.delete(cpmk)
+    db.commit()
+    return {"message": "CPMK berhasil dihapus"}

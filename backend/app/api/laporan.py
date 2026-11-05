@@ -86,6 +86,19 @@ def import_narasi(
     return laporan
 
 
+@router.get("/saya", response_model=list[LaporanResponse])
+def list_laporan_saya(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.dosen, UserRole.admin_prodi)),
+):
+    if user.role == UserRole.dosen:
+        mk_ids = [p.mata_kuliah_id for p in db.query(PengampuMataKuliah).filter(PengampuMataKuliah.user_id == user.id).all()]
+        return db.query(LaporanEvaluasi).filter(LaporanEvaluasi.mata_kuliah_id.in_(mk_ids)).order_by(LaporanEvaluasi.id.desc()).all()
+    elif user.role == UserRole.admin_prodi:
+        return db.query(LaporanEvaluasi).join(MataKuliah).filter(MataKuliah.program_studi_id == user.program_studi_id).order_by(LaporanEvaluasi.id.desc()).all()
+    return []
+
+
 @router.get("/{matkul_id}", response_model=list[LaporanResponse])
 def list_laporan(matkul_id: int, db: Session = Depends(get_db), scope: AcademicScope = Depends(get_academic_scope)):
     mk = db.query(MataKuliah).filter(MataKuliah.id == matkul_id).first()
