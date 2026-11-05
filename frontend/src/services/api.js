@@ -14,4 +14,12 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Data Master API Helpers
+export const fetchKurikulumVersions = (params) => api.get('/kurikulum/versions', { params })
+export const fetchCplList = (params) => api.get('/cpl', { params })
+export const fetchIkList = (params) => api.get('/ik', { params })
+export const fetchCpmkList = (params) => api.get('/cpmk', { params })
+export const fetchMataKuliahList = (params) => api.get('/mata-kuliah', { params })
+export const fetchProdiList = (params) => api.get('/prodi', { params })
+
 export default api

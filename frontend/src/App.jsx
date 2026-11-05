@@ -25,6 +25,7 @@ import MataKuliahListPage from './pages/mk/MataKuliahListPage'
 import JenisEvaluasiPage from './pages/evaluasi/JenisEvaluasiPage'
 import BentukPenilaianPage from './pages/evaluasi/BentukPenilaianPage'
 import PenilaianPage from './pages/dosen/PenilaianPage'
+import DataMasterPage from './pages/datamaster/DataMasterPage'
 
 import useAuth from './hooks/useAuth'
 
@@ -118,6 +119,18 @@ export default function App() {
             <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
               <AppLayout>
                 <AnalisisPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* View-Only Academic Master Data */}
+        <Route
+          path="/data-master"
+          element={
+            <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
+              <AppLayout>
+                <DataMasterPage />
               </AppLayout>
             </ProtectedRoute>
           }

@@ -23,6 +23,7 @@ const pageTitles = {
   '/kurikulum': 'Kurikulum OBE',
   '/dokumen': 'Validasi Laporan',
   '/pengaturan': 'Manajemen Pengguna',
+  '/data-master': 'Data Master',
   '/super-admin/prodi': 'Daftar Prodi',
   '/super-admin/fakultas': 'Daftar Fakultas',
   '/super-admin/users': 'Manajemen Pengguna Lintas Prodi',
@@ -112,6 +113,7 @@ export default function Navbar({ children }) {
         { label: 'Peserta Kuliah', path: '/peserta' },
         { label: 'Penilaian', path: '/penilaian' },
         { label: 'Analitik OBE', path: '/analisis' },
+        { label: 'Data Master', path: '/data-master' },
         {
           label: 'Kurikulum OBE',
           path: '/kurikulum',
@@ -129,6 +131,7 @@ export default function Navbar({ children }) {
         { label: 'Ikhtisar', path: '/dashboard' },
         { label: 'Peserta Kuliah', path: '/peserta' },
         { label: 'Data Mahasiswa', path: '/mahasiswa' },
+        { label: 'Data Master', path: '/data-master' },
         // Kurikulum OBE is rendered separately as collapsible group
         { label: 'Analitik OBE', path: '/analisis' },
         { label: 'Validasi Laporan', path: '/dokumen' },
@@ -139,6 +142,7 @@ export default function Navbar({ children }) {
     const baseMenus = [
       { label: 'Ikhtisar', path: '/dashboard' },
       { label: 'Analitik OBE', path: '/analisis' },
+      { label: 'Data Master', path: '/data-master' },
       {
         label: 'Kurikulum OBE',
         path: '/kurikulum',
