@@ -11,12 +11,15 @@ const pageTitles = {
   '/dashboard': 'Ikhtisar',
   '/peserta': 'Peserta Kuliah',
   '/mahasiswa': 'Data Mahasiswa',
-  '/nilai': 'Input Nilai',
+  '/penilaian': 'Penilaian',
+  '/nilai': 'Penilaian',
   '/analisis': 'Analitik OBE',
   '/kurikulum/cpl': 'Capaian Pembelajaran (CPL)',
   '/kurikulum/pemetaan': 'Pemetaan IK',
   '/kurikulum/mata-kuliah': 'Mata Kuliah & Pengampu',
   '/kurikulum/cpmk': 'Capaian Pembelajaran Mata Kuliah (CPMK)',
+  '/kurikulum/jenis-evaluasi': 'Jenis Evaluasi',
+  '/kurikulum/bentuk-penilaian': 'Bentuk Penilaian',
   '/kurikulum': 'Kurikulum OBE',
   '/dokumen': 'Validasi Laporan',
   '/pengaturan': 'Manajemen Pengguna',
@@ -90,6 +93,8 @@ export default function Navbar({ children }) {
     { label: 'Pemetaan IK', path: '/kurikulum/pemetaan' },
     { label: 'Mata Kuliah', path: '/kurikulum/mata-kuliah' },
     { label: 'CPMK', path: '/kurikulum/cpmk' },
+    { label: 'Jenis Evaluasi', path: '/kurikulum/jenis-evaluasi' },
+    { label: 'Bentuk Penilaian', path: '/kurikulum/bentuk-penilaian' },
   ]
 
   const menuItems = useMemo(() => {
@@ -105,7 +110,7 @@ export default function Navbar({ children }) {
       return [
         { label: 'Ikhtisar', path: '/dashboard' },
         { label: 'Peserta Kuliah', path: '/peserta' },
-        { label: 'Input Nilai', path: '/nilai' },
+        { label: 'Penilaian', path: '/penilaian' },
         { label: 'Analitik OBE', path: '/analisis' },
         {
           label: 'Kurikulum OBE',

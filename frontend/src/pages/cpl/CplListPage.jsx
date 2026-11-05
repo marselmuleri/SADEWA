@@ -140,8 +140,22 @@ export default function CplListPage() {
     return filteredCpls.slice(start, start + pageSize)
   }, [filteredCpls, currentPage, pageSize])
 
+  // UI Pre-save Duplicate Check for Kode CPL
+  const duplicateKodeError = useMemo(() => {
+    const trimmed = formKode.trim().toLowerCase()
+    if (!trimmed) return null
+    const existing = cplList.find(
+      (c) => (c.kode || '').toLowerCase().trim() === trimmed && c.id !== editingCpl?.id
+    )
+    if (existing) {
+      return `Kode CPL "${existing.kode}" sudah terdaftar pada versi kurikulum ini.`
+    }
+    return null
+  }, [formKode, cplList, editingCpl])
+
   // --- ADD CPL ---
   const handleOpenAdd = () => {
+    setEditingCpl(null)
     setFormKode('')
     setFormDeskripsi('')
     setFormThreshold(70.0)
@@ -154,7 +168,7 @@ export default function CplListPage() {
       pushToast('Pilih versi kurikulum terlebih dahulu', 'error')
       return
     }
-    setSubmitting(true)
+    if (duplicateKodeError) return
     try {
       const payload = {
         kurikulum_version_id: selectedVersionId,
@@ -185,6 +199,7 @@ export default function CplListPage() {
   const handleSaveEdit = async (e) => {
     e.preventDefault()
     if (!editingCpl) return
+    if (duplicateKodeError) return
     setSubmitting(true)
 
     const kodeChanged = formKode.trim() !== editingCpl.kode || formDeskripsi.trim() !== editingCpl.deskripsi
@@ -509,8 +524,18 @@ export default function CplListPage() {
               value={formKode}
               onChange={(e) => setFormKode(e.target.value)}
               data-testid="input-cpl-kode"
-              className="w-full rounded-[6px] border border-[#CBD5E1] px-3 py-2 text-xs focus:border-[#1A3A6B] focus:outline-none"
+              className={`w-full rounded-[6px] border px-3 py-2 text-xs focus:outline-none ${
+                duplicateKodeError
+                  ? 'border-red-400 bg-red-50/50 text-red-900 focus:border-red-500'
+                  : 'border-[#CBD5E1] focus:border-[#1A3A6B]'
+              }`}
             />
+            {duplicateKodeError && (
+              <p className="mt-1 text-[11px] font-medium text-red-600 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 inline" />
+                <span>{duplicateKodeError}</span>
+              </p>
+            )}
           </div>
 
           <div>
@@ -558,7 +583,7 @@ export default function CplListPage() {
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || Boolean(duplicateKodeError) || !formKode.trim()}
               data-testid="submit-add-cpl-button"
               className="inline-flex items-center gap-1.5 rounded-[6px] bg-[#1A3A6B] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#142B4A] disabled:opacity-50"
             >
@@ -582,8 +607,18 @@ export default function CplListPage() {
               value={formKode}
               onChange={(e) => setFormKode(e.target.value)}
               data-testid="edit-cpl-kode"
-              className="w-full rounded-[6px] border border-[#CBD5E1] px-3 py-2 text-xs focus:border-[#1A3A6B] focus:outline-none"
+              className={`w-full rounded-[6px] border px-3 py-2 text-xs focus:outline-none ${
+                duplicateKodeError
+                  ? 'border-red-400 bg-red-50/50 text-red-900 focus:border-red-500'
+                  : 'border-[#CBD5E1] focus:border-[#1A3A6B]'
+              }`}
             />
+            {duplicateKodeError && (
+              <p className="mt-1 text-[11px] font-medium text-red-600 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 inline" />
+                <span>{duplicateKodeError}</span>
+              </p>
+            )}
           </div>
 
           <div>
@@ -631,7 +666,7 @@ export default function CplListPage() {
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || Boolean(duplicateKodeError) || !formKode.trim()}
               data-testid="submit-edit-cpl-button"
               className="inline-flex items-center gap-1.5 rounded-[6px] bg-[#1A3A6B] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#142B4A] disabled:opacity-50"
             >

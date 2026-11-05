@@ -73,11 +73,6 @@ export default function MahasiswaPage() {
   // Ref untuk menghentikan impor
   const stopImportRef = useRef(false)
 
-  // Guard RBAC: Halaman ini eksklusif untuk Admin Prodi
-  if (!isAdminProdi) {
-    return <Navigate to="/dashboard" replace />
-  }
-
   // Load Data Mahasiswa (mengambil seluruh data via pagination loop)
   const loadMahasiswa = async () => {
     setLoading(true)
@@ -519,6 +514,11 @@ export default function MahasiswaPage() {
     })
     setImporting(false)
     loadMahasiswa()
+  }
+
+  // Guard RBAC: Halaman ini eksklusif untuk Admin Prodi
+  if (!isAdminProdi) {
+    return <Navigate to="/dashboard" replace />
   }
 
   return (

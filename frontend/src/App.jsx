@@ -21,6 +21,9 @@ import PemetaanIkPage from './pages/cpl/PemetaanIkPage'
 import CpmkMkListPage from './pages/cpmk/CpmkMkListPage'
 import CpmkDetailPage from './pages/cpmk/CpmkDetailPage'
 import MataKuliahListPage from './pages/mk/MataKuliahListPage'
+import JenisEvaluasiPage from './pages/evaluasi/JenisEvaluasiPage'
+import BentukPenilaianPage from './pages/evaluasi/BentukPenilaianPage'
+import PenilaianPage from './pages/dosen/PenilaianPage'
 
 import useAuth from './hooks/useAuth'
 
@@ -68,14 +71,18 @@ export default function App() {
           }
         />
         <Route
-          path="/nilai"
+          path="/penilaian"
           element={
             <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
               <AppLayout>
-                <NilaiPage />
+                <PenilaianPage />
               </AppLayout>
             </ProtectedRoute>
           }
+        />
+        <Route
+          path="/nilai"
+          element={<Navigate to="/penilaian" replace />}
         />
         <Route
           path="/analisis"
@@ -157,6 +164,26 @@ export default function App() {
             <ProtectedRoute allowedRoles={['admin_prodi']}>
               <AppLayout>
                 <CpmkDetailPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/kurikulum/jenis-evaluasi"
+          element={
+            <ProtectedRoute allowedRoles={['admin_prodi']}>
+              <AppLayout>
+                <JenisEvaluasiPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/kurikulum/bentuk-penilaian"
+          element={
+            <ProtectedRoute allowedRoles={['admin_prodi']}>
+              <AppLayout>
+                <BentukPenilaianPage />
               </AppLayout>
             </ProtectedRoute>
           }

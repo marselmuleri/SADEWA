@@ -248,6 +248,19 @@ export default function MataKuliahListPage() {
     )
   }
 
+  // UI Pre-save Duplicate Check for Kode MK within this Version
+  const duplicateKodeError = useMemo(() => {
+    const trimmed = formKode.trim().toLowerCase()
+    if (!trimmed) return null
+    const existing = mkList.find(
+      (mk) => (mk.kode || '').trim().toLowerCase() === trimmed && mk.id !== editingMk?.id
+    )
+    if (existing) {
+      return `Kode mata kuliah "${existing.kode}" sudah terdaftar pada versi kurikulum ini.`
+    }
+    return null
+  }, [formKode, mkList, editingMk])
+
   // --- OPEN MODAL TAMBAH MK ---
   const handleOpenAdd = () => {
     setEditingMk(null)
@@ -378,6 +391,9 @@ export default function MataKuliahListPage() {
       pushToast('Pilih versi kurikulum terlebih dahulu', 'error')
       return
     }
+    if (duplicateKodeError) {
+      return
+    }
 
     setSavingMk(true)
     setPartialErrorSummary(null)
@@ -461,15 +477,34 @@ export default function MataKuliahListPage() {
 
     // CHECK RESULT
     if (failedPengampus.length > 0) {
-      // Partial failure: Keep modal open and display summary
+      // Partial failure: Keep modal open and display clear summary
       setPartialErrorSummary(
-        `Mata kuliah berhasil disimpan, tetapi sebagian penugasan pengampu gagal: ${failedPengampus.join('; ')}`
+        `Mata kuliah tersimpan, namun pembaruan tim pengampu gagal sebagian: ${failedPengampus.join('; ')}`
       )
       pushToast(
-        'Mata kuliah tersimpan. Beberapa pengampu gagal ditugaskan, periksa daftar pengampu.',
+        'Mata kuliah tersimpan. Sebagian perubahan tim pengampu gagal, data telah disegarkan dari server.',
         'warning'
       )
+      // Segarkan state tabel dari server
       await fetchMkList(selectedVersionId)
+
+      // Segarkan state pengampu di dalam modal dari server agar form mencerminkan kondisi riil di database
+      try {
+        const res = await api.get('/pengampu-mata-kuliah', { params: { mata_kuliah_id: targetMkId } })
+        const serverPengampus = Array.isArray(res.data) ? res.data : []
+        setPengampuList(
+          serverPengampus.map((p) => ({
+            id: p.id,
+            user_id: p.user_id,
+            user_nama: p.user_nama || dosenMap.get(p.user_id)?.nama || `Dosen #${p.user_id}`,
+            is_koordinator: Boolean(p.is_koordinator),
+            isNew: false,
+            failedMessage: failedPengampus.some((f) => f.includes(p.user_nama)) ? 'Gagal disinkronkan' : null,
+          }))
+        )
+      } catch {
+        // preserve current list if get fails
+      }
     } else {
       pushToast(
         editingMk
@@ -738,8 +773,18 @@ export default function MataKuliahListPage() {
                   value={formKode}
                   onChange={(e) => setFormKode(e.target.value)}
                   data-testid="input-mk-kode"
-                  className="w-full rounded-[6px] border border-[#CBD5E1] px-3 py-1.5 text-xs font-mono font-bold focus:border-[#1A3A6B] focus:outline-none"
+                  className={`w-full rounded-[6px] border px-3 py-1.5 text-xs font-mono font-bold focus:outline-none ${
+                    duplicateKodeError
+                      ? 'border-red-400 focus:border-red-500'
+                      : 'border-[#CBD5E1] focus:border-[#1A3A6B]'
+                  }`}
                 />
+                {duplicateKodeError && (
+                  <p className="mt-1 text-xs text-red-600 font-medium flex items-center gap-1" data-testid="error-duplicate-kode-mk">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                    <span>{duplicateKodeError}</span>
+                  </p>
+                )}
               </div>
               <div className="col-span-2">
                 <label className="block text-xs font-semibold text-[#142B4A] mb-1">
@@ -933,7 +978,7 @@ export default function MataKuliahListPage() {
             </button>
             <button
               type="submit"
-              disabled={savingMk}
+              disabled={savingMk || Boolean(duplicateKodeError) || !formKode.trim() || !formNama.trim()}
               data-testid="submit-mk-modal"
               className="inline-flex items-center gap-1.5 rounded-[6px] bg-[#1A3A6B] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#142B4A] disabled:opacity-50"
             >

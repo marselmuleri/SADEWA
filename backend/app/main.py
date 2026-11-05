@@ -41,6 +41,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(api_v1_router)
 
 @app.get("/")
 def root():
@@ -51,6 +52,3 @@ def root():
 async def check_ai_health():
     """Endpoint untuk memantau status kesehatan proses terpisah AI Service (port 8001)."""
     return await ai_client.check_health()
-
-
-app.include_router(api_v1_router)

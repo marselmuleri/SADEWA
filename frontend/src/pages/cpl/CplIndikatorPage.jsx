@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
@@ -67,8 +67,22 @@ export default function CplIndikatorPage() {
     loadData()
   }, [cplId])
 
+  // UI Pre-save Duplicate Check for Kode IK within this CPL
+  const duplicateKodeError = useMemo(() => {
+    const trimmed = formKode.trim().toLowerCase()
+    if (!trimmed) return null
+    const existing = ikList.find(
+      (ik) => (ik.kode || '').toLowerCase().trim() === trimmed && ik.id !== editingIk?.id
+    )
+    if (existing) {
+      return `Kode IK "${existing.kode}" sudah terdaftar pada CPL ini.`
+    }
+    return null
+  }, [formKode, ikList, editingIk])
+
   // --- ADD IK ---
   const handleOpenAdd = () => {
+    setEditingIk(null)
     const nextOrder = ikList.length + 1
     const prefix = cpl?.kode ? `${cpl.kode}.` : 'IK-'
     setFormKode(`${prefix}${nextOrder}`)
@@ -79,6 +93,7 @@ export default function CplIndikatorPage() {
 
   const handleSaveAdd = async (e) => {
     e.preventDefault()
+    if (duplicateKodeError) return
     setSubmitting(true)
     try {
       const payload = {
@@ -110,6 +125,7 @@ export default function CplIndikatorPage() {
   const handleSaveEdit = async (e) => {
     e.preventDefault()
     if (!editingIk) return
+    if (duplicateKodeError) return
     setSubmitting(true)
     try {
       const payload = {
@@ -302,8 +318,18 @@ export default function CplIndikatorPage() {
                 value={formKode}
                 onChange={(e) => setFormKode(e.target.value)}
                 data-testid="input-ik-kode"
-                className="w-full rounded-[6px] border border-[#CBD5E1] px-3 py-2 text-xs focus:border-[#1A3A6B] focus:outline-none"
+                className={`w-full rounded-[6px] border px-3 py-2 text-xs focus:outline-none ${
+                  duplicateKodeError
+                    ? 'border-red-400 bg-red-50/50 text-red-900 focus:border-red-500'
+                    : 'border-[#CBD5E1] focus:border-[#1A3A6B]'
+                }`}
               />
+              {duplicateKodeError && (
+                <p className="mt-1 text-[11px] font-medium text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3 inline" />
+                  <span>{duplicateKodeError}</span>
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#142B4A] mb-1">
@@ -345,7 +371,7 @@ export default function CplIndikatorPage() {
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || Boolean(duplicateKodeError) || !formKode.trim()}
               data-testid="submit-add-ik-button"
               className="inline-flex items-center gap-1.5 rounded-[6px] bg-[#1A3A6B] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#142B4A] disabled:opacity-50"
             >
@@ -370,8 +396,18 @@ export default function CplIndikatorPage() {
                 value={formKode}
                 onChange={(e) => setFormKode(e.target.value)}
                 data-testid="edit-ik-kode"
-                className="w-full rounded-[6px] border border-[#CBD5E1] px-3 py-2 text-xs focus:border-[#1A3A6B] focus:outline-none"
+                className={`w-full rounded-[6px] border px-3 py-2 text-xs focus:outline-none ${
+                  duplicateKodeError
+                    ? 'border-red-400 bg-red-50/50 text-red-900 focus:border-red-500'
+                    : 'border-[#CBD5E1] focus:border-[#1A3A6B]'
+                }`}
               />
+              {duplicateKodeError && (
+                <p className="mt-1 text-[11px] font-medium text-red-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3 inline" />
+                  <span>{duplicateKodeError}</span>
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-semibold text-[#142B4A] mb-1">
@@ -412,7 +448,7 @@ export default function CplIndikatorPage() {
             </button>
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || Boolean(duplicateKodeError) || !formKode.trim()}
               data-testid="submit-edit-ik-button"
               className="inline-flex items-center gap-1.5 rounded-[6px] bg-[#1A3A6B] px-4 py-1.5 text-xs font-semibold text-white hover:bg-[#142B4A] disabled:opacity-50"
             >

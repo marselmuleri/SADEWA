@@ -62,11 +62,6 @@ export default function PengaturanPage() {
     }
   }, [currentRole])
 
-  // RBAC Guard: Hanya Admin Prodi yang boleh mengakses halaman ini per PRD Feature 3 & DESIGN.md Section 0
-  if (currentRole !== 'admin_prodi') {
-    return <Navigate to="/dashboard" replace />
-  }
-
   // Filtered users
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
@@ -216,6 +211,11 @@ export default function PengaturanPage() {
   }
 
   const programName = user?.program_studi_nama || 'Teknik Komputer'
+
+  // RBAC Guard: Hanya Admin Prodi yang boleh mengakses halaman ini per PRD Feature 3 & DESIGN.md Section 0
+  if (currentRole !== 'admin_prodi') {
+    return <Navigate to="/dashboard" replace />
+  }
 
   return (
     <div className="space-y-8">

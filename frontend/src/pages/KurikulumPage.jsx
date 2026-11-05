@@ -31,11 +31,6 @@ export default function KurikulumPage() {
   const isDosen = currentRole === 'dosen'
   const isAdminProdi = currentRole === 'admin_prodi'
 
-  // If Admin Prodi navigates to root /kurikulum, redirect to CPL list
-  if (isAdminProdi) {
-    return <Navigate to="/kurikulum/cpl" replace />
-  }
-
   // Active view tab: 'cpl' | 'matrix'
   const [activeTab, setActiveTab] = useState('cpl')
 
@@ -198,6 +193,11 @@ export default function KurikulumPage() {
     } finally {
       setThresholdSubmitting(false)
     }
+  }
+
+  // If Admin Prodi navigates to root /kurikulum, redirect to CPL list
+  if (isAdminProdi) {
+    return <Navigate to="/kurikulum/cpl" replace />
   }
 
   return (
