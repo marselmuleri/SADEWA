@@ -1,21 +1,87 @@
+import re
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import AcademicScope, get_academic_scope, get_scoped_prodi_id
-from app.schemas.mahasiswa import MahasiswaCreate, MahasiswaResponse, MahasiswaUpdate
+from app.schemas.mahasiswa import MahasiswaBatchCreate, MahasiswaCreate, MahasiswaResponse, MahasiswaUpdate
 from app.models.mahasiswa import Mahasiswa
 from app.models.program_studi import ProgramStudi
 
 router = APIRouter()
 
 
+def derive_angkatan(nim: str, given_angkatan: int | None = None) -> int | None:
+    if given_angkatan:
+        return given_angkatan
+    if nim:
+        digits = re.sub(r"\D", "", nim)
+        if len(digits) >= 8:
+            yy = int(digits[6:8])
+            if 0 <= yy <= 99:
+                return 2000 + yy
+        if len(digits) >= 2:
+            yy = int(digits[:2])
+            if 15 <= yy <= 35:
+                return 2000 + yy
+    return None
+
+
 @router.post("", response_model=MahasiswaResponse)
 def create_mahasiswa(payload: MahasiswaCreate, db: Session = Depends(get_db), prodi_id: int = Depends(get_scoped_prodi_id)):
-    data = Mahasiswa(**{**payload.model_dump(), "program_studi_id": prodi_id})
+    existing = db.query(Mahasiswa).filter(
+        Mahasiswa.program_studi_id == prodi_id,
+        Mahasiswa.nim == payload.nim,
+        Mahasiswa.is_active.is_(True),
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Mahasiswa dengan NIM '{payload.nim}' sudah terdaftar pada program studi ini",
+        )
+
+    angkatan_val = derive_angkatan(payload.nim, payload.angkatan)
+    dump_data = payload.model_dump()
+    dump_data["angkatan"] = angkatan_val
+    dump_data["program_studi_id"] = prodi_id
+
+    data = Mahasiswa(**dump_data)
     db.add(data)
     db.commit()
     db.refresh(data)
     return data
+
+
+@router.post("/batch", response_model=list[MahasiswaResponse])
+def batch_create_mahasiswa(payload: MahasiswaBatchCreate, db: Session = Depends(get_db), prodi_id: int = Depends(get_scoped_prodi_id)):
+    created = []
+    seen_nim: set[str] = set()
+
+    for item in payload.records:
+        if item.nim in seen_nim:
+            continue
+        seen_nim.add(item.nim)
+
+        existing = db.query(Mahasiswa).filter(
+            Mahasiswa.program_studi_id == prodi_id,
+            Mahasiswa.nim == item.nim,
+            Mahasiswa.is_active.is_(True),
+        ).first()
+        if existing:
+            continue
+
+        angkatan_val = derive_angkatan(item.nim, item.angkatan)
+        dump_data = item.model_dump()
+        dump_data["angkatan"] = angkatan_val
+        dump_data["program_studi_id"] = prodi_id
+
+        data = Mahasiswa(**dump_data)
+        db.add(data)
+        created.append(data)
+
+    db.commit()
+    for d in created:
+        db.refresh(d)
+    return created
 
 
 @router.get("", response_model=list[MahasiswaResponse])

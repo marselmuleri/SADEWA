@@ -62,6 +62,17 @@ def create_ik(
         raise HTTPException(status_code=404, detail="CPL tidak ditemukan")
     if cpl.program_studi_id != prodi_id:
         raise HTTPException(status_code=403, detail="CPL ini di luar prodi Anda")
+
+    existing = db.query(IK).filter(
+        IK.cpl_id == payload.cpl_id,
+        IK.kode == payload.kode,
+    ).first()
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"IK dengan kode '{payload.kode}' sudah ada pada CPL ini"
+        )
+
     data = IK(**payload.model_dump(), created_by=user.id)
     db.add(data)
     db.commit()

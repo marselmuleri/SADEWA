@@ -9,6 +9,16 @@ Catatan perubahan: fungsi pencarian tren industri dihapus mengikuti revisi
 dosen. Fungsi tersebut juga tidak melakukan retrieval sungguhan, hanya meminta
 LLM menebak dari pengetahuan internalnya, sehingga bertentangan dengan alasan
 pemilihan RAG pada dokumen C100.
+
+Perubahan terbaru:
+- generate_rps() kini mencoba ulang otomatis (maks _MAX_RETRIES_RPS kali) bila
+  hasil generasi pertama tidak lolos validasi OBE. Pelanggaran dari percobaan
+  sebelumnya diumpankan balik ke LLM sebagai pesan koreksi, sehingga percobaan
+  berikutnya lebih terarah. Jika setelah semua percobaan masih ada pelanggaran,
+  hasil terakhir tetap dikembalikan beserta daftar pelanggaran.
+- generate_rps() kini juga mengambil referensi RPS dari universitas lain via
+  web search (DuckDuckGo) sebagai konteks tambahan. Referensi ini hanya dipakai
+  di dalam prompt, tidak ditampilkan ke pengguna di frontend.
 """
 
 import logging
@@ -19,8 +29,11 @@ from .config import settings
 from .llm_client import chat, extract_json
 from .retriever import retrieve_context_with_metadata
 from .validators import validate_narasi, validate_rps
+from .web_retriever import fetch_web_context
 
 logger = logging.getLogger(__name__)
+
+_MAX_RETRIES_RPS = 2  # jumlah percobaan ulang setelah percobaan pertama gagal
 
 
 def generate_rps(
@@ -35,6 +48,10 @@ def generate_rps(
       - data                : JSON RPS hasil generasi
       - valid               : bool hasil validasi aturan OBE
       - pelanggaran_validasi: list peringatan bila ada
+
+    Percobaan ulang otomatis (maks _MAX_RETRIES_RPS kali) bila hasil generasi
+    pertama tidak lolos validasi OBE. Pelanggaran diumpankan balik ke LLM
+    sebagai pesan koreksi pada percobaan berikutnya.
     """
     logger.info("Memulai RAG pipeline RPS untuk: %s", mk_name)
 
@@ -43,7 +60,16 @@ def generate_rps(
     topik = (deskripsi or "").strip()
     query = f"RPS {mk_name} {prodi} {topik} CPL CPMK capaian pembelajaran OBE".replace("  ", " ")
     context_kurikulum, sources = retrieve_context_with_metadata(query)
-    logger.info("Konteks diambil (%d karakter)", len(context_kurikulum))
+    logger.info("Konteks lokal diambil (%d karakter)", len(context_kurikulum))
+
+    # Ambil referensi RPS dari universitas lain via web search.
+    # Berjalan paralel dengan proses lain agar tidak memperlambat.
+    # Bila gagal (timeout/no internet), context_web = "" dan pipeline tetap jalan.
+    context_web = fetch_web_context(mk_name=mk_name, prodi=prodi)
+    if context_web:
+        logger.info("Konteks web diambil (%d karakter)", len(context_web))
+    else:
+        logger.info("Konteks web tidak tersedia, lanjut dengan konteks lokal saja.")
 
     prompt = prompts.build_rps_prompt(
         mk_name=mk_name,
@@ -52,22 +78,56 @@ def generate_rps(
         prodi=prodi,
         deskripsi=deskripsi,
         context_kurikulum=context_kurikulum,
+        context_web=context_web,
     )
 
-    raw = chat(
-        messages=[
-            {"role": "system", "content": prompts.SYSTEM_RPS},
-            {"role": "user", "content": prompt},
-        ],
-        max_tokens=settings.rps_max_tokens,
-        temperature=settings.rps_temperature,
-    )
+    messages = [
+        {"role": "system", "content": prompts.SYSTEM_RPS},
+        {"role": "user", "content": prompt},
+    ]
 
-    data = extract_json(raw)
-    valid, errors = validate_rps(data)
+    data: Dict[str, Any] = {}
+    valid = False
+    errors: List[str] = []
+    raw = ""
+
+    for attempt in range(_MAX_RETRIES_RPS + 1):
+        if attempt > 0:
+            # Umpan balik pelanggaran ke LLM sebagai pesan koreksi
+            koreksi = (
+                "JSON yang kamu hasilkan melanggar aturan OBE berikut:\n"
+                + "\n".join(f"- {e}" for e in errors)
+                + "\n\nPerbaiki seluruh pelanggaran di atas dan kembalikan "
+                "JSON yang valid dan lengkap. Jangan tambahkan teks lain."
+            )
+            messages = messages + [
+                {"role": "assistant", "content": raw},
+                {"role": "user", "content": koreksi},
+            ]
+            logger.info(
+                "Percobaan %d/%d: RPS belum valid (%d pelanggaran). Mencoba ulang...",
+                attempt, _MAX_RETRIES_RPS, len(errors),
+            )
+
+        raw = chat(
+            messages=messages,
+            max_tokens=settings.rps_max_tokens,
+            temperature=settings.rps_temperature,
+        )
+
+        data = extract_json(raw)
+        valid, errors = validate_rps(data)
+
+        if valid:
+            if attempt > 0:
+                logger.info("RPS valid setelah %d percobaan ulang.", attempt)
+            break
 
     if not valid:
-        logger.warning("RPS lolos parsing tetapi melanggar aturan: %s", errors)
+        logger.warning(
+            "RPS tetap tidak valid setelah %d percobaan: %s",
+            _MAX_RETRIES_RPS + 1, errors,
+        )
 
     return {
         "data": data,

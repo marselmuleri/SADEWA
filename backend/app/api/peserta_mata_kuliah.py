@@ -10,7 +10,7 @@ from app.models.peserta_mata_kuliah import PesertaMataKuliah
 from app.models.program_studi import ProgramStudi
 from app.models.user import User
 from app.schemas.peserta_mata_kuliah import (
-    PesertaMataKuliahCreate, PesertaMataKuliahResponse
+    PesertaMataKuliahBatchCreate, PesertaMataKuliahCreate, PesertaMataKuliahResponse
 )
 
 router = APIRouter()
@@ -59,6 +59,47 @@ def create_peserta(
     return data
 
 
+@router.post("/batch", response_model=list[PesertaMataKuliahResponse])
+def batch_create_peserta(
+    payload: PesertaMataKuliahBatchCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen)),
+):
+    _check_write_access(db, user, payload.mata_kuliah_id)
+
+    created = []
+    seen_mhs: set[int] = set()
+
+    for item in payload.records:
+        if item.mahasiswa_id in seen_mhs:
+            continue
+        seen_mhs.add(item.mahasiswa_id)
+
+        mhs = db.query(Mahasiswa).filter(Mahasiswa.id == item.mahasiswa_id).first()
+        if not mhs:
+            continue
+
+        existing = db.query(PesertaMataKuliah).filter(
+            PesertaMataKuliah.mata_kuliah_id == payload.mata_kuliah_id,
+            PesertaMataKuliah.mahasiswa_id == item.mahasiswa_id,
+        ).first()
+        if existing:
+            continue
+
+        data = PesertaMataKuliah(
+            mata_kuliah_id=payload.mata_kuliah_id,
+            mahasiswa_id=item.mahasiswa_id,
+            kelas=item.kelas,
+        )
+        db.add(data)
+        created.append(data)
+
+    db.commit()
+    for d in created:
+        db.refresh(d)
+    return created
+
+
 @router.get("", response_model=list[PesertaMataKuliahResponse])
 def list_peserta(
     mata_kuliah_id: int | None = None,
@@ -75,7 +116,10 @@ def list_peserta(
     if kelas:
         query = query.filter(PesertaMataKuliah.kelas == kelas)
 
-    if scope.program_studi_id:
+    if scope.user.role == UserRole.dosen:
+        dosen_mk_ids = [p.mata_kuliah_id for p in db.query(PengampuMataKuliah).filter(PengampuMataKuliah.user_id == scope.user.id).all()]
+        query = query.filter(PesertaMataKuliah.mata_kuliah_id.in_(dosen_mk_ids))
+    elif scope.program_studi_id:
         query = query.filter(MataKuliah.program_studi_id == scope.program_studi_id)
     elif scope.fakultas_id:
         query = query.join(ProgramStudi, MataKuliah.program_studi_id == ProgramStudi.id).filter(
@@ -93,7 +137,14 @@ def get_peserta(
     data = db.query(PesertaMataKuliah).join(MataKuliah).filter(PesertaMataKuliah.id == id).first()
     if not data:
         raise HTTPException(status_code=404, detail="Peserta mata kuliah tidak ditemukan")
-    if scope.program_studi_id and data.mata_kuliah.program_studi_id != scope.program_studi_id:
+    if scope.user.role == UserRole.dosen:
+        is_pengampu = db.query(PengampuMataKuliah).filter(
+            PengampuMataKuliah.mata_kuliah_id == data.mata_kuliah_id,
+            PengampuMataKuliah.user_id == scope.user.id,
+        ).first()
+        if not is_pengampu:
+            raise HTTPException(status_code=403, detail="Anda bukan dosen pengampu mata kuliah ini")
+    elif scope.program_studi_id and data.mata_kuliah.program_studi_id != scope.program_studi_id:
         raise HTTPException(status_code=403, detail="Peserta mata kuliah ini di luar prodi Anda")
     if scope.fakultas_id and data.mata_kuliah.program_studi.fakultas_id != scope.fakultas_id:
         raise HTTPException(status_code=403, detail="Peserta mata kuliah ini di luar fakultas Anda")

@@ -8,10 +8,15 @@ class MahasiswaBase(BaseModel):
     nama: str
     semester_aktif: int
     status_masuk: StatusMasuk
+    angkatan: int | None = None
 
 
 class MahasiswaCreate(MahasiswaBase):
     pass
+
+
+class MahasiswaBatchCreate(BaseModel):
+    records: list[MahasiswaCreate]
 
 
 class MahasiswaUpdate(BaseModel):
@@ -19,6 +24,7 @@ class MahasiswaUpdate(BaseModel):
     nama: str | None = None
     semester_aktif: int | None = None
     status_masuk: StatusMasuk | None = None
+    angkatan: int | None = None
     is_active: bool | None = None
 
 

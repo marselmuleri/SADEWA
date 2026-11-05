@@ -7,7 +7,7 @@ from app.models.enums import StatusOutcome
 class HasilEvaluasi(Base):
     __tablename__ = "hasil_evaluasi"
     id = Column(BigInteger, primary_key=True, autoincrement=True)
-    peserta_mata_kuliah_id = Column(BigInteger, ForeignKey("peserta_mata_kuliah.id"), nullable=True, unique=True)
+    peserta_mata_kuliah_id = Column(BigInteger, ForeignKey("peserta_mata_kuliah.id"), nullable=False, unique=True)
     kurikulum_version_id = Column(BigInteger, ForeignKey("kurikulum_versions.id"), nullable=True)
     nilai_akhir = Column(DECIMAL)
     nilai_huruf = Column(String)
@@ -16,6 +16,9 @@ class HasilEvaluasi(Base):
     is_final = Column(Boolean, default=False)
     finalized_at = Column(TIMESTAMP, nullable=True)
     finalized_by = Column(BigInteger, ForeignKey("users.id"), nullable=True)
+    unlocked_at = Column(TIMESTAMP, nullable=True)
+    unlocked_by = Column(BigInteger, ForeignKey("users.id"), nullable=True)
+    alasan_buka = Column(String, nullable=True)
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     peserta_mata_kuliah = relationship("PesertaMataKuliah", back_populates="hasil_evaluasi")

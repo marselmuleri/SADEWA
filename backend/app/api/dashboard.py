@@ -8,10 +8,12 @@ from app.models.cpl import CPL
 from app.models.cpl_achievement import CPLAchievement
 from app.models.cpmk import CPMK
 from app.models.cpmk_achievement import CPMKAchievement
+from app.models.enums import UserRole
 from app.models.hasil_evaluasi import HasilEvaluasi
 from app.models.ik import IK
 from app.models.ik_achievement import IKAchievement
 from app.models.mata_kuliah import MataKuliah
+from app.models.pengampu_mata_kuliah import PengampuMataKuliah
 from app.models.peserta_mata_kuliah import PesertaMataKuliah
 from app.models.program_studi import ProgramStudi
 from app.schemas.dashboard import (
@@ -119,7 +121,14 @@ def dashboard_mata_kuliah(
     mk = db.query(MataKuliah).filter(MataKuliah.id == matkul_id).first()
     if not mk:
         raise HTTPException(status_code=404, detail="Mata kuliah tidak ditemukan")
-    if scope.program_studi_id and mk.program_studi_id != scope.program_studi_id:
+    if scope.user.role == UserRole.dosen:
+        is_pengampu = db.query(PengampuMataKuliah).filter(
+            PengampuMataKuliah.mata_kuliah_id == matkul_id,
+            PengampuMataKuliah.user_id == scope.user.id,
+        ).first()
+        if not is_pengampu:
+            raise HTTPException(status_code=403, detail="Anda bukan dosen pengampu mata kuliah ini")
+    elif scope.program_studi_id and mk.program_studi_id != scope.program_studi_id:
         raise HTTPException(status_code=403, detail="Mata kuliah ini di luar prodi Anda")
     if scope.fakultas_id and mk.program_studi.fakultas_id != scope.fakultas_id:
         raise HTTPException(status_code=403, detail="Mata kuliah ini di luar fakultas Anda")
