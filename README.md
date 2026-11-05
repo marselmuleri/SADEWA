@@ -385,4 +385,3 @@ Isi `ai/.env`, lalu jalankan `sadewa-ingest` dari folder `ai/`.
 **Dosen tidak terfilter per prodi pada endpoint baca**
 Scope Dosen berbasis penugasan di `pengampu_mata_kuliah` dan baru diterapkan pada sebagian endpoint (lihat `AcademicScope` di `backend/app/core/deps.py`).
 
-**Belum tersedia:** sinkronisasi SIAP UNDIP, prediksi Random Forest, dan chatbot (lihat tabel [Fitur dan Status](#fitur-dan-status)).
