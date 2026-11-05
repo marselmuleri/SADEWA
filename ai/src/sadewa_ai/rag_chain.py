@@ -16,6 +16,9 @@ Perubahan terbaru:
   sebelumnya diumpankan balik ke LLM sebagai pesan koreksi, sehingga percobaan
   berikutnya lebih terarah. Jika setelah semua percobaan masih ada pelanggaran,
   hasil terakhir tetap dikembalikan beserta daftar pelanggaran.
+- generate_rps() kini juga mengambil referensi RPS dari universitas lain via
+  web search (DuckDuckGo) sebagai konteks tambahan. Referensi ini hanya dipakai
+  di dalam prompt, tidak ditampilkan ke pengguna di frontend.
 """
 
 import logging
@@ -26,6 +29,7 @@ from .config import settings
 from .llm_client import chat, extract_json
 from .retriever import retrieve_context_with_metadata
 from .validators import validate_narasi, validate_rps
+from .web_retriever import fetch_web_context
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +60,16 @@ def generate_rps(
     topik = (deskripsi or "").strip()
     query = f"RPS {mk_name} {prodi} {topik} CPL CPMK capaian pembelajaran OBE".replace("  ", " ")
     context_kurikulum, sources = retrieve_context_with_metadata(query)
-    logger.info("Konteks diambil (%d karakter)", len(context_kurikulum))
+    logger.info("Konteks lokal diambil (%d karakter)", len(context_kurikulum))
+
+    # Ambil referensi RPS dari universitas lain via web search.
+    # Berjalan paralel dengan proses lain agar tidak memperlambat.
+    # Bila gagal (timeout/no internet), context_web = "" dan pipeline tetap jalan.
+    context_web = fetch_web_context(mk_name=mk_name, prodi=prodi)
+    if context_web:
+        logger.info("Konteks web diambil (%d karakter)", len(context_web))
+    else:
+        logger.info("Konteks web tidak tersedia, lanjut dengan konteks lokal saja.")
 
     prompt = prompts.build_rps_prompt(
         mk_name=mk_name,
@@ -65,6 +78,7 @@ def generate_rps(
         prodi=prodi,
         deskripsi=deskripsi,
         context_kurikulum=context_kurikulum,
+        context_web=context_web,
     )
 
     messages = [

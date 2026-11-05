@@ -30,6 +30,10 @@ pydantic-settings>=2.2
 fastapi>=0.110
 uvicorn[standard]>=0.27
 
+# Web Search untuk referensi RPS universitas lain
+duckduckgo-search>=6.3.0
+trafilatura>=1.12.0
+
 # Pengujian
 pytest==8.3.4
 httpx>=0.27

@@ -29,6 +29,7 @@ def build_rps_prompt(
     prodi: str,
     deskripsi: str,
     context_kurikulum: str,
+    context_web: str = "",
 ) -> str:
     """Prompt untuk pembangkitan draf RPS 16 pertemuan."""
     topik = (deskripsi or "").strip()
@@ -66,6 +67,10 @@ peraturan, atau kode yang tidak ada di konteks.
 ## Konteks Dokumen Kurikulum (GUNAKAN INI SEBAGAI REFERENSI FORMAT)
 {context_kurikulum}
 
+{f'''## Referensi RPS Universitas Lain (Gunakan Sebagai Perbandingan Materi)
+{context_web}
+
+''' if context_web else ''}\
 ## Parameter Mata Kuliah yang Harus Digenerate
 - Nama Mata Kuliah : {mk_name}
 - Kode MK          : [generate kode yang sesuai format institusi]
