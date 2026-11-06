@@ -23,7 +23,11 @@ const pageTitles = {
   '/kurikulum': 'Kurikulum OBE',
   '/dokumen': 'Validasi Laporan',
   '/pengaturan': 'Manajemen Pengguna',
-  '/data-master': 'Data Master',
+  '/data-master/kurikulum': 'DATA MASTER > Versi Kurikulum',
+  '/data-master/cpl': 'DATA MASTER > CPL',
+  '/data-master/ik': 'DATA MASTER > IK',
+  '/data-master/cpmk': 'DATA MASTER > CPMK',
+  '/data-master': 'DATA MASTER',
   '/super-admin/prodi': 'Daftar Prodi',
   '/super-admin/fakultas': 'Daftar Fakultas',
   '/super-admin/users': 'Manajemen Pengguna Lintas Prodi',
@@ -34,6 +38,7 @@ function SidebarLink({ item, active, onClick, isSubItem = false }) {
     <Link
       to={item.path}
       onClick={onClick}
+      aria-current={active ? 'page' : undefined}
       data-testid={`nav-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
       className={`group flex items-center justify-between rounded-[6px] border px-3 py-2 text-sm font-medium transition-colors ${
         isSubItem ? 'pl-7 text-xs' : ''
@@ -41,7 +46,7 @@ function SidebarLink({ item, active, onClick, isSubItem = false }) {
         active
           ? 'border-white bg-white text-[#142B4A] shadow-sm font-semibold'
           : 'border-transparent text-[#E5EDF7] hover:border-white/10 hover:bg-white/10 hover:text-white'
-      }`}
+      } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F4A300] focus-visible:ring-offset-2 focus-visible:ring-offset-[#132D50]`}
     >
       <div className="flex items-center gap-2.5 truncate">
         <span>{item.label}</span>
@@ -55,6 +60,39 @@ function SidebarLink({ item, active, onClick, isSubItem = false }) {
         {item.suffix ? <span className="text-[10px] text-[#C8D3E1]">{item.suffix}</span> : null}
       </div>
     </Link>
+  )
+}
+
+function SidebarMenuGroup({ id, label, icon: Icon, isActive, isOpen, onToggle, subItems, pathname }) {
+  return (
+    <div className="space-y-1 pt-1">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isOpen}
+        aria-controls={`${id}-submenu`}
+        data-testid={`nav-group-${id}`}
+        className={`flex w-full items-center justify-between rounded-[6px] border px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F4A300] focus-visible:ring-offset-2 focus-visible:ring-offset-[#132D50] ${
+          isActive
+            ? 'border-white/20 bg-white/10 text-white'
+            : 'border-transparent text-[#E5EDF7] hover:border-white/10 hover:bg-white/5 hover:text-white'
+        }`}
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <Icon className="h-4 w-4 shrink-0 text-[#F4A300]" />
+          <span className="truncate">{label}</span>
+        </div>
+        {isOpen ? <ChevronDown className="h-4 w-4 shrink-0 text-[#C8D3E1]" /> : <ChevronRight className="h-4 w-4 shrink-0 text-[#C8D3E1]" />}
+      </button>
+
+      {isOpen ? (
+        <div id={`${id}-submenu`} className="ml-3 space-y-1 border-l border-white/10 pl-2">
+          {subItems.map((subItem) => (
+            <SidebarLink key={subItem.path} item={subItem} active={pathname === subItem.path} isSubItem={true} />
+          ))}
+        </div>
+      ) : null}
+    </div>
   )
 }
 
@@ -74,12 +112,20 @@ export default function Navbar({ children }) {
   // Admin Prodi collapsible Kurikulum group state
   const isKurikulumActive = location.pathname.startsWith('/kurikulum')
   const [isKurikulumGroupOpen, setIsKurikulumGroupOpen] = useState(true)
+  const isDataMasterActive = location.pathname.startsWith('/data-master')
+  const [isDataMasterGroupOpen, setIsDataMasterGroupOpen] = useState(false)
 
   useEffect(() => {
     if (isKurikulumActive) {
       setIsKurikulumGroupOpen(true)
     }
   }, [isKurikulumActive])
+
+  useEffect(() => {
+    if (isDataMasterActive) {
+      setIsDataMasterGroupOpen(true)
+    }
+  }, [isDataMasterActive])
 
   const profileProgram = isDekan
     ? (selectedProdi ? selectedProdi.nama : 'Pilih Program Studi')
@@ -96,6 +142,13 @@ export default function Navbar({ children }) {
     { label: 'CPMK', path: '/kurikulum/cpmk' },
     { label: 'Jenis Evaluasi', path: '/kurikulum/jenis-evaluasi' },
     { label: 'Bentuk Penilaian', path: '/kurikulum/bentuk-penilaian' },
+  ]
+
+  const dataMasterSubItems = [
+    { label: 'Versi Kurikulum', path: '/data-master/kurikulum' },
+    { label: 'CPL', path: '/data-master/cpl' },
+    { label: 'IK', path: '/data-master/ik' },
+    { label: 'CPMK', path: '/data-master/cpmk' },
   ]
 
   const menuItems = useMemo(() => {
@@ -212,49 +265,30 @@ export default function Navbar({ children }) {
                   />
                 ))}
 
-                {/* Collapsible Kurikulum OBE Group for Admin Prodi */}
-                <div className="space-y-1 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setIsKurikulumGroupOpen((prev) => !prev)}
-                    data-testid="nav-group-kurikulum"
-                    className={`w-full flex items-center justify-between rounded-[6px] border px-3 py-2 text-sm font-semibold transition-colors ${
-                      isKurikulumActive
-                        ? 'border-white/20 bg-white/10 text-white'
-                        : 'border-transparent text-[#E5EDF7] hover:border-white/10 hover:bg-white/5 hover:text-white'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      <Layers className="h-4 w-4 text-[#F4A300]" />
-                      <span>Kurikulum OBE</span>
-                    </div>
-                    {isKurikulumGroupOpen ? (
-                      <ChevronDown className="h-4 w-4 text-[#C8D3E1]" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 text-[#C8D3E1]" />
-                    )}
-                  </button>
+                <SidebarMenuGroup
+                  id="data-master"
+                  label="Data Master"
+                  icon={Layers}
+                  isActive={isDataMasterActive}
+                  isOpen={isDataMasterGroupOpen}
+                  onToggle={() => setIsDataMasterGroupOpen((prev) => !prev)}
+                  subItems={dataMasterSubItems}
+                  pathname={location.pathname}
+                />
 
-                  {/* Sub-items */}
-                  {isKurikulumGroupOpen && (
-                    <div className="space-y-1 pl-2 border-l border-white/10 ml-3">
-                      {adminKurikulumSubItems.map((subItem) => {
-                        const isSubActive = location.pathname.startsWith(subItem.path)
-                        return (
-                          <SidebarLink
-                            key={subItem.path}
-                            item={subItem}
-                            active={isSubActive}
-                            isSubItem={true}
-                          />
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
+                <SidebarMenuGroup
+                  id="kurikulum"
+                  label="Kurikulum OBE"
+                  icon={Layers}
+                  isActive={isKurikulumActive}
+                  isOpen={isKurikulumGroupOpen}
+                  onToggle={() => setIsKurikulumGroupOpen((prev) => !prev)}
+                  subItems={adminKurikulumSubItems}
+                  pathname={location.pathname}
+                />
 
                 {/* Remaining Admin Prodi items */}
-                {menuItems.slice(3).map((item) => (
+                {menuItems.slice(3).filter((item) => item.path !== '/data-master').map((item) => (
                   <SidebarLink
                     key={`${item.path}-${item.label}`}
                     item={item}
@@ -264,11 +298,25 @@ export default function Navbar({ children }) {
               </>
             ) : (
               menuItems.map((item) => (
-                <SidebarLink
-                  key={`${item.path}-${item.label}`}
-                  item={item}
-                  active={location.pathname === item.path}
-                />
+                item.path === '/data-master' ? (
+                  <SidebarMenuGroup
+                    key={item.path}
+                    id="data-master"
+                    label="Data Master"
+                    icon={Layers}
+                    isActive={isDataMasterActive}
+                    isOpen={isDataMasterGroupOpen}
+                    onToggle={() => setIsDataMasterGroupOpen((prev) => !prev)}
+                    subItems={dataMasterSubItems}
+                    pathname={location.pathname}
+                  />
+                ) : (
+                  <SidebarLink
+                    key={`${item.path}-${item.label}`}
+                    item={item}
+                    active={location.pathname === item.path}
+                  />
+                )
               ))
             )}
           </div>

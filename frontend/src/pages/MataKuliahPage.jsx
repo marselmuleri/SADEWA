@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../services/api'
 import Modal from '../components/Modal'
 import ToastContainer from '../components/ToastContainer'
 import useToast from '../hooks/useToast'
 import { useRole } from '../hooks/useRole'
+import useAuth from '../hooks/useAuth'
 
 const mkInit = {
   kode_mk: '',
@@ -17,6 +18,7 @@ const mkInit = {
 
 export default function MataKuliahPage() {
   const { isAdmin, isKaprodi, canDelete } = useRole()
+  const { user } = useAuth()
   const { toasts, pushToast } = useToast()
   const [list, setList] = useState([])
   const [prodiOptions, setProdiOptions] = useState([])
@@ -28,20 +30,23 @@ export default function MataKuliahPage() {
 
   const canManage = isAdmin || isKaprodi
 
-  const loadData = async () => {
-    const [mkRes, prodiRes, dosenRes] = await Promise.all([
+  const loadData = useCallback(async () => {
+    const [mkRes, dosenRes] = await Promise.all([
       api.get('/mata-kuliah'),
-      api.get('/prodi'),
       api.get('/users', { params: { role: 'dosen' } }),
     ])
     setList(mkRes.data)
-    setProdiOptions(prodiRes.data)
+    // Admin Prodi/Kaprodi are locked to their own prodi; no global /prodi
+    // request is needed for this legacy form.
+    setProdiOptions(canManage && user?.program_studi_id
+      ? [{ id: user.program_studi_id, nama: user.program_studi_nama || `Prodi ID #${user.program_studi_id}` }]
+      : [])
     setDosenOptions(dosenRes.data)
-  }
+  }, [canManage, user?.program_studi_id, user?.program_studi_nama])
 
   useEffect(() => {
     loadData().catch(() => pushToast('Gagal memuat mata kuliah', 'error'))
-  }, [])
+  }, [loadData, pushToast])
 
   const dosenMap = dosenOptions.reduce((acc, d) => ({ ...acc, [d.id]: d.nama }), {})
 

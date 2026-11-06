@@ -1,4 +1,4 @@
-import { useState, useMemo, Fragment } from 'react'
+import { useState, useMemo, useEffect, Fragment } from 'react'
 import {
   BookOpen,
   Target,
@@ -9,24 +9,18 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronRight,
-  Info,
   CheckCircle2,
   Filter,
   X,
 } from 'lucide-react'
-import { PageHeader, SectionCard, Badge } from '../../components/PageChrome'
-import PageErrorBoundary from '../../components/PageErrorBoundary'
-import useDataMaster from '../../hooks/useDataMaster'
+import { SectionCard, Badge } from '../../components/PageChrome'
+import useAuth from '../../hooks/useAuth'
 
-export default function DataMasterPage() {
-  return (
-    <PageErrorBoundary>
-      <DataMasterContent />
-    </PageErrorBoundary>
-  )
-}
-
-function DataMasterContent() {
+export default function DataMasterPage({ section, data }) {
+  const { user, activeRole } = useAuth()
+  const currentRole = activeRole || user?.role || ''
+  const isSingleProdiRole = ['admin_prodi', 'kaprodi', 'dosen'].includes(currentRole)
+  const isDekan = currentRole === 'dekan'
   const {
     versions,
     cpls,
@@ -35,8 +29,6 @@ function DataMasterContent() {
     mataKuliahs,
     prodis,
     loading,
-    error,
-    reload,
     prodiMap,
     kurikulumMap,
     mataKuliahMap,
@@ -44,12 +36,10 @@ function DataMasterContent() {
     iksByCplId,
     cpmksByMkId,
     totalBobotPerMk,
-  } = useDataMaster()
+  } = data
+  const activeTab = section
 
-  // Active Tab: 'kurikulum' | 'cpl' | 'ik' | 'cpmk'
-  const [activeTab, setActiveTab] = useState('kurikulum')
-
-  // Search states per tab
+  // State is kept per section so navigation does not load unrelated data.
   const [searchKurikulum, setSearchKurikulum] = useState('')
   const [searchCpl, setSearchCpl] = useState('')
   const [searchIk, setSearchIk] = useState('')
@@ -75,6 +65,29 @@ function DataMasterContent() {
   const [pageCpl, setPageCpl] = useState(1)
   const [pageIk, setPageIk] = useState(1)
   const [pageCpmk, setPageCpmk] = useState(1)
+
+  // A role/account change can happen without a full page reload. Reset every
+  // local filter so a saved selection from the previous account cannot apply.
+  useEffect(() => {
+    setFilterProdiId('ALL')
+    setFilterKurikulumId('ALL')
+    setFilterMataKuliahId('ALL')
+    setFilterStatusKurikulum('ALL')
+    setFilterLevelTaksonomi('ALL')
+    setFilterStatusBobot('ALL')
+    setSearchKurikulum('')
+    setSearchCpl('')
+    setSearchIk('')
+    setSearchCpmk('')
+    setExpandedKurikulumIds(new Set())
+    setExpandedCplIds(new Set())
+    setExpandedIkIds(new Set())
+    setExpandedCpmkIds(new Set())
+    setPageKurikulum(1)
+    setPageCpl(1)
+    setPageIk(1)
+    setPageCpmk(1)
+  }, [user?.id, currentRole])
 
   // Toggle expand helper
   const toggleExpand = (setFn, id) => {
@@ -111,6 +124,9 @@ function DataMasterContent() {
   const availableProdiOptions = useMemo(() => {
     return prodis.map((p) => ({ id: p.id, label: `${p.nama} (${p.kode})` }))
   }, [prodis])
+
+  const readOnlyProdiLabel = user?.program_studi_nama
+    || (user?.program_studi_id ? `Prodi ID #${user.program_studi_id}` : 'Belum terhubung ke program studi')
 
   const availableKurikulumOptions = useMemo(() => {
     return versions.map((v) => ({
@@ -231,153 +247,8 @@ function DataMasterContent() {
     Boolean(searchKurikulum || searchCpl || searchIk || searchCpmk)
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <PageHeader
-        eyebrow="DATA MASTER AKADEMIK"
-        title="Data Master"
-        description="Tinjauan data master kurikulum, capaian pembelajaran lulusan (CPL), indikator kinerja (IK), dan capaian pembelajaran mata kuliah (CPMK)."
-        badge="Mode Lihat Saja"
-        actions={
-          <button
-            type="button"
-            onClick={() => reload()}
-            disabled={loading}
-            data-testid="btn-reload-datamaster"
-            className="inline-flex items-center gap-1.5 rounded-md border border-[#CBD5E1] bg-white px-3 py-2 text-xs font-semibold text-[#142B4A] hover:bg-[#F8FAFC] disabled:opacity-50 transition-colors shadow-sm"
-            title="Muat ulang seluruh data master"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin text-[#1A3A6B]' : 'text-[#64748B]'}`} />
-            <span>Muat Ulang Data</span>
-          </button>
-        }
-      />
-
-      {/* Info Notice: View Only */}
-      <div className="flex items-start gap-3 rounded-lg border border-[#CBD5E1]/80 bg-[#F8FAFC] p-4 text-xs text-[#64748B] leading-relaxed">
-        <Info className="h-4 w-4 text-[#1A3A6B] shrink-0 mt-0.5" />
-        <div>
-          <span className="font-semibold text-[#142B4A]">Informasi Halaman: </span>
-          Halaman Data Master ini berstatus <span className="font-semibold text-[#142B4A]">Hanya-Lihat (View-Only)</span> untuk peninjauan seluruh entitas master kurikulum dan hierarki OBE. Penambahan, pengubahan, atau penghapusan komponen kurikulum dikelola melalui menu <span className="font-medium text-[#1A3A6B]">Kurikulum OBE</span> oleh pengguna dengan hak akses terkait.
-        </div>
-      </div>
-
-      {/* Error Banner if API Fails */}
-      {error && !loading && (
-        <div
-          data-testid="datamaster-error-banner"
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-xs text-red-800"
-        >
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" />
-            <span className="font-medium">{error}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => reload()}
-            className="inline-flex items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700 transition-colors shadow-sm self-start sm:self-auto"
-          >
-            <RefreshCw className="h-3 w-3" />
-            <span>Coba Lagi</span>
-          </button>
-        </div>
-      )}
-
-      {/* Main Container with Tabs */}
+    <div>
       <SectionCard>
-        {/* Navigation Tabs */}
-        <div className="border-b border-[#E2E8F0] -mx-5 -mt-5 px-5 bg-white rounded-t-lg">
-          <nav className="flex space-x-6 overflow-x-auto" aria-label="Tab Data Master">
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('kurikulum')
-                setPageKurikulum(1)
-              }}
-              data-testid="tab-kurikulum"
-              className={`inline-flex items-center gap-2 border-b-2 py-4 px-1 text-xs font-semibold transition-colors whitespace-nowrap ${
-                activeTab === 'kurikulum'
-                  ? 'border-[#1A3A6B] text-[#1A3A6B]'
-                  : 'border-transparent text-[#64748B] hover:text-[#142B4A] hover:border-[#CBD5E1]'
-              }`}
-            >
-              <BookOpen className="h-4 w-4" />
-              <span>1. Versi Kurikulum</span>
-              <span className={`rounded-full px-2 py-0.5 text-[11px] ${
-                activeTab === 'kurikulum' ? 'bg-[#1A3A6B]/10 text-[#1A3A6B]' : 'bg-[#F1F5F9] text-[#64748B]'
-              }`}>
-                {versions.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('cpl')
-                setPageCpl(1)
-              }}
-              data-testid="tab-cpl"
-              className={`inline-flex items-center gap-2 border-b-2 py-4 px-1 text-xs font-semibold transition-colors whitespace-nowrap ${
-                activeTab === 'cpl'
-                  ? 'border-[#1A3A6B] text-[#1A3A6B]'
-                  : 'border-transparent text-[#64748B] hover:text-[#142B4A] hover:border-[#CBD5E1]'
-              }`}
-            >
-              <Target className="h-4 w-4" />
-              <span>2. CPL (Capaian Pembelajaran Lulusan)</span>
-              <span className={`rounded-full px-2 py-0.5 text-[11px] ${
-                activeTab === 'cpl' ? 'bg-[#1A3A6B]/10 text-[#1A3A6B]' : 'bg-[#F1F5F9] text-[#64748B]'
-              }`}>
-                {cpls.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('ik')
-                setPageIk(1)
-              }}
-              data-testid="tab-ik"
-              className={`inline-flex items-center gap-2 border-b-2 py-4 px-1 text-xs font-semibold transition-colors whitespace-nowrap ${
-                activeTab === 'ik'
-                  ? 'border-[#1A3A6B] text-[#1A3A6B]'
-                  : 'border-transparent text-[#64748B] hover:text-[#142B4A] hover:border-[#CBD5E1]'
-              }`}
-            >
-              <Layers className="h-4 w-4" />
-              <span>3. IK (Indikator Kinerja)</span>
-              <span className={`rounded-full px-2 py-0.5 text-[11px] ${
-                activeTab === 'ik' ? 'bg-[#1A3A6B]/10 text-[#1A3A6B]' : 'bg-[#F1F5F9] text-[#64748B]'
-              }`}>
-                {iks.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab('cpmk')
-                setPageCpmk(1)
-              }}
-              data-testid="tab-cpmk"
-              className={`inline-flex items-center gap-2 border-b-2 py-4 px-1 text-xs font-semibold transition-colors whitespace-nowrap ${
-                activeTab === 'cpmk'
-                  ? 'border-[#1A3A6B] text-[#1A3A6B]'
-                  : 'border-transparent text-[#64748B] hover:text-[#142B4A] hover:border-[#CBD5E1]'
-              }`}
-            >
-              <Award className="h-4 w-4" />
-              <span>4. CPMK (Capaian Mata Kuliah)</span>
-              <span className={`rounded-full px-2 py-0.5 text-[11px] ${
-                activeTab === 'cpmk' ? 'bg-[#1A3A6B]/10 text-[#1A3A6B]' : 'bg-[#F1F5F9] text-[#64748B]'
-              }`}>
-                {cpmks.length}
-              </span>
-            </button>
-          </nav>
-        </div>
-
         {/* Global Toolbar: Search & Dynamic Filters */}
         <div className="py-4 border-b border-[#E2E8F0] space-y-3">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -441,8 +312,16 @@ function DataMasterContent() {
 
             {/* Filter Dropdowns */}
             <div className="flex flex-wrap items-center gap-2">
-              {/* Filter Program Studi */}
-              {availableProdiOptions.length > 0 && (
+              {/* Role prodi memakai label read-only; hanya Dekan yang boleh memilih prodi. */}
+              {isSingleProdiRole && (
+                <div data-testid="datamaster-prodi-readonly" className="inline-flex items-center gap-1.5 rounded-md border border-[#CBD5E1] bg-[#F8FAFC] px-2.5 py-1.5 text-xs text-[#142B4A]">
+                  <span className="font-semibold text-[#64748B]">Program Studi:</span>
+                  <span className="font-medium">{readOnlyProdiLabel}</span>
+                </div>
+              )}
+
+              {/* Filter Program Studi khusus Dekan, dari daftar prodi fakultasnya. */}
+              {isDekan && availableProdiOptions.length > 0 && (
                 <div className="flex items-center gap-1.5">
                   <label htmlFor="filter-prodi" className="text-[11px] font-semibold text-[#64748B] whitespace-nowrap">
                     Prodi:
@@ -635,7 +514,7 @@ function DataMasterContent() {
                       <th className="py-3 px-3 w-12 text-center">No</th>
                       <th className="py-3 px-4">Versi Kurikulum</th>
                       <th className="py-3 px-4 w-32">Semester</th>
-                      <th className="py-3 px-4">Program Studi</th>
+                      {!isSingleProdiRole && <th className="py-3 px-4">Program Studi</th>}
                       <th className="py-3 px-4 w-28 text-center">Status</th>
                       <th className="py-3 px-4 w-40">Tanggal Terbit</th>
                       <th className="py-3 px-4 w-40">Dibuat Pada</th>
@@ -644,7 +523,7 @@ function DataMasterContent() {
                   <tbody className="divide-y divide-[#E2E8F0]">
                     {paginatedKurikulum.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="py-16 text-center text-[#64748B]">
+                        <td colSpan={isSingleProdiRole ? 7 : 8} className="py-16 text-center text-[#64748B]">
                           <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
                             <BookOpen className="h-8 w-8 text-[#CBD5E1]" />
                             <p className="font-semibold text-sm text-[#142B4A]">
@@ -701,14 +580,16 @@ function DataMasterContent() {
                               <td className="py-3 px-4 text-[#142B4A] font-medium">
                                 {ver.semester}
                               </td>
-                              <td className="py-3 px-4">
-                                <div className="font-semibold text-[#142B4A]">
-                                  {prodi?.nama || `Prodi ID #${ver.program_studi_id}`}
-                                </div>
-                                <div className="text-[11px] text-[#64748B]">
-                                  {prodi?.kode ? `Kode: ${prodi.kode}` : ''}
-                                </div>
-                              </td>
+                              {!isSingleProdiRole && (
+                                <td className="py-3 px-4">
+                                  <div className="font-semibold text-[#142B4A]">
+                                    {prodi?.nama || `Prodi ID #${ver.program_studi_id}`}
+                                  </div>
+                                  <div className="text-[11px] text-[#64748B]">
+                                    {prodi?.kode ? `Kode: ${prodi.kode}` : ''}
+                                  </div>
+                                </td>
+                              )}
                               <td className="py-3 px-4 text-center">
                                 <Badge tone={ver.status === 'published' ? 'success' : 'warning'}>
                                   {ver.status === 'published' ? 'Published' : 'Draft'}
@@ -737,7 +618,7 @@ function DataMasterContent() {
                             {/* Expanded Detail Row */}
                             {isExpanded && (
                               <tr className="bg-[#F8FAFC]/90">
-                                <td colSpan={8} className="p-4 pl-12 border-t border-[#E2E8F0]">
+                                <td colSpan={isSingleProdiRole ? 7 : 8} className="p-4 pl-12 border-t border-[#E2E8F0]">
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="rounded border border-[#E2E8F0] bg-white p-3 space-y-2">
                                       <div className="text-xs font-semibold text-[#142B4A] flex items-center justify-between">
@@ -824,7 +705,7 @@ function DataMasterContent() {
                       <th className="py-3 px-3 w-12 text-center">No</th>
                       <th className="py-3 px-4 w-28">Kode CPL</th>
                       <th className="py-3 px-4">Deskripsi Capaian Pembelajaran</th>
-                      <th className="py-3 px-4 w-48">Program Studi</th>
+                      {!isSingleProdiRole && <th className="py-3 px-4 w-48">Program Studi</th>}
                       <th className="py-3 px-4 w-36">Kurikulum</th>
                       <th className="py-3 px-4 w-32 text-center">Threshold</th>
                       <th className="py-3 px-4 w-28 text-center">Anak IK</th>
@@ -833,7 +714,7 @@ function DataMasterContent() {
                   <tbody className="divide-y divide-[#E2E8F0]">
                     {paginatedCpls.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="py-16 text-center text-[#64748B]">
+                        <td colSpan={isSingleProdiRole ? 7 : 8} className="py-16 text-center text-[#64748B]">
                           <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
                             <Target className="h-8 w-8 text-[#CBD5E1]" />
                             <p className="font-semibold text-sm text-[#142B4A]">
@@ -889,12 +770,14 @@ function DataMasterContent() {
                               <td className="py-3 px-4">
                                 <div className="font-semibold text-[#142B4A]">{cpl.deskripsi}</div>
                               </td>
-                              <td className="py-3 px-4">
-                                <div className="font-medium text-[#142B4A]">
-                                  {prodi?.nama || `Prodi ID #${cpl.program_studi_id}`}
-                                </div>
-                                <div className="text-[11px] text-[#64748B]">{prodi?.kode || ''}</div>
-                              </td>
+                              {!isSingleProdiRole && (
+                                <td className="py-3 px-4">
+                                  <div className="font-medium text-[#142B4A]">
+                                    {prodi?.nama || `Prodi ID #${cpl.program_studi_id}`}
+                                  </div>
+                                  <div className="text-[11px] text-[#64748B]">{prodi?.kode || ''}</div>
+                                </td>
+                              )}
                               <td className="py-3 px-4 text-[#64748B]">
                                 <span className="font-medium text-[#142B4A]">
                                   {kur?.version_label || `Kurikulum ID #${cpl.kurikulum_version_id}`}
@@ -917,7 +800,7 @@ function DataMasterContent() {
                             {/* Expanded Row: Hierarki OBE Level 1 -> Level 2 (CPL -> IK) */}
                             {isExpanded && (
                               <tr className="bg-[#F8FAFC]/90">
-                                <td colSpan={8} className="p-4 pl-12 border-t border-[#E2E8F0]">
+                                <td colSpan={isSingleProdiRole ? 7 : 8} className="p-4 pl-12 border-t border-[#E2E8F0]">
                                   <div className="rounded border border-[#CBD5E1]/80 bg-white p-4 space-y-3">
                                     <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
                                       <div className="flex items-center gap-2">
@@ -1001,13 +884,13 @@ function DataMasterContent() {
                       <th className="py-3 px-4 w-20 text-center">Urutan</th>
                       <th className="py-3 px-4">Deskripsi Indikator Kinerja</th>
                       <th className="py-3 px-4 w-64">CPL Induk</th>
-                      <th className="py-3 px-4 w-44">Program Studi</th>
+                      {!isSingleProdiRole && <th className="py-3 px-4 w-44">Program Studi</th>}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E2E8F0]">
                     {paginatedIks.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="py-16 text-center text-[#64748B]">
+                        <td colSpan={isSingleProdiRole ? 6 : 7} className="py-16 text-center text-[#64748B]">
                           <div className="flex flex-col items-center justify-center gap-2 max-w-sm mx-auto">
                             <Layers className="h-8 w-8 text-[#CBD5E1]" />
                             <p className="font-semibold text-sm text-[#142B4A]">
@@ -1080,18 +963,20 @@ function DataMasterContent() {
                                   <span className="text-[#94A3B8]">CPL ID #{ik.cpl_id}</span>
                                 )}
                               </td>
-                              <td className="py-3 px-4">
-                                <div className="font-medium text-[#142B4A]">
-                                  {prodi?.nama || '-'}
-                                </div>
-                                <div className="text-[11px] text-[#64748B]">{prodi?.kode || ''}</div>
-                              </td>
+                              {!isSingleProdiRole && (
+                                <td className="py-3 px-4">
+                                  <div className="font-medium text-[#142B4A]">
+                                    {prodi?.nama || '-'}
+                                  </div>
+                                  <div className="text-[11px] text-[#64748B]">{prodi?.kode || ''}</div>
+                                </td>
+                              )}
                             </tr>
 
                             {/* Expanded Detail Row for IK */}
                             {isExpanded && (
                               <tr className="bg-[#F8FAFC]/90">
-                                <td colSpan={7} className="p-4 pl-12 border-t border-[#E2E8F0]">
+                                <td colSpan={isSingleProdiRole ? 6 : 7} className="p-4 pl-12 border-t border-[#E2E8F0]">
                                   <div className="rounded border border-[#CBD5E1]/80 bg-white p-4 space-y-2">
                                     <div className="text-xs font-semibold text-[#142B4A] flex items-center gap-2 border-b border-[#E2E8F0] pb-2">
                                       <span>Rincian Indikator Kinerja & CPL Induk</span>

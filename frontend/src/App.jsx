@@ -25,7 +25,11 @@ import MataKuliahListPage from './pages/mk/MataKuliahListPage'
 import JenisEvaluasiPage from './pages/evaluasi/JenisEvaluasiPage'
 import BentukPenilaianPage from './pages/evaluasi/BentukPenilaianPage'
 import PenilaianPage from './pages/dosen/PenilaianPage'
-import DataMasterPage from './pages/datamaster/DataMasterPage'
+import DataMasterLayout from './pages/datamaster/DataMasterLayout'
+import DataMasterKurikulumPage from './pages/datamaster/DataMasterKurikulumPage'
+import DataMasterCplPage from './pages/datamaster/DataMasterCplPage'
+import DataMasterIkPage from './pages/datamaster/DataMasterIkPage'
+import DataMasterCpmkPage from './pages/datamaster/DataMasterCpmkPage'
 
 import useAuth from './hooks/useAuth'
 
@@ -51,6 +55,14 @@ function RoleBasedHomeRedirect() {
 }
 
 const ACADEMIC_ROLES = ['admin_prodi', 'dosen', 'kaprodi', 'dekan']
+
+function DataMasterIndexRedirect() {
+  const { search } = useLocation()
+  const legacyTab = new URLSearchParams(search).get('tab')
+  const section = ['kurikulum', 'cpl', 'ik', 'cpmk'].includes(legacyTab) ? legacyTab : 'kurikulum'
+
+  return <Navigate to={`/data-master/${section}`} replace />
+}
 
 export default function App() {
   return (
@@ -130,11 +142,17 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
               <AppLayout>
-                <DataMasterPage />
+                <DataMasterLayout />
               </AppLayout>
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<DataMasterIndexRedirect />} />
+          <Route path="kurikulum" element={<DataMasterKurikulumPage />} />
+          <Route path="cpl" element={<DataMasterCplPage />} />
+          <Route path="ik" element={<DataMasterIkPage />} />
+          <Route path="cpmk" element={<DataMasterCpmkPage />} />
+        </Route>
 
         {/* Consolidated Kurikulum OBE for Dosen, Kaprodi, Dekan (Mode Lihat) */}
         <Route

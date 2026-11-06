@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import useAuth from './useAuth'
 import useToast from './useToast'
 import {
@@ -11,7 +11,30 @@ import {
 } from '../services/api'
 import { getApiErrorMessage } from '../pages/superAdminHelpers'
 
-export default function useDataMaster() {
+const sectionLoaders = {
+  kurikulum: {
+    versions: fetchKurikulumVersions,
+    cpls: fetchCplList,
+    mataKuliahs: fetchMataKuliahList,
+  },
+  cpl: {
+    cpls: fetchCplList,
+    iks: fetchIkList,
+    versions: fetchKurikulumVersions,
+  },
+  ik: {
+    iks: fetchIkList,
+    cpls: fetchCplList,
+    versions: fetchKurikulumVersions,
+  },
+  cpmk: {
+    cpmks: fetchCpmkList,
+    mataKuliahs: fetchMataKuliahList,
+    versions: fetchKurikulumVersions,
+  },
+}
+
+export default function useDataMaster(section = 'kurikulum') {
   const { user, activeRole } = useAuth()
   const { pushToast } = useToast()
   const currentRole = activeRole || user?.role || ''
@@ -25,47 +48,73 @@ export default function useDataMaster() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const requestIdRef = useRef(0)
+
+  const clearData = useCallback(() => {
+    setVersions([])
+    setCpls([])
+    setIks([])
+    setCpmks([])
+    setMataKuliahs([])
+    setProdis([])
+  }, [])
 
   const loadAllData = useCallback(async () => {
+    const requestId = ++requestIdRef.current
+
     // Only fetch if user is logged in and not super_admin
     if (!user || currentRole === 'super_admin') {
+      clearData()
+      setError(null)
       setLoading(false)
       return
     }
 
+    if (currentRole === 'dekan' && !user.fakultas_id) {
+      clearData()
+      setError('Akun Dekan belum terhubung ke fakultas. Hubungi Super Admin untuk memperbarui cakupan akun.')
+      setLoading(false)
+      return
+    }
+
+    clearData()
     setLoading(true)
     setError(null)
 
     try {
-      const [verRes, cplRes, ikRes, cpmkRes, mkRes, prodiRes] = await Promise.all([
-        fetchKurikulumVersions().catch((err) => {
-          console.warn('Gagal memuat versi kurikulum:', err)
-          return { data: [] }
-        }),
-        fetchCplList(),
-        fetchIkList(),
-        fetchCpmkList(),
-        fetchMataKuliahList(),
-        fetchProdiList().catch((err) => {
-          console.warn('Gagal memuat prodi:', err)
-          return { data: [] }
-        }),
-      ])
+      const loaders = Object.entries(sectionLoaders[section] || sectionLoaders.kurikulum)
+      if (currentRole === 'dekan') {
+        loaders.push(['prodis', () => fetchProdiList({ fakultas_id: user.fakultas_id })])
+      }
 
-      setVersions(Array.isArray(verRes.data) ? verRes.data : [])
-      setCpls(Array.isArray(cplRes.data) ? cplRes.data : [])
-      setIks(Array.isArray(ikRes.data) ? ikRes.data : [])
-      setCpmks(Array.isArray(cpmkRes.data) ? cpmkRes.data : [])
-      setMataKuliahs(Array.isArray(mkRes.data) ? mkRes.data : [])
-      setProdis(Array.isArray(prodiRes.data) ? prodiRes.data : [])
+      const responses = await Promise.all(loaders.map(([key, loader]) => {
+        const isOptionalRelationship = loader === fetchKurikulumVersions
+        if (!isOptionalRelationship) return loader().then((response) => [key, response?.data])
+
+        return loader().then((response) => [key, response?.data]).catch((err) => {
+          console.warn('Gagal memuat data master pendukung:', err)
+          return [key, []]
+        })
+      }))
+
+      if (requestId !== requestIdRef.current) return
+
+      const dataByKey = Object.fromEntries(responses)
+      setVersions(Array.isArray(dataByKey.versions) ? dataByKey.versions : [])
+      setCpls(Array.isArray(dataByKey.cpls) ? dataByKey.cpls : [])
+      setIks(Array.isArray(dataByKey.iks) ? dataByKey.iks : [])
+      setCpmks(Array.isArray(dataByKey.cpmks) ? dataByKey.cpmks : [])
+      setMataKuliahs(Array.isArray(dataByKey.mataKuliahs) ? dataByKey.mataKuliahs : [])
+      setProdis(Array.isArray(dataByKey.prodis) ? dataByKey.prodis : [])
     } catch (err) {
+      if (requestId !== requestIdRef.current) return
       const msg = getApiErrorMessage(err, 'Gagal memuat data master akademik')
       setError(msg)
       pushToast(msg, 'error')
     } finally {
-      setLoading(false)
+      if (requestId === requestIdRef.current) setLoading(false)
     }
-  }, [user, currentRole, pushToast])
+  }, [user, currentRole, pushToast, section, clearData])
 
   useEffect(() => {
     loadAllData()
@@ -142,6 +191,44 @@ export default function useDataMaster() {
     })
     return map
   }, [cpmks])
+
+  useEffect(() => {
+    const isSingleProdiRole = currentRole === 'admin_prodi' || currentRole === 'kaprodi'
+    const allowedProdiIds = isSingleProdiRole
+      ? new Set(user?.program_studi_id ? [Number(user.program_studi_id)] : [])
+      : currentRole === 'dekan'
+      ? new Set(prodis.map((prodi) => Number(prodi.id)))
+      : null
+
+    if (!allowedProdiIds || allowedProdiIds.size === 0) return
+
+    const cplById = new Map(cpls.map((cpl) => [Number(cpl.id), cpl]))
+    const mkById = new Map(mataKuliahs.map((mk) => [Number(mk.id), mk]))
+    const outsideScope = {
+      versions: versions.filter((item) => !allowedProdiIds.has(Number(item.program_studi_id))).map((item) => item.id),
+      cpls: cpls.filter((item) => !allowedProdiIds.has(Number(item.program_studi_id))).map((item) => item.id),
+      mataKuliahs: mataKuliahs.filter((item) => !allowedProdiIds.has(Number(item.program_studi_id))).map((item) => item.id),
+      iks: iks.filter((item) => {
+        const parentCpl = cplById.get(Number(item.cpl_id))
+        return parentCpl && !allowedProdiIds.has(Number(parentCpl.program_studi_id))
+      }).map((item) => item.id),
+      cpmks: cpmks.filter((item) => {
+        const mataKuliah = mkById.get(Number(item.mata_kuliah_id))
+        return mataKuliah && !allowedProdiIds.has(Number(mataKuliah.program_studi_id))
+      }).map((item) => item.id),
+    }
+    const totalOutsideScope = Object.values(outsideScope).reduce((total, ids) => total + ids.length, 0)
+
+    if (totalOutsideScope > 0) {
+      console.warn('[Data Master] Data di luar scope terdeteksi', {
+        role: currentRole,
+        programStudiId: user?.program_studi_id || null,
+        fakultasId: user?.fakultas_id || null,
+        allowedProdiIds: Array.from(allowedProdiIds),
+        outsideScope,
+      })
+    }
+  }, [currentRole, user?.program_studi_id, user?.fakultas_id, versions, cpls, iks, cpmks, mataKuliahs, prodis])
 
   return {
     versions,
