@@ -11,6 +11,7 @@ from app.models.skala_nilai import SkalaNilai
 from app.models.user import User
 from app.schemas.kurikulum_version import KurikulumVersionCreate, KurikulumVersionResponse
 from app.schemas.skala_nilai import SkalaItem, SkalaNilaiRequest, SkalaNilaiResponse
+from app.services.arsip import arsipkan_publish
 
 router = APIRouter()
 
@@ -41,8 +42,15 @@ def create_version(
     user: User = Depends(require_roles(UserRole.admin_prodi)),
 ):
     prodi_id = _require_prodi_scope(user)
+    v_label = payload.version_label or payload.versi
+    if not v_label:
+        raise HTTPException(status_code=400, detail="Versi kurikulum wajib diisi")
+
     data = KurikulumVersion(
-        **{**payload.model_dump(), "program_studi_id": prodi_id},
+        program_studi_id=prodi_id,
+        version_label=v_label,
+        deskripsi=payload.deskripsi,
+        tahun=payload.tahun,
         status="draft",
         created_by=user.id,
     )
@@ -66,6 +74,9 @@ def publish_version(
         raise HTTPException(status_code=403, detail="Tidak boleh publish kurikulum di luar prodi Anda")
     data.status = "published"
     data.published_at = datetime.now(timezone.utc)
+    db.flush()
+    # Data Master: snapshot kurikulum yang fix dipakai (hanya saat publish pertama).
+    arsipkan_publish(db, data, user.id)
     db.commit()
     db.refresh(data)
     return data

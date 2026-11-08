@@ -1587,7 +1587,7 @@ export default function PenilaianPage() {
                       <tr>
                         <th className="py-2.5 px-3 w-12 text-center">No</th>
                         <th className="py-2.5 px-3 w-36">Kode IK</th>
-                        <th className="py-2.5 px-3 text-center w-36">Rata-rata Skor</th>
+                        <th className="py-2.5 px-3 text-center w-36">Rata-rata Capaian (%)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#E2E8F0]">
@@ -1603,7 +1603,7 @@ export default function PenilaianPage() {
                             <td className="py-2.5 px-3 text-center text-[#64748B]">{idx + 1}</td>
                             <td className="py-2.5 px-3 font-mono font-bold text-[#1A3A6B]">{item.kode}</td>
                             <td className="py-2.5 px-3 text-center font-mono font-semibold text-[#142B4A]">
-                              {Number(item.rata_rata).toFixed(1)}
+                              {Number(item.rata_rata).toFixed(1)}%
                             </td>
                           </tr>
                         ))

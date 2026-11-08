@@ -21,6 +21,10 @@ const sectionMeta = {
     title: 'CPMK',
     description: 'Tinjau Capaian Pembelajaran Mata Kuliah dan akumulasi bobotnya.',
   },
+  arsip: {
+    title: 'Arsip Kurikulum',
+    description: 'Tinjau data kurikulum yang sudah fix dipakai per versi kurikulum dan per semester.',
+  },
 }
 
 export default function DataMasterLayout() {

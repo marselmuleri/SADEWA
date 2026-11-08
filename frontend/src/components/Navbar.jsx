@@ -27,6 +27,7 @@ const pageTitles = {
   '/data-master/cpl': 'DATA MASTER > CPL',
   '/data-master/ik': 'DATA MASTER > IK',
   '/data-master/cpmk': 'DATA MASTER > CPMK',
+  '/data-master/arsip': 'DATA MASTER > Arsip Kurikulum',
   '/data-master': 'DATA MASTER',
   '/super-admin/prodi': 'Daftar Prodi',
   '/super-admin/fakultas': 'Daftar Fakultas',
@@ -149,6 +150,7 @@ export default function Navbar({ children }) {
     { label: 'CPL', path: '/data-master/cpl' },
     { label: 'IK', path: '/data-master/ik' },
     { label: 'CPMK', path: '/data-master/cpmk' },
+    { label: 'Arsip Kurikulum', path: '/data-master/arsip' },
   ]
 
   const menuItems = useMemo(() => {
@@ -185,8 +187,8 @@ export default function Navbar({ children }) {
         { label: 'Peserta Kuliah', path: '/peserta' },
         { label: 'Data Mahasiswa', path: '/mahasiswa' },
         { label: 'Data Master', path: '/data-master' },
-        // Kurikulum OBE is rendered separately as collapsible group
-        { label: 'Analitik OBE', path: '/analisis' },
+        // Kurikulum OBE is rendered separately as collapsible group.
+        // Analitik OBE sengaja tidak ada: wewenang Dosen, Kaprodi, dan Dekan.
         { label: 'Validasi Laporan', path: '/dokumen' },
         { label: 'Manajemen Pengguna', path: '/pengaturan' },
       ]

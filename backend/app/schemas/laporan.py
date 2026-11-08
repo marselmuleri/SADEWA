@@ -5,6 +5,9 @@ from pydantic import BaseModel, ConfigDict
 
 class LaporanGenerateRequest(BaseModel):
     semester: Literal["Ganjil", "Genap"]
+    # Isi awal laporan, mis. hasil Generate Narasi yang sudah diedit dosen.
+    konten: str = ""
+    sumber_narasi_ids: list[int] | None = None
 
 
 class LaporanImportNarasiRequest(BaseModel):

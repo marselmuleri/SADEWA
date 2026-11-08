@@ -22,4 +22,9 @@ export const fetchCpmkList = (params) => api.get('/cpmk', { params })
 export const fetchMataKuliahList = (params) => api.get('/mata-kuliah', { params })
 export const fetchProdiList = (params) => api.get('/prodi', { params })
 
+// Arsip Kurikulum (Data Master: data yang sudah fix dipakai)
+export const fetchArsipList = (params) => api.get('/arsip', { params })
+export const fetchArsipDetail = (id) => api.get(`/arsip/${id}`)
+export const createArsipSemester = (payload) => api.post('/arsip/semester', payload)
+
 export default api

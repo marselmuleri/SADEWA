@@ -10,7 +10,7 @@ from app.models.pengampu_mata_kuliah import PengampuMataKuliah
 from app.models.program_studi import ProgramStudi
 from app.models.rps import RPS
 from app.models.user import User
-from app.schemas.rps import RPSGenerateRequest, RPSResponse
+from app.schemas.rps import RPSGenerateRequest, RPSResponse, RPSUpdate
 from app.services import ai_client
 
 logger = logging.getLogger(__name__)
@@ -118,3 +118,45 @@ def list_rps(mata_kuliah_id: int, db: Session = Depends(get_db), scope: Academic
     elif scope.fakultas_id:
         query = query.join(ProgramStudi, MataKuliah.program_studi_id == ProgramStudi.id).filter(ProgramStudi.fakultas_id == scope.fakultas_id)
     return query.order_by(RPS.id.desc()).all()
+
+
+def _get_rps_for_write(db: Session, user: User, rps_id: int) -> RPS:
+    rps = db.query(RPS).filter(RPS.id == rps_id).first()
+    if not rps:
+        raise HTTPException(status_code=404, detail="RPS tidak ditemukan")
+    _check_write_access(db, user, rps.mata_kuliah_id)
+    return rps
+
+
+@router.put("/{rps_id}", response_model=RPSResponse)
+def update_rps(
+    rps_id: int,
+    payload: RPSUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen)),
+):
+    """Simpan hasil edit draf RPS (isi, tahun ajaran, semester)."""
+    rps = _get_rps_for_write(db, user, rps_id)
+    pertemuan = payload.konten.get("pertemuan")
+    if pertemuan is not None and not isinstance(pertemuan, list):
+        raise HTTPException(status_code=400, detail="Format pertemuan RPS tidak valid")
+    rps.konten = payload.konten
+    if payload.tahun_ajaran:
+        rps.tahun_ajaran = payload.tahun_ajaran
+    if payload.semester:
+        rps.semester = payload.semester
+    db.commit()
+    db.refresh(rps)
+    return rps
+
+
+@router.delete("/{rps_id}")
+def delete_rps(
+    rps_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen)),
+):
+    rps = _get_rps_for_write(db, user, rps_id)
+    db.delete(rps)
+    db.commit()
+    return {"message": "Draf RPS dihapus"}

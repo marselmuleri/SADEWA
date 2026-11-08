@@ -15,7 +15,9 @@ from app.models.mk_bentuk_penilaian_ik_map import MKBentukPenilaianIKMap
 from app.models.nilai_bentuk_penilaian import NilaiBentukPenilaian
 from app.models.peserta_mata_kuliah import PesertaMataKuliah
 from app.models.skala_nilai import SkalaNilai
-from app.services.calculation.obe_formula import compute_result, pilih_huruf
+from app.services.calculation.obe_formula import (
+    bobot_ik_mata_kuliah, compute_result, persen_cpmk, pilih_huruf,
+)
 
 
 def cek_siap_dinilai(db: Session, mata_kuliah_id: int) -> list[str]:
@@ -116,6 +118,11 @@ def run_kalkulasi(db: Session, mata_kuliah_id: int) -> dict:
             cpmk_ik[cpmk.id][m.ik_id] = m.bobot
             ik_ids_in_mk.add(m.ik_id)
 
+    # Poin IK maksimal di mata kuliah ini = jumlah kolom IK pada matriks bentuk penilaian
+    # (poin dihitung dari matriks ini). Persen IK = poin / bobot × 100, tidak pernah > 100.
+    # Untuk MK yang lolos validasi bobot, nilainya sama dengan Σ bobot pemetaan CPMK→IK.
+    ik_bobot_mk = bobot_ik_mata_kuliah(matrix)
+
     # 3. Bangun relasi ik -> cpl
     ik_to_cpl = {ik.id: ik.cpl_id for ik in db.query(IK).filter(IK.id.in_(ik_ids_in_mk)).all()} if ik_ids_in_mk else {}
 
@@ -176,16 +183,13 @@ def run_kalkulasi(db: Session, mata_kuliah_id: int) -> dict:
             if len(sample_results) < 5:
                 sample_results.append({"ik_id": ik_id, "nilai": kontribusi})
 
-        # STEP B: CPMK achievement (turunan per peserta)
+        # STEP B: CPMK achievement (persen 0-100) = rata-rata persen IK pendukung,
+        # dibobot dengan bobot pemetaan CPMK→IK.
         for cpmk in cpmk_list:
             maps = cpmk_ik.get(cpmk.id, {})
             if not maps:
                 continue
-            total_bobot_map = sum(maps.values()) or Decimal("1")
-            nilai_cpmk = Decimal("0")
-            for m_ik_id, m_bobot in maps.items():
-                p_ik = hasil_obe.poin_ik.get(m_ik_id, Decimal("0.00"))
-                nilai_cpmk += p_ik * (m_bobot / total_bobot_map)
+            nilai_cpmk = persen_cpmk(maps, hasil_obe.poin_ik, ik_bobot_mk)
 
             existing_cpmk = db.query(CPMKAchievement).filter(
                 CPMKAchievement.peserta_mata_kuliah_id == peserta.id,
@@ -226,16 +230,26 @@ def run_kalkulasi(db: Session, mata_kuliah_id: int) -> dict:
                 status_outcome="Tercapai" if nilai_akhir >= Decimal("70") else "Tidak Tercapai",
             ))
 
-        # STEP D: Capaian CPL per mahasiswa
+        # STEP D: Capaian CPL per mahasiswa PER MATA KULIAH, beserta bobot_cp.
+        # Gabungan lintas mata kuliah dihitung saat dibaca (cpl_aggregate.py),
+        # jadi kalkulasi satu mata kuliah tidak lagi menimpa capaian mata kuliah lain.
         current_semester = mbp_list[0].semester if mbp_list else (mk.semester if mk else None)
         mhs_angkatan = getattr(peserta.mahasiswa, "angkatan", None)
         for cpl_id, persen_cpl in hasil_obe.persen_cpl.items():
+            bobot_cp = hasil_obe.bobot_cp.get(cpl_id, Decimal("0"))
             existing_cpl = db.query(CPLAchievement).filter(
                 CPLAchievement.mahasiswa_id == peserta.mahasiswa_id,
                 CPLAchievement.cpl_id == cpl_id,
+                CPLAchievement.mata_kuliah_id == mata_kuliah_id,
             ).first()
+            if bobot_cp <= Decimal("0"):
+                # CPL ini tidak diukur di mata kuliah ini.
+                if existing_cpl:
+                    db.delete(existing_cpl)
+                continue
             if existing_cpl:
                 existing_cpl.nilai = persen_cpl
+                existing_cpl.bobot_cp = bobot_cp
                 if current_semester:
                     existing_cpl.semester = current_semester
                 if mhs_angkatan is not None:
@@ -244,10 +258,18 @@ def run_kalkulasi(db: Session, mata_kuliah_id: int) -> dict:
                 db.add(CPLAchievement(
                     mahasiswa_id=peserta.mahasiswa_id,
                     cpl_id=cpl_id,
+                    mata_kuliah_id=mata_kuliah_id,
                     semester=current_semester,
                     angkatan=mhs_angkatan,
                     nilai=persen_cpl,
+                    bobot_cp=bobot_cp,
                 ))
+            # Baris lama tanpa mata kuliah (format sebelumnya) sudah tergantikan.
+            db.query(CPLAchievement).filter(
+                CPLAchievement.mahasiswa_id == peserta.mahasiswa_id,
+                CPLAchievement.cpl_id == cpl_id,
+                CPLAchievement.mata_kuliah_id.is_(None),
+            ).delete(synchronize_session=False)
 
     db.commit()
 

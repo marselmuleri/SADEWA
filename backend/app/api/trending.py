@@ -5,7 +5,9 @@ from app.core.database import get_db
 from app.core.deps import AcademicScope, get_academic_scope
 from app.models.cpl import CPL
 from app.models.cpl_achievement import CPLAchievement
+from app.models.enums import UserRole
 from app.models.program_studi import ProgramStudi
+from app.services.calculation.cpl_aggregate import gabung_capaian_cpl
 from app.schemas.dashboard import TrendingItem
 
 router = APIRouter()
@@ -20,8 +22,13 @@ def trending_cpl_by_angkatan(
     db: Session = Depends(get_db),
     scope: AcademicScope = Depends(get_academic_scope),
 ):
+    if scope.user.role == UserRole.admin_prodi:
+        raise HTTPException(status_code=403, detail="Admin Prodi tidak memiliki akses ke trending analisis OBE")
+    if scope.user.role not in (UserRole.dosen, UserRole.kaprodi, UserRole.dekan):
+        raise HTTPException(status_code=403, detail="Role ini tidak memiliki akses trending")
+
     if scope.program_studi_id:
-        # Admin Prodi & Kaprodi: prodi selalu dari akun login, parameter client diabaikan.
+        # Kaprodi & Dosen: prodi selalu dari akun login, parameter client diabaikan.
         prodi_id = scope.program_studi_id
     elif scope.fakultas_id:
         # Dekan lintas prodi: wajib pilih salah satu prodi di fakultasnya sendiri.
@@ -42,9 +49,9 @@ def trending_cpl_by_angkatan(
     if year_end:
         query = query.filter(CPLAchievement.angkatan <= year_end)
 
-    achs = query.all()
+    # Gabung dulu per mahasiswa (berbobot bobot IK lintas mata kuliah), baru dirata-rata per angkatan.
     grouped: dict[tuple[int, int], list] = {}
-    for a in achs:
+    for a in gabung_capaian_cpl(query.all()).values():
         if a.angkatan is None:
             continue
         key = (a.angkatan, a.cpl_id)

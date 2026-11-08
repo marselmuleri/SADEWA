@@ -1,7 +1,7 @@
 # SADEWA Institutional — Design Brief
 
-**Version:** 1.1 (Role-Aligned)
-**Rujukan wajib:** `docs/PRD/PRD.md` v2.1 — dokumen ini adalah sumber kebenaran **visual**; PRD tetap sumber kebenaran **fungsional** (siapa boleh apa). Jika ada perbedaan soal kewenangan/akses, PRD yang berlaku.
+**Version:** 1.2 (Selaras PRD v2.2 — Analitik OBE bukan wewenang Admin Prodi)
+**Rujukan wajib:** [`docs/PRD/PRD_SADEWA_v2.2.md`](../PRD_SADEWA_v2.2.md) — matriks hak akses lengkap ada di PRD Bagian 4. Dokumen ini adalah sumber kebenaran **visual**; PRD tetap sumber kebenaran **fungsional** (siapa boleh apa). Jika ada perbedaan soal kewenangan/akses, PRD yang berlaku.
 
 Dokumen ini adalah arahan visual dan UX untuk membangun ulang tampilan SADEWA secara konsisten. Gunakan sebagai **design system + implementation brief**, bukan hanya sebagai deskripsi umum.
 
@@ -13,16 +13,18 @@ Dokumen ini adalah arahan visual dan UX untuk membangun ulang tampilan SADEWA se
 
 | Halaman | Role yang bisa akses | Sumber PRD |
 |---|---|---|
-| Ikhtisar / Dashboard OBE | Admin Prodi, Dosen, Kaprodi, Dekan (data ter-scope ke `program_id` masing-masing) | Feature 6 |
-| Analitik OBE (3-level drill-down) | Admin Prodi, Dosen, Kaprodi, Dekan | Feature 6, 7 |
-| Kurikulum OBE (edit CPL/IK/CPMK) | **Admin Prodi** (CRUD penuh) · Dosen (lihat saja, CPMK miliknya) | Feature 2 |
-| Validasi Laporan | **Kaprodi**, Dekan (approve/reject) · Dosen (lihat status laporan miliknya) | Feature 10 |
-| Generate RPS / Laporan Evaluasi | Dosen (buat & submit) · Kaprodi (lihat sebagai bagian validasi) | Feature 8, 9 |
-| Manajemen Pengguna (dalam 1 prodi) | **Admin Prodi** — kelola dosen/kaprodi di prodinya sendiri | Feature 3 |
-| **Panel Super Admin** (daftar prodi, provisioning, user metadata lintas prodi) | **Super Admin SAJA** — role terpisah, tidak muncul untuk role lain | Feature 12, Section 3.2 |
-| **Pengajuan/Provisioning Prodi Baru** | **Super Admin SAJA** — approve/reject provisioning bukan wewenang Kaprodi | Feature 12, Section 3.3 |
+| Ikhtisar | Admin Prodi (**kesiapan konfigurasi kurikulum, tanpa angka capaian**) · Dosen (per MK diampu) · Kaprodi (capaian prodi) · Dekan (capaian prodi terpilih) | PRD F8 |
+| Analitik OBE (3-level drill-down + tren) | **Dosen, Kaprodi, Dekan** — **bukan** Admin Prodi | PRD F9, revisi R1 |
+| Kurikulum OBE (kelola CPL/IK/MK/CPMK/evaluasi) | **Admin Prodi** (CRUD penuh) · Dosen, Kaprodi, Dekan (Mode Lihat; Kaprodi boleh ubah target CPL) | PRD F2–F4 |
+| Data Master (read-only) | Admin Prodi, Dosen, Kaprodi, Dekan | PRD F12 |
+| Data Mahasiswa | Admin Prodi | PRD F6 |
+| Peserta Kuliah | Admin Prodi · Dosen (MK diampu) | PRD F6 |
+| Penilaian (bobot, matriks IK, input nilai, kalkulasi) | Dosen (MK diampu) | PRD F7 |
+| Laporan Saya / Validasi Laporan | Dosen (buat, submit, generate RPS) · **Kaprodi** (approve/reject) · Dekan (lihat saja) | PRD F10–F11 |
+| Manajemen Pengguna (dalam 1 prodi) | **Admin Prodi** — kelola akun Dosen & Kaprodi di prodinya | PRD F5 |
+| **Panel Super Admin** (fakultas, prodi, akun Admin Prodi & Dekan) | **Super Admin SAJA** | PRD F13, Bagian 3.3 |
 
-**Konsekuensi untuk demo:** karena ini demo visual dengan data lokal (tanpa auth sungguhan), gunakan **role switcher** di topbar (dropdown atau pill selector: "Lihat sebagai: Admin Prodi / Dosen / Kaprodi / Dekan / Super Admin"). Saat role diganti, sidebar dan konten halaman ikut berganti mengikuti tabel di atas — ini untuk membuktikan pemisahan kewenangan benar-benar berjalan di UI, bukan cuma label role di pojok atas yang tidak berpengaruh ke apapun.
+**Catatan implementasi:** aplikasi memakai login nyata (JWT), jadi tidak ada role switcher; role ditentukan oleh akun. Pemisahan kewenangan dibuktikan dengan login memakai akun seed tiap role (lihat README).
 
 ---
 
@@ -32,14 +34,14 @@ SADEWA adalah aplikasi institutional untuk **Sistem Analisis Data Evaluasi Wawas
 
 ### Fokus MVP (demo visual)
 
-1. Dashboard operasional OBE — Admin Prodi/Dosen/Kaprodi/Dekan.
-2. Analitik 3-level: **CPL → IK → CPMK** — Admin Prodi/Dosen/Kaprodi/Dekan.
+1. Ikhtisar — Admin Prodi (kesiapan konfigurasi), Dosen/Kaprodi/Dekan (capaian OBE).
+2. Analitik 3-level: **CPL → IK → CPMK** — Dosen/Kaprodi/Dekan (bukan Admin Prodi).
 3. Analisis tren ketercapaian CPL — Kaprodi/Dekan (lintas angkatan).
 4. Kurikulum OBE — Admin Prodi (edit), Dosen (lihat).
 5. Validasi laporan evaluasi — Kaprodi/Dekan (approve/reject), Dosen (submit & lihat status).
 6. Panel Super Admin: daftar prodi & provisioning — **khusus Super Admin, terpisah total dari 5 poin di atas**.
 
-Gunakan data demo lokal untuk membuat tampilan dan alur terasa hidup. Jangan mengharuskan login sungguhan atau integrasi eksternal pada demo visual — tapi role switcher tetap wajib ada agar perbedaan akses terlihat.
+Aplikasi memakai login nyata dan data dari backend. Gunakan data seed (README) untuk screenshot dan uji alur tiap role.
 
 ## 2. Karakter Visual
 
@@ -148,22 +150,23 @@ Struktur visual sidebar (lebar, warna, logo) **sama** untuk semua role. Yang ber
 - Item nonaktif: teks biru-putih dengan hover background putih transparan.
 - Bagian bawah sidebar berisi profile card berisi nama, role aktif, dan (jika Admin Prodi/Dosen/Kaprodi/Dekan) badge kode program studi.
 
-**Menu untuk Admin Prodi / Dosen / Kaprodi / Dekan** (grup "RUANG KERJA"):
-- Ikhtisar
-- Analitik OBE
-- Kurikulum OBE *(Dosen: read-only, tanpa tombol edit)*
-- Validasi Laporan *(Dosen: judul menu jadi "Laporan Saya", tanpa tombol approve/reject)*
+**Menu per role** (grup "RUANG KERJA", sesuai implementasi `Navbar.jsx`):
 
-Grup "ADMINISTRASI" **hanya muncul untuk Admin Prodi**, berisi:
-- Manajemen Pengguna *(khusus user di prodinya sendiri)*
+| Role | Menu |
+|---|---|
+| Admin Prodi | Ikhtisar · Peserta Kuliah · Data Mahasiswa · Data Master *(grup)* · Kurikulum OBE *(grup: CPL, Pemetaan IK, Mata Kuliah, CPMK, Jenis Evaluasi, Bentuk Penilaian)* · Validasi Laporan · Manajemen Pengguna |
+| Dosen | Ikhtisar · Peserta Kuliah · Penilaian · Analitik OBE · Data Master · Kurikulum OBE *(Mode Lihat)* · Laporan Saya |
+| Kaprodi | Ikhtisar · Analitik OBE · Data Master · Kurikulum OBE *(Mode Lihat)* · Validasi Laporan |
+| Dekan | Ikhtisar · Analitik OBE · Data Master · Kurikulum OBE *(Mode Lihat)* · Validasi Laporan *(Mode Lihat)* |
 
-**Menu untuk Super Admin** — sidebar terpisah total, tidak berbagi grup "RUANG KERJA" di atas:
-- **RUANG KERJA SUPER ADMIN**
-  - Daftar Prodi
-  - Pengajuan Onboarding Prodi *(dengan badge notifikasi orange untuk yang pending)*
-  - Manajemen Pengguna Lintas Prodi *(metadata saja — lihat status aktif/nonaktif, bukan isi akademik; lihat PRD Section 3.2)*
+> **Admin Prodi tidak punya menu Analitik OBE.** Analisis capaian adalah wewenang Dosen, Kaprodi, dan Dekan (PRD revisi R1).
 
-> Super Admin **tidak** melihat menu Kurikulum OBE, Analitik OBE, atau Validasi Laporan sama sekali — itu di luar kewenangannya per PRD Section 3.2.
+**Menu untuk Super Admin** — sidebar terpisah total ("RUANG KERJA SUPER ADMIN"):
+- Daftar Prodi
+- Daftar Fakultas
+- Manajemen Pengguna Lintas Prodi *(akun Admin Prodi & Dekan; metadata saja, bukan isi akademik)*
+
+> Super Admin **tidak** melihat menu Kurikulum OBE, Analitik OBE, atau Validasi Laporan — itu di luar kewenangannya (PRD Bagian 3.3).
 
 ### Topbar
 
@@ -174,7 +177,7 @@ Grup "ADMINISTRASI" **hanya muncul untuk Admin Prodi**, berisi:
 - Search field kanan dengan placeholder `Cari di SADEWA...` (disembunyikan pada tampilan Super Admin jika tidak relevan).
 - Notification icon dengan titik notifikasi orange.
 - Role indicator: nama role aktif (`Kaprodi`, `Admin Prodi`, `Super Admin`, dst.) dan, untuk role selain Super Admin, badge kode program studi (`TK`).
-- **Role switcher** (khusus demo, lihat Section 0): dropdown di sebelah role indicator untuk berpindah role tanpa reload.
+- Tombol `Keluar` (logout). Tidak ada role switcher; role berasal dari akun yang login.
 - Topbar boleh sticky.
 
 ### Main Content
@@ -192,7 +195,9 @@ Grup "ADMINISTRASI" **hanya muncul untuk Admin Prodi**, berisi:
 
 ### A. Ikhtisar / Dashboard
 
-**Role:** Admin Prodi, Dosen, Kaprodi, Dekan. Konten sama secara struktur; data selalu ter-scope ke `program_id` milik user (Dekan bisa punya selector prodi jika mengawasi lebih dari satu — lihat PRD Section 3.1).
+**Role:** Dosen, Kaprodi, Dekan untuk tampilan capaian di bawah ini. Data selalu ter-scope ke prodi milik user; Dekan memilih prodi lewat selector (PRD Bagian 3.1).
+
+**Varian Admin Prodi:** eyebrow `DASHBOARD ADMINISTRASI PRODI`, empat kartu (Kurikulum Aktif, CPL / IK, Mata Kuliah, Penugasan Pengampu) dan section `Kesiapan Konfigurasi Kurikulum` berupa checklist (versi published, CPL ber-IK, MK ber-CPMK, MK ber-pengampu) dengan tombol `Buka` ke halaman terkait. **Tidak** menampilkan angka capaian, bar chart CPL, atau kartu CPL.
 
 Header:
 
@@ -250,7 +255,10 @@ Buat satu card navy untuk konteks program studi:
 
 ### B. Analitik OBE
 
-**Role:** Admin Prodi, Dosen, Kaprodi, Dekan.
+**Role:** Dosen, Kaprodi, Dekan. **Admin Prodi tidak berwenang** — menu tidak dirender dan rute `/analisis` dialihkan ke Ikhtisar.
+
+- Dosen: analisis per mata kuliah yang diampu (CPMK & IK breakdown).
+- Kaprodi/Dekan: drill-down CPL → IK → mata kuliah, plus tab Tren.
 
 Gunakan breadcrumb yang menunjukkan hirarki:
 
@@ -308,7 +316,7 @@ Tombol `Tambah CPL` **hanya render untuk role Admin Prodi**. Untuk Dosen, sembun
 
 ### D. Validasi Laporan
 
-**Role:** Kaprodi, Dekan (approve/reject) · Dosen (lihat status laporan miliknya, submit laporan baru — mengarah ke alur Generate Laporan Evaluasi, PRD Feature 9).
+**Role:** Kaprodi (approve/reject) · Dekan (lihat saja, lintas prodi di fakultasnya) · Dosen (lihat status laporan miliknya, submit laporan baru, generate RPS — PRD F10–F11).
 
 Tabel laporan berisi:
 
@@ -316,7 +324,7 @@ Tabel laporan berisi:
 - Mata kuliah.
 - Tanggal dikirim.
 - Status.
-- Tombol `Setujui` dan `Kembalikan` — **hanya render untuk Kaprodi/Dekan**.
+- Tombol `Setujui` dan `Kembalikan` — **hanya render untuk Kaprodi** (Dekan: badge `Mode Lihat`).
 
 Untuk role Dosen, ganti judul halaman jadi "Laporan Saya" dan kolom aksi jadi status badge saja (`Menunggu Validasi` / `Disetujui` / `Perlu Revisi`) tanpa tombol approve/reject, plus tombol `+ Buat Laporan Baru` yang mengarah ke form Generate Laporan Evaluasi.
 
@@ -397,7 +405,6 @@ Tambahkan search `Cari prodi...` dan tombol filter.
 - Loading state menggunakan skeleton atau label singkat, bukan blank screen.
 - Jika API gagal, shell, navigasi, dan data demo tetap tampil.
 - Jangan membuat modal/full-screen error yang menggantikan seluruh halaman.
-- Saat role switcher diganti (demo), transisi sidebar & konten memakai fade singkat, bukan reload halaman penuh.
 
 ## 7. Accessibility
 
@@ -456,9 +463,9 @@ Gunakan data demo berikut agar screenshot dan flow terlihat realistis:
 - Pertahankan desktop-first; mobile tidak menjadi prioritas MVP.
 - Jangan menambahkan auth, SIAP, AI, email, atau payment integration ke demo kecuali diminta eksplisit.
 - Semua API yang dibuat untuk demo harus dapat diganti dengan backend nyata tanpa mengubah struktur UX.
-- **Wajib:** implementasikan role switcher di demo (Section 0) dan pastikan sidebar/menu/tombol aksi benar-benar berubah mengikuti tabel Role → Halaman di Section 0 — ini bukan opsional, karena ini yang membuktikan struktur RBAC dari PRD benar-benar tercermin di UI.
+- **Wajib:** sidebar, menu, dan tombol aksi harus mengikuti tabel Role → Halaman di Section 0 (dan matriks PRD Bagian 4). Uji dengan login memakai akun seed tiap role.
 - Jangan render menu atau tombol aksi untuk role yang tidak berwenang, meskipun secara visual di-disable — lihat Section 7 soal DOM rendering.
 
 ## 10. Prompt Singkat Siap Salin
 
-> Bangun dashboard web SADEWA Institutional dengan gaya formal akademik dan institutional, dan dengan **role-based access yang benar-benar berfungsi** di UI (lihat peta Role → Halaman di Section 0 dokumen ini). Gunakan fixed sidebar navy 240–250px yang isinya berubah sesuai role aktif, topbar putih dengan breadcrumb, search, notification, role indicator, dan role switcher untuk keperluan demo. Gunakan palette `#1A3A6B` navy, `#6D778E` slate, `#F4A300` orange, `#10B981` green, `#EF4444` red, background `#F8FAFC`, surface putih, dan border `#E2E8F0`. Gunakan heading Public Sans atau sans-serif institutional tegas, body Inter atau IBM Plex Sans. Hindari gradient, glassmorphism, shadow besar, radius berlebihan, dan layout yang terlalu terpusat. Buat halaman Ikhtisar, Analitik OBE, Kurikulum OBE, dan Validasi Laporan untuk role Admin Prodi/Dosen/Kaprodi/Dekan (dengan variasi kewenangan tiap role sesuai Section 5), serta Panel Super Admin (Daftar Prodi & Pengajuan Onboarding) yang terpisah total dan hanya terlihat oleh Super Admin. Dashboard harus menampilkan metrik OBE, bar chart CPL, aktivitas terbaru, kartu CPL, context card program studi, line chart tren 2021–2024, tabel IK/CPMK, tabel status pengajuan prodi (khusus Super Admin), statistik kurikulum, dan workflow approve/reject laporan (khusus Kaprodi/Dekan). Gunakan data demo lokal realistis. Semua interaksi penting harus memberi toast feedback, memiliki state loading/fallback, dan diberi data-testid unik.
+> Bangun dashboard web SADEWA Institutional dengan gaya formal akademik dan institutional, dan dengan **role-based access yang benar-benar berfungsi** di UI (lihat peta Role → Halaman di Section 0 dokumen ini). Gunakan fixed sidebar navy 240–250px yang isinya berubah sesuai role aktif, topbar putih dengan breadcrumb, search, notification, role indicator, dan tombol keluar. Gunakan palette `#1A3A6B` navy, `#6D778E` slate, `#F4A300` orange, `#10B981` green, `#EF4444` red, background `#F8FAFC`, surface putih, dan border `#E2E8F0`. Gunakan heading Public Sans atau sans-serif institutional tegas, body Inter atau IBM Plex Sans. Hindari gradient, glassmorphism, shadow besar, radius berlebihan, dan layout yang terlalu terpusat. Buat halaman Ikhtisar, Kurikulum OBE, dan Validasi Laporan untuk role akademik, serta Analitik OBE khusus Dosen/Kaprodi/Dekan — bukan Admin Prodi (variasi kewenangan tiap role sesuai Section 0 dan 5), serta Panel Super Admin (Daftar Prodi & Pengajuan Onboarding) yang terpisah total dan hanya terlihat oleh Super Admin. Dashboard harus menampilkan metrik OBE, bar chart CPL, aktivitas terbaru, kartu CPL, context card program studi, line chart tren 2021–2024, tabel IK/CPMK, tabel status pengajuan prodi (khusus Super Admin), statistik kurikulum, dan workflow approve/reject laporan (khusus Kaprodi; Dekan lihat saja). Gunakan data demo lokal realistis. Semua interaksi penting harus memberi toast feedback, memiliki state loading/fallback, dan diberi data-testid unik.

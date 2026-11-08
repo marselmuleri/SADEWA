@@ -29,11 +29,23 @@ class IKAchievementItem(BaseModel):
 
 
 class CPLAchievementItem(BaseModel):
+    """Capaian CPL pada satu mata kuliah (mata_kuliah_id None = data lama sebelum per-MK)."""
     cpl_id: int
     cpl_kode: str
+    mata_kuliah_id: int | None = None
+    mata_kuliah_nama: str | None = None
     semester: str | None = None
     angkatan: int | None = None
     nilai: Decimal
+    bobot_cp: Decimal | None = None
+
+
+class CPLGabunganItem(BaseModel):
+    """Capaian CPL gabungan lintas mata kuliah: Σ(nilai × bobot_cp) / Σ bobot_cp."""
+    cpl_id: int
+    cpl_kode: str
+    nilai: Decimal
+    jumlah_mata_kuliah: int
 
 
 class RaporMahasiswaResponse(BaseModel):
@@ -44,3 +56,5 @@ class RaporMahasiswaResponse(BaseModel):
     cpmk_achievement: list[CPMKAchievementItem]
     ik_achievement: list[IKAchievementItem]
     cpl_achievement: list[CPLAchievementItem]
+    # Kosong untuk Dosen: gabungan memuat mata kuliah yang tidak diampu.
+    cpl_gabungan: list[CPLGabunganItem] = []

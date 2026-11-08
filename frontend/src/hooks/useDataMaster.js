@@ -27,6 +27,8 @@ const sectionLoaders = {
     cpls: fetchCplList,
     versions: fetchKurikulumVersions,
   },
+  // Arsip memuat datanya sendiri; hook ini hanya menyediakan daftar prodi untuk Dekan.
+  arsip: {},
   cpmk: {
     cpmks: fetchCpmkList,
     mataKuliahs: fetchMataKuliahList,

@@ -46,7 +46,8 @@ def generate_laporan(
         mata_kuliah_id=matkul_id,
         dosen_id=user.id,
         semester=payload.semester,
-        konten="",
+        konten=payload.konten or "",
+        sumber_narasi_ids=payload.sumber_narasi_ids,
         status="draft",
         version=1,
     )

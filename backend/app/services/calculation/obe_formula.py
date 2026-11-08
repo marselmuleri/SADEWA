@@ -25,7 +25,7 @@ Aturan Pembulatan & Presisi:
    Jika skala kosong atau belum diatur, mengembalikan None.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -57,6 +57,9 @@ class HasilOBE:
     poin_cpl: Dict[str, Decimal]
     persen_cpl: Dict[str, Decimal]
     nilai_akhir: Decimal
+    # Σ bobot IK milik tiap CPL pada mata kuliah ini; dipakai sebagai bobot
+    # saat capaian CPL digabung lintas mata kuliah.
+    bobot_cp: Dict[str, Decimal] = field(default_factory=dict)
 
 
 def compute_result(
@@ -139,7 +142,43 @@ def compute_result(
         poin_cpl=poin_cpl,
         persen_cpl=persen_cpl,
         nilai_akhir=nilai_akhir,
+        bobot_cp=bobot_cp,
     )
+
+
+def bobot_ik_mata_kuliah(matrix: Dict[Any, Dict[Any, Any]]) -> Dict[Any, Decimal]:
+    """
+    Poin IK maksimal per IK pada satu mata kuliah: jumlah kolom IK pada matriks
+    bentuk penilaian × IK (dict[bentuk, dict[ik, bobot_sel]]).
+    """
+    hasil: Dict[Any, Decimal] = {}
+    for maps in matrix.values():
+        for ik, bobot in maps.items():
+            hasil[ik] = hasil.get(ik, Decimal("0")) + _to_decimal(bobot)
+    return hasil
+
+
+def persen_ik(poin: Any, bobot_ik: Any) -> Decimal:
+    """Persen capaian IK pada satu mata kuliah: poin / bobot × 100 (0 jika bobot 0)."""
+    b = _to_decimal(bobot_ik or 0)
+    if b <= 0:
+        return Decimal("0.00")
+    return (_to_decimal(poin) / b * Decimal("100")).quantize(TWOPLACES, rounding=ROUND_HALF_UP)
+
+
+def persen_cpmk(maps: Dict[Any, Any], poin_ik: Dict[Any, Any], bobot_ik_mk: Dict[Any, Any]) -> Decimal:
+    """
+    Persen capaian CPMK = rata-rata persen IK pendukung, dibobot bobot pemetaan CPMK→IK.
+    Contoh: IK1 (bobot 60) 100%, IK2 (bobot 40) 50% -> (100*60 + 50*40) / 100 = 80.00
+    """
+    total = sum(_to_decimal(b) for b in maps.values())
+    if total <= 0:
+        return Decimal("0.00")
+    jumlah = sum(
+        persen_ik(poin_ik.get(ik, 0), bobot_ik_mk.get(ik, 0)) * _to_decimal(b)
+        for ik, b in maps.items()
+    )
+    return (jumlah / total).quantize(TWOPLACES, rounding=ROUND_HALF_UP)
 
 
 def pilih_huruf(

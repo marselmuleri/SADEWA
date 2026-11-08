@@ -21,28 +21,35 @@ def auto_sync_schema(db_engine):
     pada tabel yang sudah ada perlu di-patch secara idempotent jika belum ada.
     """
     if db_engine.dialect.name == "postgresql":
-        with db_engine.begin() as conn:
-            statements = [
-                "ALTER TABLE rps ADD COLUMN IF NOT EXISTS konten JSON;",
-                "ALTER TABLE rps ADD COLUMN IF NOT EXISTS sumber_dokumen_rag JSON;",
-                "ALTER TABLE jenis_evaluasi ADD COLUMN IF NOT EXISTS bobot NUMERIC(5, 2);",
-                "ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS angkatan SMALLINT;",
-                "ALTER TABLE cpl_achievement ADD COLUMN IF NOT EXISTS angkatan INTEGER;",
-                "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS kurikulum_version_id BIGINT;",
-                "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS is_final BOOLEAN DEFAULT FALSE;",
-                "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS finalized_at TIMESTAMP;",
-                "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS finalized_by BIGINT;",
-                "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS unlocked_at TIMESTAMP;",
-                "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS unlocked_by BIGINT;",
-                "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS alasan_buka VARCHAR(255);",
-                "ALTER TABLE nilai_bentuk_penilaian ADD COLUMN IF NOT EXISTS ik_id BIGINT;",
-                "ALTER TABLE kurikulum_versions ALTER COLUMN semester DROP NOT NULL;",
-            ]
-            for stmt in statements:
-                try:
+        statements = [
+            "ALTER TABLE rps ADD COLUMN IF NOT EXISTS konten JSON;",
+            "ALTER TABLE rps ADD COLUMN IF NOT EXISTS sumber_dokumen_rag JSON;",
+            "ALTER TABLE jenis_evaluasi ADD COLUMN IF NOT EXISTS bobot NUMERIC(5, 2);",
+            "ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS angkatan SMALLINT;",
+            "ALTER TABLE cpl_achievement ADD COLUMN IF NOT EXISTS angkatan INTEGER;",
+            "ALTER TABLE cpl_achievement ADD COLUMN IF NOT EXISTS mata_kuliah_id BIGINT REFERENCES mata_kuliah(id);",
+            "ALTER TABLE cpl_achievement ADD COLUMN IF NOT EXISTS bobot_cp NUMERIC;",
+            "CREATE INDEX IF NOT EXISTS ix_cpl_achievement_mata_kuliah_id ON cpl_achievement (mata_kuliah_id);",
+            "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS kurikulum_version_id BIGINT;",
+            "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS is_final BOOLEAN DEFAULT FALSE;",
+            "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS finalized_at TIMESTAMP;",
+            "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS finalized_by BIGINT;",
+            "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS unlocked_at TIMESTAMP;",
+            "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS unlocked_by BIGINT;",
+            "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS alasan_buka VARCHAR(255);",
+            "ALTER TABLE nilai_bentuk_penilaian ADD COLUMN IF NOT EXISTS ik_id BIGINT;",
+            "ALTER TABLE kurikulum_versions DROP COLUMN IF EXISTS semester;",
+            "ALTER TABLE kurikulum_versions ADD COLUMN IF NOT EXISTS deskripsi TEXT;",
+            "ALTER TABLE kurikulum_versions ADD COLUMN IF NOT EXISTS tahun INTEGER;",
+        ]
+        # Satu transaksi per perintah: di PostgreSQL satu perintah yang gagal
+        # membatalkan seluruh transaksi, jadi perintah lain tidak boleh ikut batal.
+        for stmt in statements:
+            try:
+                with db_engine.begin() as conn:
                     conn.execute(sa.text(stmt))
-                except Exception as e:
-                    logger.warning("Auto-sync schema notice: %s (%s)", stmt, e)
+            except Exception as e:
+                logger.warning("Auto-sync schema notice: %s (%s)", stmt, e)
 
 
 @asynccontextmanager

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   BarChart3,
@@ -14,6 +14,10 @@ import {
   TrendingUp,
   Info,
   Building2,
+  ClipboardList,
+  GitCompareArrows,
+  SlidersHorizontal,
+  Grid3x3,
 } from 'lucide-react'
 import {
   CartesianGrid,
@@ -33,6 +37,24 @@ import { exportToCsv } from '../utils/csvExport'
 import useAuth from '../hooks/useAuth'
 import { useDekanScope } from '../context/DekanScopeContext'
 import ProdiSelector from '../components/ProdiSelector'
+import { buildModel } from '../components/analitik/analitikModel'
+import RingkasanEvaluasi from '../components/analitik/RingkasanEvaluasi'
+import PerbandinganAngkatan from '../components/analitik/PerbandinganAngkatan'
+import SimulatorThreshold from '../components/analitik/SimulatorThreshold'
+import PetaKurikulum from '../components/analitik/PetaKurikulum'
+import CpmkPendukungIk from '../components/analitik/CpmkPendukungIk'
+import DrilldownModel from '../components/analitik/DrilldownModel'
+import TrenAngkatan from '../components/analitik/TrenAngkatan'
+
+// Tab Analitik OBE tingkat prodi (Kaprodi & Dekan)
+const TABS = [
+  { id: 'ringkasan', label: 'Ringkasan Evaluasi', icon: ClipboardList },
+  { id: 'drilldown', label: 'Drill-Down CPL → IK → CPMK', icon: Layers3 },
+  { id: 'perbandingan', label: 'Perbandingan Angkatan', icon: GitCompareArrows },
+  { id: 'trending', label: 'Tren Antar Angkatan', icon: TrendingUp },
+  { id: 'simulator', label: 'Simulator Threshold', icon: SlidersHorizontal },
+  { id: 'peta', label: 'Peta Kurikulum', icon: Grid3x3 },
+]
 
 const CHART_COLORS = [
   '#1A3A6B', // Navy institusional
@@ -59,9 +81,24 @@ export default function AnalisisPage() {
   const [dosenMkData, setDosenMkData] = useState(null)
   const [loadingDosenMk, setLoadingDosenMk] = useState(false)
   const [errorDosenMk, setErrorDosenMk] = useState(null)
+  // Tab analitik Dosen (fitur sama dengan Kaprodi, cakupan 1 mata kuliah)
+  const [dosenTab, setDosenTab] = useState('ringkasan')
+  const [dosenFocus, setDosenFocus] = useState(null)
+  const [mkAnalitik, setMkAnalitik] = useState(null)
+  const [loadingMkAnalitik, setLoadingMkAnalitik] = useState(false)
+  const [errorMkAnalitik, setErrorMkAnalitik] = useState(null)
+  // Kaprodi/Dekan: cakupan analitik. '' = seluruh prodi, selain itu id mata kuliah.
+  const [scopeMkId, setScopeMkId] = useState('')
   const { selectedProdiId, selectedProdi } = useDekanScope()
 
-  const [activeTab, setActiveTab] = useState('drilldown') // 'drilldown' | 'trending'
+  // Dari Ikhtisar (klik kartu CPL) langsung ke drill-down; selain itu mulai dari ringkasan.
+  const [activeTab, setActiveTab] = useState(initialCplId ? 'drilldown' : 'ringkasan')
+
+  // --- Data agregat Analitik OBE tingkat prodi (GET /analitik/prodi) ---
+  const [analitikData, setAnalitikData] = useState(null)
+  const [loadingAnalitik, setLoadingAnalitik] = useState(false)
+  const [errorAnalitik, setErrorAnalitik] = useState(null)
+  const pendingIkIdRef = useRef(null)
 
   // Nilai semester mengacu pada SemesterEnum (app/models/enums.py): "Ganjil" | "Genap"
   const [selectedSemester, setSelectedSemester] = useState('')
@@ -151,6 +188,53 @@ export default function AnalisisPage() {
     fetchCplOverview()
   }, [selectedSemester, isDekan, selectedProdiId])
 
+  // Data agregat untuk Ringkasan, Perbandingan, Simulator, Peta, dan Level 3 drill-down
+  const fetchAnalitik = async () => {
+    if (isDosen || (isDekan && !selectedProdiId)) {
+      setAnalitikData(null)
+      return
+    }
+    setLoadingAnalitik(true)
+    setErrorAnalitik(null)
+    try {
+      const params = {}
+      if (selectedSemester) params.semester = selectedSemester
+      if (isDekan) params.program_studi_id = Number(selectedProdiId)
+      const res = await api.get('/analitik/prodi', { params })
+      setAnalitikData(res.data)
+    } catch (err) {
+      setErrorAnalitik(getApiErrorMessage(err, 'Gagal memuat data analitik prodi'))
+      setAnalitikData(null)
+    } finally {
+      setLoadingAnalitik(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchAnalitik()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDosen, isDekan, selectedProdiId, selectedSemester])
+
+  const model = useMemo(() => buildModel(analitikData), [analitikData])
+
+  // Navigasi dari kartu temuan / papan prioritas ke tab lain
+  const handleNavigate = ({ tab, cplId, ikId, mkId }) => {
+    if (cplId) {
+      const target = cplList.find((c) => String(c.cpl_id) === String(cplId))
+      pendingIkIdRef.current = ikId ?? null
+      if (target) {
+        if (selectedCpl?.cpl_id === target.cpl_id && ikId) {
+          const ik = ikList.find((i) => i.ik_id === ikId)
+          if (ik) setSelectedIk(ik)
+        }
+        setSelectedCpl(target)
+      }
+    }
+    if (mkId) setSelectedMkId(String(mkId))
+    setActiveTab(tab)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   // 2. Fetch IK Breakdown when selected CPL or selectedSemester changes
   useEffect(() => {
     if (isDosen || !selectedCpl?.cpl_id) return
@@ -165,8 +249,10 @@ export default function AnalisisPage() {
         const list = Array.isArray(res.data) ? res.data : []
         setIkList(list)
         if (list.length > 0) {
-          setSelectedIk(list[0])
+          const pending = list.find((i) => i.ik_id === pendingIkIdRef.current)
+          setSelectedIk(pending || list[0])
         }
+        pendingIkIdRef.current = null
       } catch (err) {
         console.warn('Gagal memuat IK breakdown:', err)
         setErrorIk(getApiErrorMessage(err, 'Belum ada data evaluasi IK untuk CPL ini.'))
@@ -384,6 +470,91 @@ export default function AnalisisPage() {
     }
   }, [isDosen, selectedDosenMkId])
 
+  const activeMkId = isDosen ? selectedDosenMkId : scopeMkId
+
+  const fetchMkAnalitik = async () => {
+    if (!activeMkId) {
+      setMkAnalitik(null)
+      return
+    }
+    setLoadingMkAnalitik(true)
+    setErrorMkAnalitik(null)
+    try {
+      const res = await api.get(`/analitik/mata-kuliah/${activeMkId}`)
+      setMkAnalitik(res.data)
+    } catch (err) {
+      setErrorMkAnalitik(getApiErrorMessage(err, 'Gagal memuat analitik mata kuliah'))
+      setMkAnalitik(null)
+    } finally {
+      setLoadingMkAnalitik(false)
+    }
+  }
+
+  useEffect(() => {
+    setDosenFocus(null)
+    fetchMkAnalitik()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMkId])
+
+  // Ganti prodi (Dekan) -> kembali ke cakupan seluruh prodi
+  useEffect(() => {
+    setScopeMkId('')
+  }, [selectedProdiId])
+
+  const mkModel = useMemo(() => buildModel(mkAnalitik), [mkAnalitik])
+
+  const handleNavigateDosen = ({ tab, cplId, ikId }) => {
+    if (cplId) setDosenFocus({ cplId, ikId, t: Date.now() })
+    setDosenTab(tab)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleNavigateMk = ({ tab, cplId, ikId }) => {
+    if (cplId) setDosenFocus({ cplId, ikId, t: Date.now() })
+    setActiveTab(tab)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // Isi tab untuk cakupan satu mata kuliah (Dosen, atau Kaprodi/Dekan yang memilih MK)
+  const renderKontenMk = (tab, onNavigate) => {
+    if (loadingMkAnalitik) {
+      return (
+        <div className="space-y-3">
+          {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-lg bg-white" />)}
+        </div>
+      )
+    }
+    if (errorMkAnalitik) {
+      return (
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
+          <span className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0" />{errorMkAnalitik}</span>
+          <ActionButton variant="secondary" onClick={fetchMkAnalitik}><RefreshCw className="h-4 w-4" />Coba lagi</ActionButton>
+        </div>
+      )
+    }
+    if (!mkModel) return null
+    return (
+      <>
+        {mkModel.cpl.length > 0 && mkModel.cpl.every((c) => mkModel.values(c.cpl_id).length === 0) && (
+          <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800" data-testid="notice-cpl-mk-kosong">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <span>
+              Capaian CPL untuk mata kuliah ini belum tersedia, sehingga analisis level CPL masih kosong. Jalankan
+              kalkulasi ulang di halaman <span className="font-semibold">Penilaian</span> agar capaian CPL tercatat per mata kuliah.
+              Analisis level CPMK tetap bisa dipakai.
+            </span>
+          </div>
+        )}
+        {tab === 'ringkasan' && <RingkasanEvaluasi model={mkModel} onNavigate={onNavigate} />}
+        {tab === 'drilldown' && <DrilldownModel model={mkModel} focus={dosenFocus} />}
+        {tab === 'perbandingan' && <PerbandinganAngkatan model={mkModel} />}
+        {tab === 'trending' && <TrenAngkatan model={mkModel} />}
+        {tab === 'simulator' && <SimulatorThreshold model={mkModel} />}
+        {tab === 'peta' && <PetaKurikulum model={mkModel} />}
+      </>
+    )
+  }
+
   if (isDosen) {
     const selectedCourse = dosenCourses.find((c) => String(c.id) === String(selectedDosenMkId))
     return (
@@ -391,8 +562,14 @@ export default function AnalisisPage() {
         <PageHeader
           eyebrow="Analitik Capaian Mata Kuliah"
           title="Analisis Ketercapaian Pembelajaran"
-          description="Evaluasi ketercapaian CPMK dan Indikator Kinerja (IK) untuk mata kuliah yang Anda ampu."
+          description="Fitur analitik yang sama dengan tingkat prodi, dengan cakupan mata kuliah yang Anda ampu."
           badge="Mode Dosen Pengampu"
+          actions={
+            <ActionButton variant="secondary" onClick={() => window.print()} data-testid="analysis-print-dosen">
+              <Printer className="h-4 w-4" />
+              Print
+            </ActionButton>
+          }
         />
 
         {/* Notice Cakupan Wewenang */}
@@ -402,7 +579,9 @@ export default function AnalisisPage() {
             <div>
               <span className="font-bold block text-sm">Cakupan Analisis Dosen Pengampu</span>
               <p className="mt-1 text-[#64748B] leading-relaxed">
-                Tampilan Ikhtisar CPL Program Studi dan Analisis Tren Lintas Angkatan merupakan wewenang Kaprodi dan Dekan. Sebagai Dosen Pengampu, Anda dapat menganalisis ketercapaian CPMK dan Indikator Kinerja (IK) secara spesifik untuk mata kuliah yang Anda ampu di bawah ini.
+                Semua angka di halaman ini hanya dihitung dari mata kuliah yang dipilih: CPL dan IK yang diukur mata kuliah ini,
+                CPMK-nya, serta perbandingan antar angkatan mahasiswa yang mengikutinya. Analisis lintas mata kuliah tingkat prodi
+                merupakan wewenang Kaprodi dan Dekan.
               </p>
             </div>
           </div>
@@ -512,93 +691,27 @@ export default function AnalisisPage() {
                 </div>
               </div>
 
-              {/* CPMK Breakdown */}
-              <SectionCard
-                title="Ketercapaian CPMK (Capaian Pembelajaran Mata Kuliah)"
-                description="Rata-rata nilai dan persentase mahasiswa yang memenuhi standar ketercapaian minimal (skor >= 70)."
-              >
-                {(!dosenMkData.cpmk_breakdown || dosenMkData.cpmk_breakdown.length === 0) ? (
-                  <p className="text-xs text-[#64748B] py-4 text-center">
-                    Belum ada data capaian CPMK untuk mata kuliah ini.
-                  </p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-[#F8FAFC] text-[#142B4A] font-semibold border-b border-[#E2E8F0]">
-                        <tr>
-                          <th className="py-2.5 px-3 w-12 text-center">No</th>
-                          <th className="py-2.5 px-3 w-32">Kode CPMK</th>
-                          <th className="py-2.5 px-3 text-center w-36">Nilai Rata-rata</th>
-                          <th className="py-2.5 px-3 text-center w-44">Mahasiswa Tercapai</th>
-                          <th className="py-2.5 px-3 text-center w-32">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E2E8F0]">
-                        {dosenMkData.cpmk_breakdown.map((item, idx) => {
-                          const pct = item.jumlah_peserta > 0
-                            ? Math.round((item.jumlah_tercapai / item.jumlah_peserta) * 100)
-                            : 0
-                          const isPassed = Number(item.rata_rata) >= 70
-                          return (
-                            <tr key={item.cpmk_id || idx} className="hover:bg-[#F8FAFC]">
-                              <td className="py-2.5 px-3 text-center text-[#64748B]">{idx + 1}</td>
-                              <td className="py-2.5 px-3 font-mono font-bold text-[#1A3A6B]">{item.kode}</td>
-                              <td className="py-2.5 px-3 text-center font-mono font-semibold text-[#142B4A]">
-                                {Number(item.rata_rata).toFixed(1)}
-                              </td>
-                              <td className="py-2.5 px-3 text-center text-[#64748B]">
-                                <span className="font-semibold text-[#142B4A]">{item.jumlah_tercapai}</span> / {item.jumlah_peserta} ({pct}%)
-                              </td>
-                              <td className="py-2.5 px-3 text-center">
-                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                                  isPassed ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
-                                }`}>
-                                  {isPassed ? 'Tercapai' : 'Perlu Evaluasi'}
-                                </span>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </SectionCard>
+              {/* Tab analitik (fitur sama dengan Kaprodi, cakupan mata kuliah ini) */}
+              <div className="flex overflow-x-auto border-b border-[#CBD5E1]" role="tablist">
+                {TABS.map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={dosenTab === id}
+                    onClick={() => setDosenTab(id)}
+                    data-testid={`dosen-tab-${id}`}
+                    className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                      dosenTab === id ? 'border-[#1A3A6B] text-[#1A3A6B]' : 'border-transparent text-[#64748B] hover:text-[#142B4A]'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {id === 'peta' ? 'Peta CPMK × IK' : label}
+                  </button>
+                ))}
+              </div>
 
-              {/* IK Breakdown */}
-              <SectionCard
-                title="Ketercapaian Indikator Kinerja (IK)"
-                description="Kontribusi rata-rata penilaian mata kuliah terhadap Indikator Kinerja yang dipetakan."
-              >
-                {(!dosenMkData.ik_breakdown || dosenMkData.ik_breakdown.length === 0) ? (
-                  <p className="text-xs text-[#64748B] py-4 text-center">
-                    Belum ada data capaian IK untuk mata kuliah ini.
-                  </p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-[#F8FAFC] text-[#142B4A] font-semibold border-b border-[#E2E8F0]">
-                        <tr>
-                          <th className="py-2.5 px-3 w-12 text-center">No</th>
-                          <th className="py-2.5 px-3 w-36">Kode IK</th>
-                          <th className="py-2.5 px-3 text-center w-36">Rata-rata Skor</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#E2E8F0]">
-                        {dosenMkData.ik_breakdown.map((item, idx) => (
-                          <tr key={item.ik_id || idx} className="hover:bg-[#F8FAFC]">
-                            <td className="py-2.5 px-3 text-center text-[#64748B]">{idx + 1}</td>
-                            <td className="py-2.5 px-3 font-mono font-bold text-[#1A3A6B]">{item.kode}</td>
-                            <td className="py-2.5 px-3 text-center font-mono font-semibold text-[#142B4A]">
-                              {Number(item.rata_rata).toFixed(1)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </SectionCard>
+              {renderKontenMk(dosenTab, handleNavigateDosen)}
             </div>
           ) : null
         )}
@@ -615,8 +728,8 @@ export default function AnalisisPage() {
         badge={isDekan ? 'Mode Lihat (Dekan)' : (user?.program_studi_nama || 'Program Studi')}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            {/* Opsi semester statis mengacu pada SemesterEnum (app/models/enums.py) - hanya relevan untuk tab drilldown */}
-            {activeTab === 'drilldown' && (
+            {/* Opsi semester statis mengacu pada SemesterEnum (app/models/enums.py). Tab tren memakai filter angkatan sendiri. */}
+            {activeTab !== 'trending' && !scopeMkId && (
               <select
                 value={selectedSemester}
                 onChange={(e) => setSelectedSemester(e.target.value)}
@@ -651,40 +764,88 @@ export default function AnalisisPage() {
         </div>
       ) : (
         <>
+          {/* Pemilih cakupan: seluruh prodi atau satu mata kuliah */}
+          <SectionCard
+            title="Cakupan Analisis"
+            description="Analisis seluruh program studi, atau pilih satu mata kuliah untuk melihat fitur yang sama dengan cakupan mata kuliah tersebut."
+            action={
+              scopeMkId ? (
+                <ActionButton variant="secondary" onClick={() => setScopeMkId('')} data-testid="btn-cakupan-prodi">
+                  Kembali ke seluruh prodi
+                </ActionButton>
+              ) : null
+            }
+          >
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={scopeMkId}
+                onChange={(e) => setScopeMkId(e.target.value)}
+                className="h-10 w-full max-w-xl rounded-md border border-[#CBD5E1] bg-white px-3 text-xs font-semibold text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
+                data-testid="select-cakupan-analitik"
+              >
+                <option value="">Seluruh Program Studi ({courses.length} mata kuliah)</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.kode} - {c.nama} ({c.sks} SKS, {c.semester})
+                  </option>
+                ))}
+              </select>
+              <Badge tone={scopeMkId ? 'warning' : 'default'}>
+                {scopeMkId ? 'Cakupan: satu mata kuliah' : 'Cakupan: seluruh prodi'}
+              </Badge>
+            </div>
+          </SectionCard>
+
           {/* Tab Switcher */}
-          <div className="flex border-b border-[#CBD5E1]">
-            <button
-              type="button"
-              onClick={() => setActiveTab('drilldown')}
-              data-testid="tab-drilldown"
-              className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
-                activeTab === 'drilldown'
-                  ? 'border-[#1A3A6B] text-[#1A3A6B]'
-                  : 'border-transparent text-[#64748B] hover:text-[#142B4A]'
-              }`}
-            >
-          <Layers3 className="h-4 w-4" />
-          Drill-Down 3-Level (CPL → IK → CPMK)
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('trending')}
-          data-testid="tab-trending"
-          className={`flex items-center gap-2 border-b-2 px-5 py-3 text-sm font-semibold transition-colors ${
-            activeTab === 'trending'
-              ? 'border-[#1A3A6B] text-[#1A3A6B]'
-              : 'border-transparent text-[#64748B] hover:text-[#142B4A]'
-          }`}
-        >
-          <TrendingUp className="h-4 w-4" />
-          Tren Antar Angkatan (Feature 7)
-        </button>
-      </div>
+          <div className="flex overflow-x-auto border-b border-[#CBD5E1]" role="tablist">
+            {TABS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === id}
+                onClick={() => setActiveTab(id)}
+                data-testid={`tab-${id}`}
+                className={`flex shrink-0 items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                  activeTab === id
+                    ? 'border-[#1A3A6B] text-[#1A3A6B]'
+                    : 'border-transparent text-[#64748B] hover:text-[#142B4A]'
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                {scopeMkId && id === 'peta' ? 'Peta CPMK × IK' : label}
+              </button>
+            ))}
+          </div>
+
+          {/* Cakupan satu mata kuliah: komponen yang sama dengan tampilan Dosen */}
+          {scopeMkId && renderKontenMk(activeTab, handleNavigateMk)}
+
+          {/* Tab berbasis /analitik/prodi */}
+          {!scopeMkId && ['ringkasan', 'perbandingan', 'simulator', 'peta'].includes(activeTab) && (
+            loadingAnalitik ? (
+              <div className="space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-28 animate-pulse rounded-lg bg-white" />)}
+              </div>
+            ) : errorAnalitik ? (
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
+                <span className="flex items-center gap-2"><AlertCircle className="h-5 w-5 shrink-0" />{errorAnalitik}</span>
+                <ActionButton variant="secondary" onClick={fetchAnalitik}><RefreshCw className="h-4 w-4" />Coba lagi</ActionButton>
+              </div>
+            ) : model ? (
+              <>
+                {activeTab === 'ringkasan' && <RingkasanEvaluasi model={model} onNavigate={handleNavigate} />}
+                {activeTab === 'perbandingan' && <PerbandinganAngkatan model={model} />}
+                {activeTab === 'simulator' && <SimulatorThreshold model={model} />}
+                {activeTab === 'peta' && <PetaKurikulum model={model} />}
+              </>
+            ) : null
+          )}
 
       {/* ==================================================== */}
       {/* TAB 1: DRILL-DOWN 3-LEVEL                            */}
       {/* ==================================================== */}
-      {activeTab === 'drilldown' && (
+      {!scopeMkId && activeTab === 'drilldown' && (
         <div className="space-y-6">
           {/* Breadcrumb Hierarchy */}
           <SectionCard title="Navigasi Hirarki OBE" description="Ketercapaian dihitung secara berjenjang dari CPL, IK, hingga CPMK.">
@@ -702,7 +863,7 @@ export default function AnalisisPage() {
               </span>
               <ChevronRight className="h-4 w-4 text-[#94A3B8]" />
               <span className="rounded-md border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1.5 font-medium">
-                Level 3 · CPMK & Mata Kuliah
+                Level 3 · CPMK Pendukung {selectedIk ? selectedIk.kode : ''}
               </span>
             </div>
           </SectionCard>
@@ -884,9 +1045,14 @@ export default function AnalisisPage() {
             </SectionCard>
           </div>
 
-          {/* Level 3: Evaluasi CPMK per Mata Kuliah */}
+          {/* Level 3: CPMK pendukung IK terpilih (lintas mata kuliah) */}
+          {selectedIk && model && (
+            <CpmkPendukungIk model={model} ikId={selectedIk.ik_id} kodeIk={selectedIk.kode} />
+          )}
+
+          {/* Rincian per mata kuliah */}
           <SectionCard
-            title="Level 3: Evaluasi CPMK Pendukung per Mata Kuliah"
+            title="Rincian CPMK per Mata Kuliah"
             description="Detail ketercapaian CPMK dan kontribusi indikator kinerja pada mata kuliah terpilih."
           >
             <div className="mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">
@@ -1016,7 +1182,7 @@ export default function AnalisisPage() {
       {/* ==================================================== */}
       {/* TAB 2: TRENDING ANALYSIS ANTAR ANGKATAN             */}
       {/* ==================================================== */}
-      {activeTab === 'trending' && (
+      {!scopeMkId && activeTab === 'trending' && (
         <div className="space-y-6">
           {/* Controls & Filter */}
           <SectionCard

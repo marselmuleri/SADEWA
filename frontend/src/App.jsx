@@ -30,6 +30,7 @@ import DataMasterKurikulumPage from './pages/datamaster/DataMasterKurikulumPage'
 import DataMasterCplPage from './pages/datamaster/DataMasterCplPage'
 import DataMasterIkPage from './pages/datamaster/DataMasterIkPage'
 import DataMasterCpmkPage from './pages/datamaster/DataMasterCpmkPage'
+import DataMasterArsipPage from './pages/datamaster/DataMasterArsipPage'
 
 import useAuth from './hooks/useAuth'
 
@@ -55,6 +56,8 @@ function RoleBasedHomeRedirect() {
 }
 
 const ACADEMIC_ROLES = ['admin_prodi', 'dosen', 'kaprodi', 'dekan']
+// Analitik OBE adalah wewenang Dosen, Kaprodi, dan Dekan (bukan Admin Prodi).
+const ANALYTICS_ROLES = ['dosen', 'kaprodi', 'dekan']
 
 function DataMasterIndexRedirect() {
   const { search } = useLocation()
@@ -128,7 +131,7 @@ export default function App() {
         <Route
           path="/analisis"
           element={
-            <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
+            <ProtectedRoute allowedRoles={ANALYTICS_ROLES}>
               <AppLayout>
                 <AnalisisPage />
               </AppLayout>
@@ -152,6 +155,7 @@ export default function App() {
           <Route path="cpl" element={<DataMasterCplPage />} />
           <Route path="ik" element={<DataMasterIkPage />} />
           <Route path="cpmk" element={<DataMasterCpmkPage />} />
+          <Route path="arsip" element={<DataMasterArsipPage />} />
         </Route>
 
         {/* Consolidated Kurikulum OBE for Dosen, Kaprodi, Dekan (Mode Lihat) */}

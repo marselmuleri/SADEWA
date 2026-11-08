@@ -124,6 +124,8 @@ def get_capaian_cpl_mata_kuliah(db: Session, mata_kuliah_id: int) -> List[Dict[s
         .filter(
             CPLAchievement.cpl_id.in_(cpl_ids),
             CPLAchievement.mahasiswa_id.in_(mhs_ids),
+            # Narasi evaluasi mata kuliah memakai capaian CPL di mata kuliah ini saja.
+            CPLAchievement.mata_kuliah_id == mata_kuliah_id,
         )
         .group_by(CPLAchievement.cpl_id)
         .all()
@@ -147,6 +149,7 @@ def get_capaian_cpl_mata_kuliah(db: Session, mata_kuliah_id: int) -> List[Dict[s
             .filter(
                 CPLAchievement.cpl_id == row.cpl_id,
                 CPLAchievement.mahasiswa_id.in_(mhs_ids),
+                CPLAchievement.mata_kuliah_id == mata_kuliah_id,
                 CPLAchievement.nilai >= threshold,
             )
             .scalar()
