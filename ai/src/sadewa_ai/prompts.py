@@ -112,7 +112,14 @@ ATURAN WAJIB:
 - Buat tepat {settings.jumlah_pertemuan} pertemuan (minggu 1-{settings.jumlah_pertemuan})
 - Minggu {settings.minggu_uts} = UTS (cpmk: "-", materi: "UTS", bobot: 20)
 - Minggu {settings.minggu_uas} = UAS (cpmk: "-", materi: "UAS", bobot: 30)
-- Bobot total semua pertemuan HARUS = {settings.bobot_total}
+- PERHITUNGAN BOBOT (WAJIB IKUTI):
+  * Total bobot = {settings.bobot_total}
+  * UTS (minggu {settings.minggu_uts}) = 20, UAS (minggu {settings.minggu_uas}) = 30
+  * Sisa untuk pertemuan reguler = {settings.bobot_total} - 20 - 30 = 50
+  * Jumlah pertemuan reguler = {settings.jumlah_pertemuan - 2} (semua kecuali UTS dan UAS)
+  * Distribusi bobot reguler: gunakan kombinasi bobot 3 dan 4 yang totalnya tepat 50
+    Contoh: 8 pertemuan bobot 4 dan 6 pertemuan bobot 3 → (8×4)+(6×3) = 32+18 = 50 ✓
+  * JANGAN gunakan bobot 4 untuk semua pertemuan reguler (14×4=56, bukan 50)
 - Setiap nilai "cpmk" pada pertemuan HARUS salah satu kode yang kamu daftarkan
   di array "cpmk", kecuali untuk UTS dan UAS yang memakai "-"
 - Semua konten dalam Bahasa Indonesia
