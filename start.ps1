@@ -4,7 +4,7 @@
 # ============================================================
 
 $ROOT   = Split-Path -Parent $MyInvocation.MyCommand.Path
-$VENV   = "$ROOT\..\venv\Scripts"
+$VENV   = "$ROOT\venv\Scripts"
 $AI_DIR = "$ROOT\ai"
 $BE_DIR = "$ROOT\backend"
 $FE_DIR = "$ROOT\frontend"

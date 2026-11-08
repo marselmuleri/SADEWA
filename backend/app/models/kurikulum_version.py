@@ -9,7 +9,7 @@ class KurikulumVersion(Base):
     id = Column(BigInteger, primary_key=True, autoincrement=True)
     program_studi_id = Column(BigInteger, ForeignKey("program_studi.id"), nullable=False)
     version_label = Column(String, nullable=False)
-    semester = Column(SAEnum(SemesterEnum, name="semester_kurikulum_enum", values_callable=lambda e: [x.value for x in e]))
+    semester = Column(SAEnum(SemesterEnum, name="semester_kurikulum_enum", values_callable=lambda e: [x.value for x in e]), nullable=True)
     status = Column(SAEnum(StatusKurikulum, name="status_kurikulum_enum", values_callable=lambda e: [x.value for x in e]), default=StatusKurikulum.draft)
     created_by = Column(BigInteger, ForeignKey("users.id"))
     published_at = Column(TIMESTAMP, nullable=True)

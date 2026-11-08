@@ -6,7 +6,7 @@ from app.schemas.common import ORMBaseModel
 
 class KurikulumVersionBase(BaseModel):
     version_label: str
-    semester: Literal["Ganjil", "Genap"]
+    semester: Literal["Ganjil", "Genap"] | None = None
 
 
 class KurikulumVersionCreate(KurikulumVersionBase):

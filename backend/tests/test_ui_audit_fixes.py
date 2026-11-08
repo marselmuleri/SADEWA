@@ -47,8 +47,8 @@ def audit_data(db_session: Session):
     db_session.flush()
 
     # Kurikulum
-    kur_a = KurikulumVersion(program_studi_id=prodi_a.id, version_label="2025-IF", semester=SemesterEnum.ganjil, status=StatusKurikulum.published)
-    kur_b = KurikulumVersion(program_studi_id=prodi_b.id, version_label="2025-EL", semester=SemesterEnum.ganjil, status=StatusKurikulum.published)
+    kur_a = KurikulumVersion(program_studi_id=prodi_a.id, version_label="2025-IF", status=StatusKurikulum.published)
+    kur_b = KurikulumVersion(program_studi_id=prodi_b.id, version_label="2025-EL", status=StatusKurikulum.published)
     db_session.add_all([kur_a, kur_b])
     db_session.flush()
 
@@ -389,3 +389,16 @@ def test_seed_data_siap_dinilai_dan_kalkulasi_langsung(client: TestClient, db_se
     data_calc = res_calc.json()
     assert data_calc["mata_kuliah_id"] == mk_if201.id
     assert data_calc["jumlah_peserta_diproses"] == 20
+
+
+def test_create_kurikulum_version_only(client: TestClient, audit_data: dict):
+    """Pastikan pembuatan versi kurikulum hanya memerlukan version_label (tanpa semester)."""
+    admin_a = audit_data["admin_a"]
+    headers = auth_header(admin_a)
+
+    payload = {"version_label": "2026-Rev"}
+    res = client.post("/api/v1/kurikulum/versions", json=payload, headers=headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["version_label"] == "2026-Rev"
+    assert data["status"] == "draft"

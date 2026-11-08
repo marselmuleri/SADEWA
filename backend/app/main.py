@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 
 from app.api.v1.router import api_v1_router
@@ -13,10 +14,42 @@ from app.services import ai_client
 logger = logging.getLogger(__name__)
 
 
+def auto_sync_schema(db_engine):
+    """
+    Menyelaraskan kolom-kolom baru pada model ke tabel fisik yang sudah ada di database.
+    Base.metadata.create_all() hanya membuat tabel yang belum ada, sehingga kolom baru
+    pada tabel yang sudah ada perlu di-patch secara idempotent jika belum ada.
+    """
+    if db_engine.dialect.name == "postgresql":
+        with db_engine.begin() as conn:
+            statements = [
+                "ALTER TABLE rps ADD COLUMN IF NOT EXISTS konten JSON;",
+                "ALTER TABLE rps ADD COLUMN IF NOT EXISTS sumber_dokumen_rag JSON;",
+                "ALTER TABLE jenis_evaluasi ADD COLUMN IF NOT EXISTS bobot NUMERIC(5, 2);",
+                "ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS angkatan SMALLINT;",
+                "ALTER TABLE cpl_achievement ADD COLUMN IF NOT EXISTS angkatan INTEGER;",
+                "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS kurikulum_version_id BIGINT;",
+                "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS is_final BOOLEAN DEFAULT FALSE;",
+                "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS finalized_at TIMESTAMP;",
+                "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS finalized_by BIGINT;",
+                "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS unlocked_at TIMESTAMP;",
+                "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS unlocked_by BIGINT;",
+                "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS alasan_buka VARCHAR(255);",
+                "ALTER TABLE nilai_bentuk_penilaian ADD COLUMN IF NOT EXISTS ik_id BIGINT;",
+                "ALTER TABLE kurikulum_versions ALTER COLUMN semester DROP NOT NULL;",
+            ]
+            for stmt in statements:
+                try:
+                    conn.execute(sa.text(stmt))
+                except Exception as e:
+                    logger.warning("Auto-sync schema notice: %s (%s)", stmt, e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Inisialisasi tabel basis data PostgreSQL
     Base.metadata.create_all(bind=engine)
+    auto_sync_schema(engine)
     yield
 
 
