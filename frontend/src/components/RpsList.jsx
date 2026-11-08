@@ -273,7 +273,9 @@ function RpsEditor({ rps, onCancel, onSaved }) {
   )
 }
 
-export default function RpsList({ mataKuliahId, mataKuliah = null, refreshKey = 0 }) {
+// sorotId: id draf yang baru dibuat; setelah daftar dimuat, draf itu dibuka, di-scroll
+// ke tampilan, dan diberi sorotan amber yang memudar.
+export default function RpsList({ mataKuliahId, mataKuliah = null, refreshKey = 0, sorotId = null }) {
   const { pushToast } = useToast()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(false)
@@ -281,6 +283,7 @@ export default function RpsList({ mataKuliahId, mataKuliah = null, refreshKey = 
   const [openId, setOpenId] = useState(null)
   const [editId, setEditId] = useState(null)
   const [hapusTarget, setHapusTarget] = useState(null)
+  const [disorot, setDisorot] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
   const load = async () => {
@@ -292,8 +295,16 @@ export default function RpsList({ mataKuliahId, mataKuliah = null, refreshKey = 
       const list = Array.isArray(res.data) ? res.data : []
       setItems(list)
       setEditId(null)
-      // Buka otomatis draf terbaru (urutan dari backend: id terbesar dulu).
-      setOpenId(list.length > 0 ? list[0].id : null)
+      // Buka draf yang baru dibuat bila ada, selain itu draf terbaru (backend: id terbesar dulu).
+      const baru = sorotId != null && list.find((r) => r.id === sorotId)
+      setOpenId(baru ? baru.id : list.length > 0 ? list[0].id : null)
+      if (baru) {
+        setDisorot(baru.id)
+        requestAnimationFrame(() => {
+          const kurangiGerak = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+          document.getElementById(`rps-item-${baru.id}`)?.scrollIntoView({ behavior: kurangiGerak ? 'auto' : 'smooth', block: 'start' })
+        })
+      }
     } catch (err) {
       console.warn('Gagal memuat daftar RPS:', err)
       setError(!err.response
@@ -364,7 +375,11 @@ export default function RpsList({ mataKuliahId, mataKuliah = null, refreshKey = 
             const isOpen = openId === rps.id
             const isEditing = editId === rps.id
             return (
-              <div key={rps.id} className="rounded-md border border-[#E2E8F0]">
+              <div
+                key={rps.id}
+                id={`rps-item-${rps.id}`}
+                className={`scroll-mt-24 rounded-md border border-[#E2E8F0] ${disorot === rps.id ? 'ai-sorot animate-sorot-pudar' : ''}`}
+              >
                 <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                   <button
                     type="button"

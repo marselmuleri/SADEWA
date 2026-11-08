@@ -50,3 +50,22 @@
 body {
   @apply text-slate-700;
 }
+
+/* --- Tampilan proses AI (components/AiLoadingStage.jsx) --- */
+@layer components {
+  /* Baris teks yang sedang "dirangkum": sorotan netral menyapu pelan */
+  .ai-kilau {
+    background-image: linear-gradient(90deg, #E2E8F0 0%, #E2E8F0 40%, #F8FAFC 50%, #E2E8F0 60%, #E2E8F0 100%);
+    background-size: 200% 100%;
+  }
+}
+
+/* Hormati preferensi gerak minimal: semua gerak dimatikan, status & teks tetap berjalan */
+@media (prefers-reduced-motion: reduce) {
+  .ai-gerak,
+  .ai-gerak *,
+  .ai-sorot {
+    animation: none !important;
+    transition: none !important;
+  }
+}

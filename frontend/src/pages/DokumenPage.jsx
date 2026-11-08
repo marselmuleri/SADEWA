@@ -5,7 +5,6 @@ import {
   RotateCcw,
   Send,
   FileText,
-  Sparkles,
   Edit3,
   Loader2,
   AlertCircle,
@@ -16,10 +15,13 @@ import {
   Search,
   Filter,
   Upload,
+  FilePlus2,
+  PenLine,
 } from 'lucide-react'
 import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
 import Modal from '../components/Modal'
 import RpsList from '../components/RpsList'
+import AiLoadingStage, { useElapsedSeconds } from '../components/AiLoadingStage'
 import useAuth from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
 import useDosenCourses from '../hooks/useDosenCourses'
@@ -27,6 +29,7 @@ import useToast from '../hooks/useToast'
 import api from '../services/api'
 import { getApiErrorMessage } from './superAdminHelpers'
 import { formatNarasi } from '../utils/narasiFormat'
+import { isDibatalkan, pesanErrorAi } from '../utils/aiError'
 import { IMPORT_ACCEPT, bacaFileLaporan } from '../utils/importDokumen'
 import { exportToCsv } from '../utils/csvExport'
 import { useDekanScope } from '../context/DekanScopeContext'
@@ -67,6 +70,18 @@ export default function DokumenPage() {
   const [aiPrompt, setAiPrompt] = useState({ topik: '', tahun_ajaran: '2025/2026' })
   const [generatingAi, setGeneratingAi] = useState(false)
   const [rpsRefresh, setRpsRefresh] = useState(0)
+  // Proses AI: 'idle' | 'running' | 'success' | 'error'
+  const [rpsStatus, setRpsStatus] = useState('idle')
+  const [rpsError, setRpsError] = useState('')
+  const [rpsBaruId, setRpsBaruId] = useState(null)
+  const rpsAbortRef = useRef(null)
+  const [narasiStatus, setNarasiStatus] = useState('idle')
+  const [narasiError, setNarasiError] = useState('')
+  const [sorotKonten, setSorotKonten] = useState(0)
+  const narasiAbortRef = useRef(null)
+  const kontenRef = useRef(null)
+  const detikRps = useElapsedSeconds(rpsStatus === 'running')
+  const detikNarasi = useElapsedSeconds(narasiStatus === 'running')
 
   // Modals for Kaprodi / Validation
   const [detailModalOpen, setDetailModalOpen] = useState(false)
@@ -171,23 +186,39 @@ export default function DokumenPage() {
   const handleGenerateNarasi = async () => {
     if (!selectedMkId || generatingNarasi) return
     if (createForm.konten.trim() && !window.confirm('Isi laporan yang sudah ada akan diganti dengan narasi baru. Lanjutkan?')) return
+    const controller = new AbortController()
+    narasiAbortRef.current = controller
     setGeneratingNarasi(true)
+    setNarasiError('')
+    setNarasiStatus('running')
     try {
-      const res = await api.post(`/narasi/generate/${selectedMkId}`, { tipe: 'rekomendasi_umum' }, { timeout: 120000 })
+      const res = await api.post(
+        `/narasi/generate/${selectedMkId}`,
+        { tipe: 'rekomendasi_umum' },
+        { timeout: 120000, signal: controller.signal },
+      )
+      // Keadaan selesai sebentar, lalu isi textarea dengan sorotan halus.
+      setNarasiStatus('success')
+      await new Promise((r) => setTimeout(r, 700))
       setCreateForm((f) => ({ ...f, konten: formatNarasi(res.data?.konten), narasiId: res.data?.id ?? null }))
       setImportedFile('')
-      pushToast('Narasi evaluasi berhasil digenerate. Periksa dan sesuaikan sebelum disimpan.')
+      setNarasiStatus('idle')
+      setSorotKonten((n) => n + 1)
+      requestAnimationFrame(() => kontenRef.current?.focus())
     } catch (err) {
-      pushToast(
-        !err.response
-          ? 'Server error (kemungkinan error 500 di backend). Periksa log backend.'
-          : getApiErrorMessage(err, 'Gagal generate narasi. Anda tetap bisa menulis isi laporan secara manual.'),
-        'error',
-      )
+      if (isDibatalkan(err)) {
+        setNarasiStatus('idle') // isi lama tetap utuh
+      } else {
+        setNarasiError(pesanErrorAi(err, 'Gagal menyusun narasi. Anda tetap bisa menulis isi laporan secara manual.'))
+        setNarasiStatus('error')
+      }
     } finally {
+      narasiAbortRef.current = null
       setGeneratingNarasi(false)
     }
   }
+
+  const batalNarasi = () => narasiAbortRef.current?.abort()
 
   // Import laporan yang sudah ditulis dosen sendiri (Word .docx / .txt) ke kolom isi.
   const handleImportFile = async (e) => {
@@ -213,6 +244,8 @@ export default function DokumenPage() {
   }
 
   const openBuatLaporan = () => {
+    setNarasiStatus('idle')
+    setNarasiError('')
     setCreateForm({ semester: currentCourse?.semester || 'Ganjil', konten: '', narasiId: null })
     setImportedFile('')
     setOpenCreateModal(true)
@@ -256,34 +289,49 @@ export default function DokumenPage() {
   // Generate RPS dengan AI (Dosen)
   const handleTriggerAiAssist = async () => {
     if (!selectedMkId || generatingAi) return
+    const controller = new AbortController()
+    rpsAbortRef.current = controller
     setGeneratingAi(true)
+    setRpsError('')
+    setRpsStatus('running')
     try {
-      await api.post(
+      const res = await api.post(
         `/rps/${selectedMkId}/generate`,
         {
           tahun_ajaran: aiPrompt.tahun_ajaran,
           semester: currentCourse?.semester || 'Ganjil',
           topik: aiPrompt.topik,
         },
-        { timeout: 120000 }
+        { timeout: 120000, signal: controller.signal },
       )
-      pushToast('Draf dokumen RPS berhasil digenerate oleh AI Service')
+      // Keadaan selesai sebentar, lalu tutup modal dan sorot draf baru di daftar.
+      setRpsStatus('success')
+      await new Promise((r) => setTimeout(r, 700))
+      setRpsBaruId(res.data?.id ?? null)
       setOpenAiModal(false)
+      setRpsStatus('idle')
       setRpsRefresh((n) => n + 1)
-      fetchLaporan()
+      pushToast('Draf RPS selesai disusun dan tersimpan')
     } catch (err) {
-      if (!err.response) {
-        pushToast('Server error (kemungkinan error 500 di backend). Periksa log backend.', 'error')
+      if (isDibatalkan(err)) {
+        setRpsStatus('idle') // kembali ke form tanpa pesan error
       } else {
-        const msg = getApiErrorMessage(
-          err,
-          'Layanan AI untuk Generate RPS sedang tidak tersedia (offline). Coba lagi nanti.'
-        )
-        pushToast(msg, 'error')
+        setRpsError(pesanErrorAi(err, 'Gagal menyusun draf RPS. Coba lagi nanti.'))
+        setRpsStatus('error')
       }
     } finally {
+      rpsAbortRef.current = null
       setGeneratingAi(false)
     }
+  }
+
+  const batalRps = () => rpsAbortRef.current?.abort()
+
+  const tutupModalRps = () => {
+    if (rpsStatus === 'running' || rpsStatus === 'success') return
+    setOpenAiModal(false)
+    setRpsStatus('idle')
+    setRpsError('')
   }
 
   // Kaprodi Decision Handlers
@@ -430,7 +478,7 @@ export default function DokumenPage() {
                 disabled={!selectedMkId}
                 data-testid="btn-generate-rps"
               >
-                <Sparkles className="h-4 w-4 text-[#F4A300]" />
+                <FilePlus2 className="h-4 w-4 text-[#F4A300]" />
                 Generate RPS
               </ActionButton>
               <ActionButton
@@ -525,7 +573,7 @@ export default function DokumenPage() {
 
       {/* Draf RPS hasil Generate RPS (khusus Dosen) */}
       {isDosen && selectedMkId && (
-        <RpsList mataKuliahId={selectedMkId} mataKuliah={currentCourse} refreshKey={rpsRefresh} />
+        <RpsList mataKuliahId={selectedMkId} mataKuliah={currentCourse} refreshKey={rpsRefresh} sorotId={rpsBaruId} />
       )}
 
       {/* Tabel Laporan Evaluasi */}
@@ -948,7 +996,8 @@ export default function DokumenPage() {
       {/* Modal Dosen: Buat Laporan Baru */}
       <Modal
         open={openCreateModal}
-        onClose={() => setOpenCreateModal(false)}
+        onClose={() => { if (!generatingNarasi) setOpenCreateModal(false) }}
+        dismissible={!generatingNarasi}
         title="Buat Draf Laporan Evaluasi Baru"
         size="max-w-2xl"
       >
@@ -965,7 +1014,8 @@ export default function DokumenPage() {
             <select
               value={createForm.semester}
               onChange={(e) => setCreateForm({ ...createForm, semester: e.target.value })}
-              className="mt-1 h-9 w-full rounded-[6px] border border-[#CBD5E1] bg-white px-3 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
+              disabled={generatingNarasi}
+              className="mt-1 h-9 w-full rounded-[6px] border border-[#CBD5E1] bg-white px-3 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none disabled:opacity-60"
             >
               <option value="Ganjil">Semester Ganjil</option>
               <option value="Genap">Semester Genap</option>
@@ -1003,17 +1053,8 @@ export default function DokumenPage() {
                 disabled={generatingNarasi || importing || !selectedMkId}
                 data-testid="btn-generate-narasi"
               >
-                {generatingNarasi ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>AI sedang menyusun narasi... (bisa sampai 1 menit)</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 text-[#F4A300]" />
-                    Generate Narasi dengan AI
-                  </>
-                )}
+                <PenLine className="h-4 w-4 text-[#F4A300]" />
+                {generatingNarasi ? 'Menyusun narasi...' : 'Generate Narasi dengan AI'}
               </ActionButton>
               </div>
             </div>
@@ -1028,22 +1069,46 @@ export default function DokumenPage() {
                 Isi diambil dari file: {importedFile}
               </p>
             )}
-            <textarea
-              id="create-laporan-konten"
-              rows={12}
-              value={createForm.konten}
-              onChange={(e) => setCreateForm({ ...createForm, konten: e.target.value })}
-              placeholder="Klik Generate Narasi dengan AI, atau tulis evaluasi pelaksanaan perkuliahan, kendala, dan rencana tindak lanjut..."
-              className="mt-2 w-full rounded-[6px] border border-[#CBD5E1] bg-white p-3 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
-              data-testid="create-laporan-konten"
-            />
+            <div className="relative mt-2">
+              <textarea
+                key={sorotKonten}
+                ref={kontenRef}
+                id="create-laporan-konten"
+                rows={12}
+                value={createForm.konten}
+                onChange={(e) => setCreateForm({ ...createForm, konten: e.target.value })}
+                readOnly={narasiStatus !== 'idle'}
+                placeholder="Klik Generate Narasi dengan AI, atau tulis evaluasi pelaksanaan perkuliahan, kendala, dan rencana tindak lanjut..."
+                className={`ai-sorot block min-h-[340px] w-full rounded-[6px] border border-[#CBD5E1] bg-white p-3 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none ${
+                  sorotKonten ? 'animate-sorot-pudar' : ''
+                }`}
+                data-testid="create-laporan-konten"
+              />
+              {narasiStatus !== 'idle' && (
+                <div
+                  className="absolute inset-0 overflow-y-auto rounded-[6px] border border-[#1A3A6B]/30 bg-white"
+                  data-testid="overlay-narasi"
+                >
+                  <AiLoadingStage
+                    variant="narasi"
+                    compact
+                    status={narasiStatus}
+                    elapsedSeconds={detikNarasi}
+                    errorMessage={narasiError}
+                    onCancel={batalNarasi}
+                    onRetry={() => { setNarasiStatus('idle'); handleGenerateNarasi() }}
+                    onClose={() => { setNarasiStatus('idle'); setNarasiError('') }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <ActionButton variant="secondary" onClick={() => setOpenCreateModal(false)}>
+            <ActionButton variant="secondary" onClick={() => setOpenCreateModal(false)} disabled={generatingNarasi}>
               Batal
             </ActionButton>
-            <ActionButton type="submit" disabled={submitting || generatingNarasi}>
+            <ActionButton type="submit" disabled={submitting || generatingNarasi || narasiStatus !== 'idle'}>
               {submitting ? 'Menyimpan...' : 'Buat Draf'}
             </ActionButton>
           </div>
@@ -1083,9 +1148,21 @@ export default function DokumenPage() {
       {/* Modal Dosen: Generate RPS */}
       <Modal
         open={openAiModal}
-        onClose={() => setOpenAiModal(false)}
+        onClose={tutupModalRps}
         title="Generate RPS dengan AI"
+        dismissible={rpsStatus === 'idle' || rpsStatus === 'error'}
       >
+        {rpsStatus !== 'idle' ? (
+          <AiLoadingStage
+            variant="rps"
+            status={rpsStatus}
+            elapsedSeconds={detikRps}
+            errorMessage={rpsError}
+            onCancel={batalRps}
+            onRetry={() => { setRpsStatus('idle'); handleTriggerAiAssist() }}
+            onClose={tutupModalRps}
+          />
+        ) : (
         <div className="space-y-4">
           <p className="text-xs text-[#64748B]">
             AI akan menyusun draf RPS 16 pertemuan berdasarkan dokumen pedoman kurikulum. Draf bisa diedit, diunduh,
@@ -1117,21 +1194,15 @@ export default function DokumenPage() {
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <ActionButton variant="secondary" onClick={() => setOpenAiModal(false)}>
+            <ActionButton variant="secondary" onClick={tutupModalRps}>
               Batal
             </ActionButton>
-            <ActionButton onClick={handleTriggerAiAssist} disabled={generatingAi || !selectedMkId}>
-              {generatingAi ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>AI sedang menyusun draf... (bisa sampai 1 menit)</span>
-                </>
-              ) : (
-                'Generate RPS'
-              )}
+            <ActionButton onClick={handleTriggerAiAssist} disabled={generatingAi || !selectedMkId} data-testid="btn-mulai-generate-rps">
+              Generate RPS
             </ActionButton>
           </div>
         </div>
+        )}
       </Modal>
     </div>
   )
