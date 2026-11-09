@@ -15,6 +15,7 @@ from app.models.program_studi import ProgramStudi
 from app.models.user import User
 from app.schemas.narasi import NarasiGenerateRequest, NarasiResponse, NarasiUpdate
 from app.services import ai_client, capaian_service
+from app.services.ai_stream import sse_response
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,22 @@ async def generate_narasi(
     Generate narasi evaluasi kurikulum berbasis OBE via AI Service (REST HTTP port 8001).
     Wajib menolak dengan HTTP 422 jika belum ada data nilai/kalkulasi untuk MK tersebut.
     """
+    mk, capaian_data, prodi_nama, semester_val = _siapkan_narasi(db, user, matkul_id, payload)
+
+    # Panggil AI Service via REST HTTP (ai_client)
+    ai_result = await ai_client.generate_narasi(
+        mk_name=mk.nama or f"Mata Kuliah {mk.kode}",
+        prodi=prodi_nama,
+        semester=semester_val,
+        tahun_ajaran=mk.tahun_ajaran or "2025/2026",
+        capaian=capaian_data,
+    )
+
+    return _simpan_narasi(db, matkul_id, payload, ai_result)
+
+
+def _siapkan_narasi(db: Session, user: User, matkul_id: int, payload: NarasiGenerateRequest):
+    """Cek akses dan kumpulkan data capaian. Melempar 422 bila belum ada data nilai/kalkulasi."""
     mk = _check_write_access(db, user, matkul_id)
 
     # Agregasi data capaian riil dari database lewat capaian_service
@@ -82,16 +99,10 @@ async def generate_narasi(
     semester_val = _semester_label(mk)
     if semester_val not in ("Ganjil", "Genap"):
         semester_val = "Ganjil"
+    return mk, capaian_data, prodi_nama, semester_val
 
-    # Panggil AI Service via REST HTTP (ai_client)
-    ai_result = await ai_client.generate_narasi(
-        mk_name=mk.nama or f"Mata Kuliah {mk.kode}",
-        prodi=prodi_nama,
-        semester=semester_val,
-        tahun_ajaran=mk.tahun_ajaran or "2025/2026",
-        capaian=capaian_data,
-    )
 
+def _simpan_narasi(db: Session, matkul_id: int, payload: NarasiGenerateRequest, ai_result: Dict[str, Any]) -> NarasiEvaluasi:
     konten_str = json.dumps(ai_result.get("data", {}), ensure_ascii=False)
 
     data = NarasiEvaluasi(
@@ -105,6 +116,48 @@ async def generate_narasi(
     db.commit()
     db.refresh(data)
     return data
+
+
+@router.post("/generate/{matkul_id}/stream")
+async def generate_narasi_stream(
+    matkul_id: int,
+    payload: NarasiGenerateRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen)),
+):
+    """
+    Versi streaming dari generate narasi (Server-Sent Events, lihat app/services/ai_stream.py).
+    Event `mulai` membawa data capaian yang dianalisis supaya bisa ditampilkan selama menunggu.
+    Penolakan 403/404/422 tetap berupa respons HTTP biasa sebelum streaming dimulai.
+    """
+    mk, capaian_data, prodi_nama, semester_val = _siapkan_narasi(db, user, matkul_id, payload)
+    nama_mk = mk.nama or f"Mata Kuliah {mk.kode}"
+    tahun_ajaran = mk.tahun_ajaran or "2025/2026"
+    info = {
+        "mata_kuliah": {
+            "id": mk.id, "kode": mk.kode, "nama": nama_mk, "prodi": prodi_nama,
+            "semester": semester_val, "tahun_ajaran": tahun_ajaran,
+        },
+        "capaian": capaian_data,
+    }
+
+    async def alur():
+        yield "mulai", info
+        hasil = None
+        async for jenis, data in ai_client.stream_narasi(
+            mk_name=nama_mk, prodi=prodi_nama, semester=semester_val,
+            tahun_ajaran=tahun_ajaran, capaian=capaian_data,
+        ):
+            if jenis == "hasil":
+                hasil = data
+            else:
+                yield jenis, data
+        yield "tahap", {"id": "simpan", "status": "mulai"}
+        record = _simpan_narasi(db, matkul_id, payload, hasil)
+        yield "tahap", {"id": "simpan", "status": "selesai"}
+        yield "selesai", NarasiResponse.model_validate(record).model_dump(mode="json")
+
+    return sse_response(alur(), db)
 
 
 @router.get("/{matkul_id}", response_model=list[NarasiResponse])

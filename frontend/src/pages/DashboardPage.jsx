@@ -40,12 +40,23 @@ import { getApiErrorMessage } from './superAdminHelpers'
 import { exportToCsv } from '../utils/csvExport'
 import { useDekanScope } from '../context/DekanScopeContext'
 import ProdiSelector from '../components/ProdiSelector'
+import AdminProdiDashboard from './AdminProdiDashboard'
 
 export default function DashboardPage() {
-  const navigate = useNavigate()
   const { user, activeRole } = useAuth()
   const { role } = useRole()
   const currentRole = activeRole || role || user?.role || 'admin_prodi'
+
+  // Admin Prodi tidak berwenang atas Analitik OBE: tampilkan ikhtisar konfigurasi saja.
+  if (currentRole === 'admin_prodi') {
+    return <AdminProdiDashboard />
+  }
+  return <AnalyticsDashboard currentRole={currentRole} />
+}
+
+function AnalyticsDashboard({ currentRole }) {
+  const navigate = useNavigate()
+  const { user } = useAuth()
   const isDosen = currentRole === 'dosen'
   const isDekan = currentRole === 'dekan'
   const isKaprodi = currentRole === 'kaprodi'

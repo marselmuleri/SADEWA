@@ -18,11 +18,12 @@ from app.models.mk_bentuk_penilaian_ik_map import MKBentukPenilaianIKMap
 from app.models.nilai_bentuk_penilaian import NilaiBentukPenilaian
 from app.models.pengampu_mata_kuliah import PengampuMataKuliah
 from app.models.peserta_mata_kuliah import PesertaMataKuliah
-from app.models.skala_nilai import SkalaNilai
 from app.models.user import User
 from app.schemas.kalkulasi import KalkulasiRunResponse, ValidasiBobotResponse, ValidasiBobotRequest
 from app.services.calculation.engine import cek_siap_dinilai, run_kalkulasi, validasi_bobot_mata_kuliah
 from app.services.calculation.obe_formula import compute_result, pilih_huruf
+from app.services.portofolio_aturan import ambang_prodi
+from app.services.skala_nilai import muat_kelompok, skala_untuk_angkatan
 
 router = APIRouter()
 
@@ -138,17 +139,12 @@ def finalize_peserta(
         raise HTTPException(status_code=400, detail="Peserta belum memiliki nilai tersimpan")
 
     # 3. Cek skala nilai kurikulum
-    skala_rows = []
-    if mk.kurikulum_version_id:
-        skala_rows = (
-            db.query(SkalaNilai)
-            .filter(SkalaNilai.kurikulum_version_id == mk.kurikulum_version_id)
-            .order_by(SkalaNilai.batas_min.desc())
-            .all()
-        )
-    if not skala_rows:
+    skala_list = skala_untuk_angkatan(
+        muat_kelompok(db, mk.kurikulum_version_id), getattr(peserta.mahasiswa, "angkatan", None)
+    )
+    if not skala_list:
         raise HTTPException(status_code=400, detail="Kurikulum belum memiliki konfigurasi skala nilai huruf")
-    skala_list = [(s.huruf, s.batas_min) for s in skala_rows]
+    ambang = ambang_prodi(db, mk.program_studi_id)
 
     # 4. Idempotensi: tolak bila sudah final
     existing = db.query(HasilEvaluasi).filter(HasilEvaluasi.peserta_mata_kuliah_id == peserta.id).first()
@@ -191,7 +187,7 @@ def finalize_peserta(
         existing.nilai_akhir = nilai_akhir
         existing.nilai_huruf = nilai_huruf
         existing.nilai_bobot = nilai_akhir
-        existing.status_outcome = "Tercapai" if nilai_akhir >= Decimal("70") else "Tidak Tercapai"
+        existing.status_outcome = "Tercapai" if nilai_akhir >= ambang else "Tidak Tercapai"
         existing.is_final = True
         existing.finalized_at = datetime.now(timezone.utc)
         existing.finalized_by = user.id
@@ -203,7 +199,7 @@ def finalize_peserta(
             nilai_akhir=nilai_akhir,
             nilai_huruf=nilai_huruf,
             nilai_bobot=nilai_akhir,
-            status_outcome="Tercapai" if nilai_akhir >= Decimal("70") else "Tidak Tercapai",
+            status_outcome="Tercapai" if nilai_akhir >= ambang else "Tidak Tercapai",
             is_final=True,
             finalized_at=datetime.now(timezone.utc),
             finalized_by=user.id,

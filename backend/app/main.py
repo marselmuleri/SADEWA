@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 
 from app.api.v1.router import api_v1_router
@@ -13,10 +14,58 @@ from app.services import ai_client
 logger = logging.getLogger(__name__)
 
 
+def auto_sync_schema(db_engine):
+    """
+    Menyelaraskan kolom-kolom baru pada model ke tabel fisik yang sudah ada di database.
+    Base.metadata.create_all() hanya membuat tabel yang belum ada, sehingga kolom baru
+    pada tabel yang sudah ada perlu di-patch secara idempotent jika belum ada.
+    """
+    if db_engine.dialect.name == "postgresql":
+        statements = [
+            "ALTER TABLE rps ADD COLUMN IF NOT EXISTS konten JSON;",
+            "ALTER TABLE rps ADD COLUMN IF NOT EXISTS sumber_dokumen_rag JSON;",
+            "ALTER TABLE jenis_evaluasi ADD COLUMN IF NOT EXISTS bobot NUMERIC(5, 2);",
+            "ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS angkatan SMALLINT;",
+            "ALTER TABLE cpl_achievement ADD COLUMN IF NOT EXISTS angkatan INTEGER;",
+            "ALTER TABLE cpl_achievement ADD COLUMN IF NOT EXISTS mata_kuliah_id BIGINT REFERENCES mata_kuliah(id);",
+            "ALTER TABLE cpl_achievement ADD COLUMN IF NOT EXISTS bobot_cp NUMERIC;",
+            "CREATE INDEX IF NOT EXISTS ix_cpl_achievement_mata_kuliah_id ON cpl_achievement (mata_kuliah_id);",
+            "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS kurikulum_version_id BIGINT;",
+            "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS is_final BOOLEAN DEFAULT FALSE;",
+            "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS finalized_at TIMESTAMP;",
+            "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS finalized_by BIGINT;",
+            "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS unlocked_at TIMESTAMP;",
+            "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS unlocked_by BIGINT;",
+            "ALTER TABLE hasil_evaluasi ADD COLUMN IF NOT EXISTS alasan_buka VARCHAR(255);",
+            "ALTER TABLE nilai_bentuk_penilaian ADD COLUMN IF NOT EXISTS ik_id BIGINT;",
+            "ALTER TABLE kurikulum_versions DROP COLUMN IF EXISTS semester;",
+            "ALTER TABLE kurikulum_versions ADD COLUMN IF NOT EXISTS deskripsi TEXT;",
+            "ALTER TABLE kurikulum_versions ADD COLUMN IF NOT EXISTS tahun INTEGER;",
+            # Portofolio: kolom RPP tambahan
+            "ALTER TABLE rpp_pertemuan ADD COLUMN IF NOT EXISTS waktu VARCHAR(100);",
+            "ALTER TABLE rpp_pertemuan ADD COLUMN IF NOT EXISTS pengalaman_belajar TEXT;",
+            "ALTER TABLE rpp_pertemuan ADD COLUMN IF NOT EXISTS indikator_kriteria TEXT;",
+            # Skala huruf per angkatan: keunikan kini per kelompok angkatan (divalidasi di API)
+            "ALTER TABLE skala_nilai DROP CONSTRAINT IF EXISTS uq_skala_nilai_kurikulum_huruf;",
+            "ALTER TABLE skala_nilai DROP CONSTRAINT IF EXISTS uq_skala_nilai_kurikulum_batas;",
+            "ALTER TABLE skala_nilai ADD COLUMN IF NOT EXISTS angkatan_min INTEGER;",
+            "ALTER TABLE skala_nilai ADD COLUMN IF NOT EXISTS angkatan_max INTEGER;",
+        ]
+        # Satu transaksi per perintah: di PostgreSQL satu perintah yang gagal
+        # membatalkan seluruh transaksi, jadi perintah lain tidak boleh ikut batal.
+        for stmt in statements:
+            try:
+                with db_engine.begin() as conn:
+                    conn.execute(sa.text(stmt))
+            except Exception as e:
+                logger.warning("Auto-sync schema notice: %s (%s)", stmt, e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Inisialisasi tabel basis data PostgreSQL
     Base.metadata.create_all(bind=engine)
+    auto_sync_schema(engine)
     yield
 
 

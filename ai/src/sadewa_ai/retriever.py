@@ -17,10 +17,14 @@ import os
 import threading
 from typing import Any, Dict, List, Optional, Tuple
 
-from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
-
 from .config import settings
+from .hf_offline import aktifkan_offline_bila_tersedia
+
+# Harus sebelum langchain_huggingface / transformers diimpor (lihat hf_offline.py).
+HF_OFFLINE = aktifkan_offline_bila_tersedia(settings.embedding_model)
+
+from langchain_chroma import Chroma  # noqa: E402
+from langchain_huggingface import HuggingFaceEmbeddings  # noqa: E402
 
 _embeddings: Optional[HuggingFaceEmbeddings] = None
 _vectorstore: Optional[Chroma] = None
@@ -44,18 +48,18 @@ def get_embeddings() -> HuggingFaceEmbeddings:
     """
     Model embedding multilingual, dimuat sekali lalu di-cache.
 
-    model_kwargs di bawah ini sengaja disamakan persis dengan kode awal
-    (device=cpu, local_files_only=False) karena versi itu terbukti cepat dan
-    berhasil di komputer pengguna. Sempat dicoba memaksa HF_HUB_OFFLINE=1
-    dengan asumsi mempercepat, tapi ternyata malah menyebabkan proses
-    menggantung -- jadi pola itu tidak dipakai lagi di sini.
+    Bila model sudah ada di cache, mode offline HF dinyalakan otomatis
+    (hf_offline.py) sehingga tidak ada pengecekan ke huggingface.co saat start.
+    Diuji 9 Nov 2026: model termuat dari cache ±11 detik tanpa menggantung,
+    sedangkan mode online gagal berulang bila huggingface.co diblokir jaringan.
     """
     global _embeddings
     if _embeddings is None:
         with _lock:
             if _embeddings is None:
                 print(
-                    f"[retriever] Memuat model embedding '{settings.embedding_model}' ...",
+                    f"[retriever] Memuat model embedding '{settings.embedding_model}'"
+                    f"{' dari cache lokal (offline)' if HF_OFFLINE else ''} ...",
                     flush=True,
                 )
                 _embeddings = HuggingFaceEmbeddings(

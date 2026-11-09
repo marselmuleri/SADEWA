@@ -112,7 +112,14 @@ ATURAN WAJIB:
 - Buat tepat {settings.jumlah_pertemuan} pertemuan (minggu 1-{settings.jumlah_pertemuan})
 - Minggu {settings.minggu_uts} = UTS (cpmk: "-", materi: "UTS", bobot: 20)
 - Minggu {settings.minggu_uas} = UAS (cpmk: "-", materi: "UAS", bobot: 30)
-- Bobot total semua pertemuan HARUS = {settings.bobot_total}
+- PERHITUNGAN BOBOT (WAJIB IKUTI):
+  * Total bobot = {settings.bobot_total}
+  * UTS (minggu {settings.minggu_uts}) = 20, UAS (minggu {settings.minggu_uas}) = 30
+  * Sisa untuk pertemuan reguler = {settings.bobot_total} - 20 - 30 = 50
+  * Jumlah pertemuan reguler = {settings.jumlah_pertemuan - 2} (semua kecuali UTS dan UAS)
+  * Distribusi bobot reguler: gunakan kombinasi bobot 3 dan 4 yang totalnya tepat 50
+    Contoh: 8 pertemuan bobot 4 dan 6 pertemuan bobot 3 → (8×4)+(6×3) = 32+18 = 50 ✓
+  * JANGAN gunakan bobot 4 untuk semua pertemuan reguler (14×4=56, bukan 50)
 - Setiap nilai "cpmk" pada pertemuan HARUS salah satu kode yang kamu daftarkan
   di array "cpmk", kecuali untuk UTS dan UAS yang memakai "-"
 - Semua konten dalam Bahasa Indonesia
@@ -216,4 +223,92 @@ ATURAN WAJIB:
 - Rekomendasi harus spesifik untuk mata kuliah {mk_name}, bukan saran umum.
 - Gunakan bahasa formal akademik dalam Bahasa Indonesia.
 - Jika seluruh capaian sudah baik, tetap berikan rekomendasi penguatan.
+"""
+SYSTEM_EVALUASI_CPMK = (
+    "Kamu adalah asisten dosen penyusun portofolio mata kuliah berbasis OBE. "
+    "Kembalikan hanya JSON valid, mulai dengan { dan akhiri dengan }. "
+    "Tidak ada teks lain, tidak ada markdown."
+)
+
+
+def _format_capaian_cpmk(
+    cpmk: List[Dict[str, Any]], skala_maks: Any
+) -> str:
+    """Ubah statistik CPMK menjadi daftar teks untuk prompt."""
+    baris = []
+    for item in cpmk:
+        bagian = f"- {item.get('kode', '-')}"
+        if item.get("deskripsi"):
+            bagian += f" ({item['deskripsi']})"
+        bagian += f": rata-rata nilai {round(float(item.get('rata_rata', 0)), 2)}"
+        if item.get("rerata_skala") is not None and skala_maks:
+            bagian += f", rerata skala {round(float(item['rerata_skala']), 2)} dari {skala_maks}"
+        bagian += (
+            f", {item.get('jumlah_tercapai', 0)} dari {item.get('jumlah_mahasiswa', 0)} mahasiswa "
+            f"({round(float(item.get('persen_tercapai', 0)), 1)}%) mencapai ambang"
+        )
+        bagian += ", status: " + ("MEMENUHI target" if item.get("memenuhi") else "BELUM MEMENUHI target")
+        baris.append(bagian)
+    return "\n".join(baris) if baris else "(tidak ada data CPMK)"
+
+
+def build_evaluasi_cpmk_prompt(
+    mk_name: str,
+    prodi: str,
+    semester: str,
+    tahun_ajaran: str,
+    ambang: float,
+    target_persen: float,
+    cpmk: List[Dict[str, Any]],
+    context_kurikulum: str,
+    target_rerata_skala: Any = None,
+    skala_maks: Any = None,
+) -> str:
+    """
+    Prompt untuk sheet Evaluasi portofolio mata kuliah: satu analisis pelaksanaan
+    pembelajaran dan satu rencana perbaikan semester depan untuk setiap CPMK.
+    """
+    target_skala = ""
+    if target_rerata_skala is not None and skala_maks:
+        target_skala = f"\n- Target rerata skala: {target_rerata_skala} (skala 1-{skala_maks})"
+
+    return f"""Tugasmu: menyusun kolom "Analisis Pelaksanaan Pembelajaran" dan
+"Rencana Perbaikan Semester Depan" pada tabel Evaluasi Pemenuhan CPMK di
+portofolio mata kuliah.
+
+## Konteks Dokumen Kurikulum
+{context_kurikulum}
+
+## Identitas Mata Kuliah
+- Mata Kuliah    : {mk_name}
+- Program Studi  : {prodi}
+- Semester       : {semester}
+- Tahun Ajaran   : {tahun_ajaran}
+- Ambang nilai CPMK: {ambang} (skala 0-100)
+- Target mahasiswa mencapai ambang: {target_persen}%{target_skala}
+
+## Data Ketercapaian CPMK (HANYA gunakan angka di bawah ini)
+{_format_capaian_cpmk(cpmk, skala_maks)}
+
+## Instruksi Output
+Kembalikan JSON valid tanpa teks lain dan tanpa markdown, dengan struktur:
+{{
+  "evaluasi": [
+    {{
+      "kode": "kode CPMK persis seperti pada data",
+      "analisis": "string (2-4 kalimat)",
+      "rencana_perbaikan": "string (1-3 kalimat)"
+    }}
+  ]
+}}
+
+ATURAN WAJIB:
+- Buat tepat satu entri untuk SETIAP kode CPMK pada data, dengan kode yang sama persis.
+- "analisis": sebutkan persentase ketercapaian dari data, artinya bagi kemampuan
+  mahasiswa sesuai deskripsi CPMK, dan dugaan penyebab bila belum memenuhi target.
+- "rencana_perbaikan": tindakan konkret untuk semester berikutnya pada mata kuliah
+  {mk_name}. Jika CPMK sudah memenuhi target, tulis upaya mempertahankan atau
+  meningkatkan capaian.
+- JANGAN mengarang angka di luar data.
+- Bahasa Indonesia formal akademik, tanpa poin-poin atau penomoran.
 """

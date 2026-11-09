@@ -1,12 +1,46 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SADEWA</title>
+    <title>SADEWA — Sistem Analisis Data Evaluasi Wawasan Akademik</title>
+    <meta name="description" content="SADEWA: platform evaluasi akademik berbasis Outcome-Based Education." />
+    <meta name="theme-color" content="#1A3A6B" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <style>
+      /* Layar muat awal: tampil sebelum JavaScript siap, otomatis diganti saat React dirender. */
+      .sadewa-boot { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #F8FAFC; font-family: system-ui, sans-serif; color: #64748B; font-size: 12px; }
+      .sadewa-boot svg { width: 88px; height: 88px; }
+      .sadewa-boot .b1, .sadewa-boot .b2 { stroke-dasharray: 100 100; }
+      .sadewa-boot .b1 { animation: sb-b1 2.8s ease-in-out infinite; }
+      .sadewa-boot .b2 { animation: sb-b2 2.8s ease-in-out infinite; }
+      .sadewa-boot .t { transform-box: fill-box; transform-origin: center; animation: sb-t 2.8s ease-out infinite; }
+      @keyframes sb-b1 { 0% { stroke-dashoffset: 100; } 30%, 100% { stroke-dashoffset: 0; } }
+      @keyframes sb-b2 { 0%, 25% { stroke-dashoffset: 100; } 55%, 100% { stroke-dashoffset: 0; } }
+      .sadewa-boot .d { animation: sb-d 2.8s ease-out infinite; }
+      @keyframes sb-d { 0%, 50% { opacity: 0; } 65%, 100% { opacity: 1; } }
+      @keyframes sb-t { 0%, 50% { transform: scale(0); } 65% { transform: scale(1.15); } 72%, 100% { transform: scale(1); } }
+      @media (prefers-reduced-motion: reduce) { .sadewa-boot .b1, .sadewa-boot .b2, .sadewa-boot .t, .sadewa-boot .d { animation: none !important; stroke-dashoffset: 0 !important; opacity: 1 !important; } .sadewa-boot .t { transform: none !important; } }
+    </style>
   </head>
   <body class="bg-slate-50">
-    <div id="root"></div>
+    <div id="root">
+      <div class="sadewa-boot" role="status" aria-live="polite">
+        <svg viewBox="10 10 180 180" aria-hidden="true">
+          <circle cx="100" cy="100" r="90" fill="#1A3A6B" />
+          <g transform="translate(100 100) scale(0.8) translate(-100 -102)">
+            <path class="b1" pathLength="100" d="M133.8 53.7A36 36 0 1 0 87.7 99.8" fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linecap="round" />
+            <path class="b2" pathLength="100" d="M112.3 104.2A36 36 0 1 1 66.2 150.3" fill="none" stroke="#F4A300" stroke-width="22" stroke-linecap="round" />
+            <g class="d"><rect x="84" y="140" width="8" height="14" rx="2" fill="#FFFFFF" /><rect x="96" y="132" width="8" height="22" rx="2" fill="#FFFFFF" /><rect x="108" y="124" width="8" height="30" rx="2" fill="#FFFFFF" /><circle cx="66.2" cy="150.3" r="14" fill="#FFFFFF" /></g>
+            <g class="t"><circle cx="133.8" cy="53.7" r="21" fill="#F4A300" /><circle cx="133.8" cy="53.7" r="9" fill="#1A3A6B" /></g>
+          </g>
+        </svg>
+        <span>Memuat SADEWA...</span>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

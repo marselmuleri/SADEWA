@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import PageErrorBoundary from './components/PageErrorBoundary'
+import AiJobDock from './components/AiJobDock'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
@@ -30,6 +31,10 @@ import DataMasterKurikulumPage from './pages/datamaster/DataMasterKurikulumPage'
 import DataMasterCplPage from './pages/datamaster/DataMasterCplPage'
 import DataMasterIkPage from './pages/datamaster/DataMasterIkPage'
 import DataMasterCpmkPage from './pages/datamaster/DataMasterCpmkPage'
+import DataMasterArsipPage from './pages/datamaster/DataMasterArsipPage'
+import PortofolioPage from './pages/portofolio/PortofolioPage'
+import PortofolioDetailPage from './pages/portofolio/PortofolioDetailPage'
+import AturanPenilaianPage from './pages/AturanPenilaianPage'
 
 import useAuth from './hooks/useAuth'
 
@@ -55,6 +60,8 @@ function RoleBasedHomeRedirect() {
 }
 
 const ACADEMIC_ROLES = ['admin_prodi', 'dosen', 'kaprodi', 'dekan']
+// Analitik OBE adalah wewenang Dosen, Kaprodi, dan Dekan (bukan Admin Prodi).
+const ANALYTICS_ROLES = ['dosen', 'kaprodi', 'dekan']
 
 function DataMasterIndexRedirect() {
   const { search } = useLocation()
@@ -128,13 +135,36 @@ export default function App() {
         <Route
           path="/analisis"
           element={
-            <ProtectedRoute allowedRoles={ACADEMIC_ROLES}>
+            <ProtectedRoute allowedRoles={ANALYTICS_ROLES}>
               <AppLayout>
                 <AnalisisPage />
               </AppLayout>
             </ProtectedRoute>
           }
         />
+
+        {/* Portofolio mata kuliah: Dosen (kelola), Kaprodi & Dekan (lihat) */}
+        <Route
+          path="/portofolio"
+          element={
+            <ProtectedRoute allowedRoles={ANALYTICS_ROLES}>
+              <AppLayout>
+                <PortofolioPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/portofolio/:mkId/:section"
+          element={
+            <ProtectedRoute allowedRoles={ANALYTICS_ROLES}>
+              <AppLayout>
+                <PortofolioDetailPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/portofolio/:mkId" element={<Navigate to="rps" replace />} />
 
         {/* View-Only Academic Master Data */}
         <Route
@@ -152,6 +182,7 @@ export default function App() {
           <Route path="cpl" element={<DataMasterCplPage />} />
           <Route path="ik" element={<DataMasterIkPage />} />
           <Route path="cpmk" element={<DataMasterCpmkPage />} />
+          <Route path="arsip" element={<DataMasterArsipPage />} />
         </Route>
 
         {/* Consolidated Kurikulum OBE for Dosen, Kaprodi, Dekan (Mode Lihat) */}
@@ -271,6 +302,16 @@ export default function App() {
           }
         />
         <Route
+          path="/aturan-penilaian"
+          element={
+            <ProtectedRoute allowedRoles={['admin_prodi']}>
+              <AppLayout>
+                <AturanPenilaianPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/pengaturan"
           element={
             <ProtectedRoute allowedRoles={['admin_prodi']}>
@@ -331,6 +372,8 @@ export default function App() {
           }
         />
       </Routes>
+      {/* Proses AI (Generate RPS / Narasi) yang berjalan di latar belakang */}
+      <AiJobDock />
     </BrowserRouter>
   )
 }

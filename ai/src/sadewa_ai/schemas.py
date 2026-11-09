@@ -125,6 +125,50 @@ class NarasiData(BaseModel):
     kesimpulan: str
 
 
+# --- Evaluasi pemenuhan CPMK (sheet Evaluasi portofolio) -----------------------
+
+
+class CapaianCPMKItem(BaseModel):
+    """Statistik satu CPMK pada satu kelas, dikirim oleh backend."""
+
+    kode: str
+    deskripsi: str = ""
+    rata_rata: float = Field(..., description="Rata-rata nilai CPMK kelas (0-100)")
+    rerata_skala: Optional[float] = Field(None, description="Rata-rata pada skala rubrik (mis. 1-4)")
+    persen_tercapai: float = Field(..., description="Persen mahasiswa dengan nilai >= ambang")
+    jumlah_mahasiswa: int = 0
+    jumlah_tercapai: int = 0
+    memenuhi: bool = False
+
+
+class EvaluasiCPMKRequest(BaseModel):
+    """Input untuk saran teks Analisis Pelaksanaan & Rencana Perbaikan per CPMK."""
+
+    mk_name: str = Field(..., min_length=1)
+    prodi: str = Field(..., min_length=1)
+    semester: Literal["Ganjil", "Genap"]
+    tahun_ajaran: str = Field(..., min_length=1)
+    ambang: float = 70.0
+    target_rerata_skala: Optional[float] = None
+    skala_maks: Optional[int] = None
+    target_persen: float = 60.0
+    cpmk: List[CapaianCPMKItem] = Field(..., min_length=1)
+
+    @field_validator("mk_name", "prodi", "tahun_ajaran")
+    @classmethod
+    def _tidak_boleh_kosong_setelah_strip(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("tidak boleh kosong atau hanya berisi spasi")
+        return v
+
+
+class EvaluasiCPMKData(BaseModel):
+    kode: str
+    analisis: str
+    rencana_perbaikan: str
+
+
 # --- Respons seragam -----------------------------------------------------------
 
 

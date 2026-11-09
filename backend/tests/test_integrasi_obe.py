@@ -216,14 +216,21 @@ def test_integrasi_putu_sandra_dan_mahasiswa_kosong(client):
     assert run_resp.status_code == 200
     assert run_resp.json()["jumlah_peserta_diproses"] == 2
 
-    # 11. Verifikasi Rapor Putu Sandra: nilai_akhir == 74.25 dan huruf B
-    rapor_putu = client.get(f"/api/v1/rapor/mahasiswa/{mhs_putu['id']}", headers=_auth_headers(admin_token)).json()
+    # 11. Rapor termasuk Analitik OBE: Admin Prodi ditolak, Dosen boleh.
+    rapor_admin = client.get(f"/api/v1/rapor/mahasiswa/{mhs_putu['id']}", headers=_auth_headers(admin_token))
+    assert rapor_admin.status_code == 403
+
+    # Verifikasi Rapor Putu Sandra: nilai_akhir == 74.25 dan huruf B
+    rapor_putu = client.get(f"/api/v1/rapor/mahasiswa/{mhs_putu['id']}", headers=_auth_headers(dosen_token)).json()
     he_putu = [h for h in rapor_putu["hasil_evaluasi"] if h["mata_kuliah_id"] == mk_id][0]
     assert float(he_putu["nilai_akhir"]) == 74.25
     assert he_putu["nilai_huruf"] == "B"
+    # Capaian CPL tersimpan per mata kuliah, lengkap dengan bobot IK-nya, dan bisa dibaca Dosen
+    assert rapor_putu["cpl_achievement"], "Dosen pengampu harus menerima capaian CPL mata kuliahnya"
+    assert all(c["mata_kuliah_id"] == mk_id and float(c["bobot_cp"]) > 0 for c in rapor_putu["cpl_achievement"])
 
     # 12. Verifikasi Rapor Mahasiswa Kosong: nilai_akhir == 0.00 dan huruf E
-    rapor_kosong = client.get(f"/api/v1/rapor/mahasiswa/{mhs_kosong['id']}", headers=_auth_headers(admin_token)).json()
+    rapor_kosong = client.get(f"/api/v1/rapor/mahasiswa/{mhs_kosong['id']}", headers=_auth_headers(dosen_token)).json()
     he_kosong = [h for h in rapor_kosong["hasil_evaluasi"] if h["mata_kuliah_id"] == mk_id][0]
     assert float(he_kosong["nilai_akhir"]) == 0.00
     assert he_kosong["nilai_huruf"] == "E"

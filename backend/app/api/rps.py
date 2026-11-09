@@ -10,8 +10,9 @@ from app.models.pengampu_mata_kuliah import PengampuMataKuliah
 from app.models.program_studi import ProgramStudi
 from app.models.rps import RPS
 from app.models.user import User
-from app.schemas.rps import RPSGenerateRequest, RPSResponse
+from app.schemas.rps import RPSGenerateRequest, RPSResponse, RPSUpdate
 from app.services import ai_client
+from app.services.ai_stream import sse_response
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +68,10 @@ async def _execute_generate_rps(
         deskripsi=payload.topik or "",
     )
 
+    return _simpan_rps(db, mata_kuliah_id, payload, user.id, ai_result)
+
+
+def _simpan_rps(db: Session, mata_kuliah_id: int, payload: RPSGenerateRequest, user_id: int, ai_result: dict) -> RPS:
     rps_data = ai_result.get("data")
     sumber_metadata = ai_result.get("sumber_dokumen") or ai_result.get("metadata")
 
@@ -77,7 +82,7 @@ async def _execute_generate_rps(
         status="draft",
         konten=rps_data,
         sumber_dokumen_rag=sumber_metadata,
-        created_by=user.id,
+        created_by=user_id,
     )
     db.add(data)
     db.commit()
@@ -99,6 +104,53 @@ async def generate_rps_prd(
     return await _execute_generate_rps(mata_kuliah_id, payload, db, user)
 
 
+@router.post("/{mata_kuliah_id}/generate/stream")
+async def generate_rps_stream(
+    mata_kuliah_id: int,
+    payload: RPSGenerateRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen)),
+):
+    """
+    Versi streaming dari generate RPS (Server-Sent Events, lihat app/services/ai_stream.py).
+    Hak akses diperiksa sebelum streaming dimulai, sehingga 403/404 tetap berupa respons HTTP biasa.
+    Draf disimpan setelah AI selesai; event `selesai` membawa record yang sama dengan endpoint biasa.
+    """
+    mk = _check_write_access(db, user, mata_kuliah_id)
+    prodi_nama = mk.program_studi.nama if mk.program_studi else "Program Studi"
+    sks_val = mk.sks if mk.sks in (1, 2, 3, 4, 6) else 3
+    semester_val = payload.semester or _semester_label(mk)
+    nama_mk = mk.nama or f"Mata Kuliah {mk.kode}"
+    info = {
+        "mata_kuliah": {
+            "id": mk.id, "kode": mk.kode, "nama": nama_mk, "sks": sks_val,
+            "prodi": prodi_nama, "semester": semester_val,
+        },
+        "topik": payload.topik or "",
+    }
+    user_id = user.id
+
+    async def alur():
+        yield "mulai", info
+        hasil = None
+        async for jenis, data in ai_client.stream_rps(
+            mk_name=nama_mk, sks=sks_val, semester=semester_val, prodi=prodi_nama, deskripsi=payload.topik or "",
+        ):
+            if jenis == "hasil":
+                hasil = data
+            else:
+                yield jenis, data
+        yield "tahap", {"id": "simpan", "status": "mulai"}
+        record = _simpan_rps(db, mata_kuliah_id, payload, user_id, hasil)
+        yield "tahap", {"id": "simpan", "status": "selesai"}
+        yield "selesai", {
+            **RPSResponse.model_validate(record).model_dump(mode="json"),
+            "peringatan": hasil.get("warnings") or [],
+        }
+
+    return sse_response(alur(), db)
+
+
 @router.post("/generate/{matkul_id}", response_model=RPSResponse, include_in_schema=False)
 async def generate_rps_legacy_alias(
     matkul_id: int,
@@ -118,3 +170,45 @@ def list_rps(mata_kuliah_id: int, db: Session = Depends(get_db), scope: Academic
     elif scope.fakultas_id:
         query = query.join(ProgramStudi, MataKuliah.program_studi_id == ProgramStudi.id).filter(ProgramStudi.fakultas_id == scope.fakultas_id)
     return query.order_by(RPS.id.desc()).all()
+
+
+def _get_rps_for_write(db: Session, user: User, rps_id: int) -> RPS:
+    rps = db.query(RPS).filter(RPS.id == rps_id).first()
+    if not rps:
+        raise HTTPException(status_code=404, detail="RPS tidak ditemukan")
+    _check_write_access(db, user, rps.mata_kuliah_id)
+    return rps
+
+
+@router.put("/{rps_id}", response_model=RPSResponse)
+def update_rps(
+    rps_id: int,
+    payload: RPSUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen)),
+):
+    """Simpan hasil edit draf RPS (isi, tahun ajaran, semester)."""
+    rps = _get_rps_for_write(db, user, rps_id)
+    pertemuan = payload.konten.get("pertemuan")
+    if pertemuan is not None and not isinstance(pertemuan, list):
+        raise HTTPException(status_code=400, detail="Format pertemuan RPS tidak valid")
+    rps.konten = payload.konten
+    if payload.tahun_ajaran:
+        rps.tahun_ajaran = payload.tahun_ajaran
+    if payload.semester:
+        rps.semester = payload.semester
+    db.commit()
+    db.refresh(rps)
+    return rps
+
+
+@router.delete("/{rps_id}")
+def delete_rps(
+    rps_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.dosen)),
+):
+    rps = _get_rps_for_write(db, user, rps_id)
+    db.delete(rps)
+    db.commit()
+    return {"message": "Draf RPS dihapus"}

@@ -22,18 +22,107 @@ Perubahan terbaru:
 """
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from . import prompts
 from .config import settings
 from .llm_client import chat, extract_json
 from .retriever import retrieve_context_with_metadata
-from .validators import validate_narasi, validate_rps
+from .validators import validate_evaluasi_cpmk, validate_narasi, validate_rps
 from .web_retriever import fetch_web_context
 
 logger = logging.getLogger(__name__)
 
 _MAX_RETRIES_RPS = 2  # jumlah percobaan ulang setelah percobaan pertama gagal
+
+# Callback progres opsional: on_event(jenis, data). Dipakai endpoint streaming
+# (service.stream_*) untuk memberi tahu frontend tahap yang sedang berjalan,
+# sumber pedoman yang dipakai, dan potongan teks yang sedang ditulis LLM.
+# Jenis event:
+#   "tahap"    {"id": "konteks"|"web"|"menulis"|"validasi", "status": "mulai"|"selesai", "detail"?, "percobaan"?}
+#   "sumber"   {"sumber": [{"file", "page", "snippet"}]}
+#   "token"    {"teks": "..."}            potongan JSON mentah dari LLM
+#   "ulang"    {"percobaan": n, "pelanggaran": [...]}   teks percobaan sebelumnya dibuang
+OnEvent = Optional[Callable[[str, Dict[str, Any]], None]]
+
+
+def _emit(on_event: OnEvent, jenis: str, **data: Any) -> None:
+    """Kirim event progres bila ada pendengar. Kegagalan callback tidak menghentikan pipeline."""
+    if on_event is None:
+        return
+    try:
+        on_event(jenis, data)
+    except Exception:  # noqa: BLE001
+        logger.debug("Callback on_event gagal untuk %s", jenis, exc_info=True)
+
+
+def _token_callback(on_event: OnEvent) -> Optional[Callable[[str], None]]:
+    if on_event is None:
+        return None
+    return lambda teks: _emit(on_event, "token", teks=teks)
+
+
+def _fix_bobot(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Auto-koreksi bobot pertemuan agar totalnya tepat 100.
+
+    LLM kadang menghasilkan total bobot > atau < 100 (paling umum: 14×4=56
+    ditambah UTS 20 + UAS 30 = 106). Fungsi ini memeriksa selisih dan
+    mendistribusikan koreksi ke pertemuan reguler (bukan UTS/UAS) secara merata,
+    satu per satu dari pertemuan terakhir ke pertama (agar perubahan tidak
+    terpusat di satu pertemuan saja).
+
+    Dipanggil SETELAH setiap percobaan generasi, sebelum validasi,
+    sehingga retry loop tidak membuang percobaan hanya karena bobot meleset.
+    """
+    pertemuan = data.get("pertemuan")
+    if not isinstance(pertemuan, list) or not pertemuan:
+        return data
+
+    target = settings.bobot_total
+    uts_minggu = settings.minggu_uts
+    uas_minggu = settings.minggu_uas
+
+    total_saat_ini = sum(
+        float(p.get("bobot", 0)) for p in pertemuan if isinstance(p, dict)
+    )
+    selisih = round(total_saat_ini - target)  # positif = kelebihan, negatif = kurang
+
+    if selisih == 0:
+        return data  # sudah benar, tidak perlu apa-apa
+
+    # Kumpulkan indeks pertemuan reguler (bukan UTS/UAS) dalam urutan terbalik
+    reguler_idx = [
+        i for i, p in enumerate(pertemuan)
+        if isinstance(p, dict) and p.get("minggu") not in (uts_minggu, uas_minggu)
+    ][::-1]  # dari belakang agar pertemuan awal tidak terganggu
+
+    for i in reguler_idx:
+        if selisih == 0:
+            break
+        bobot_lama = float(pertemuan[i].get("bobot", 0))
+        if selisih > 0:
+            # Kurangi bobot satu per satu
+            koreksi = min(selisih, bobot_lama - 1)  # minimal bobot = 1
+            if koreksi > 0:
+                pertemuan[i]["bobot"] = int(bobot_lama - koreksi)
+                selisih -= koreksi
+        else:
+            # Tambah bobot satu per satu
+            pertemuan[i]["bobot"] = int(bobot_lama + 1)
+            selisih += 1
+
+    if selisih != 0:
+        logger.warning(
+            "[rag_chain] _fix_bobot: masih ada selisih %d setelah koreksi "
+            "(pertemuan reguler tidak cukup untuk mengakomodasi selisih).",
+            selisih,
+        )
+    else:
+        logger.info("[rag_chain] _fix_bobot: bobot dikoreksi otomatis → total 100.")
+
+    data["pertemuan"] = pertemuan
+    return data
 
 
 def generate_rps(
@@ -42,6 +131,7 @@ def generate_rps(
     semester: str,
     prodi: str,
     deskripsi: str,
+    on_event: OnEvent = None,
 ) -> Dict[str, Any]:
     """
     Bangkitkan draf RPS. Mengembalikan dict berisi:
@@ -59,17 +149,23 @@ def generate_rps(
     # diambil relevan dengan permintaan, bukan selalu sama untuk mata kuliah yang sama.
     topik = (deskripsi or "").strip()
     query = f"RPS {mk_name} {prodi} {topik} CPL CPMK capaian pembelajaran OBE".replace("  ", " ")
+    _emit(on_event, "tahap", id="konteks", status="mulai")
     context_kurikulum, sources = retrieve_context_with_metadata(query)
     logger.info("Konteks lokal diambil (%d karakter)", len(context_kurikulum))
+    _emit(on_event, "sumber", sumber=sources)
+    _emit(on_event, "tahap", id="konteks", status="selesai", detail=f"{len(sources)} potongan pedoman ditemukan")
 
     # Ambil referensi RPS dari universitas lain via web search.
     # Berjalan paralel dengan proses lain agar tidak memperlambat.
     # Bila gagal (timeout/no internet), context_web = "" dan pipeline tetap jalan.
+    _emit(on_event, "tahap", id="web", status="mulai")
     context_web = fetch_web_context(mk_name=mk_name, prodi=prodi)
     if context_web:
         logger.info("Konteks web diambil (%d karakter)", len(context_web))
+        _emit(on_event, "tahap", id="web", status="selesai", detail="Referensi RPS sejenis ditemukan")
     else:
         logger.info("Konteks web tidak tersedia, lanjut dengan konteks lokal saja.")
+        _emit(on_event, "tahap", id="web", status="selesai", detail="Tidak tersedia, lanjut dengan pedoman lokal")
 
     prompt = prompts.build_rps_prompt(
         mk_name=mk_name,
@@ -108,15 +204,30 @@ def generate_rps(
                 "Percobaan %d/%d: RPS belum valid (%d pelanggaran). Mencoba ulang...",
                 attempt, _MAX_RETRIES_RPS, len(errors),
             )
+            _emit(on_event, "ulang", percobaan=attempt + 1, pelanggaran=errors)
 
+        _emit(
+            on_event, "tahap", id="menulis", status="mulai", percobaan=attempt + 1,
+            detail=None if attempt == 0 else f"Percobaan {attempt + 1}: memperbaiki {len(errors)} pelanggaran",
+        )
         raw = chat(
             messages=messages,
             max_tokens=settings.rps_max_tokens,
             temperature=settings.rps_temperature,
+            on_token=_token_callback(on_event),
         )
+        _emit(on_event, "tahap", id="menulis", status="selesai", percobaan=attempt + 1)
 
+        _emit(on_event, "tahap", id="validasi", status="mulai", percobaan=attempt + 1)
         data = extract_json(raw)
+        # Auto-koreksi bobot sebelum validasi agar tidak membuang retry
+        # hanya karena LLM salah menghitung distribusi bobot.
+        data = _fix_bobot(data)
         valid, errors = validate_rps(data)
+        _emit(
+            on_event, "tahap", id="validasi", status="selesai", percobaan=attempt + 1,
+            detail="Lolos aturan OBE" if valid else f"{len(errors)} pelanggaran ditemukan",
+        )
 
         if valid:
             if attempt > 0:
@@ -143,6 +254,7 @@ def generate_narasi_evaluasi(
     semester: str,
     tahun_ajaran: str,
     capaian: List[Dict[str, Any]],
+    on_event: OnEvent = None,
 ) -> Dict[str, Any]:
     """
     Bangkitkan laporan narasi evaluasi kurikulum (endpoint SADEWA-21).
@@ -165,8 +277,11 @@ def generate_narasi_evaluasi(
         f"evaluasi ketercapaian CPL CPMK {mk_name} {prodi} "
         "laporan borang akreditasi rekomendasi perbaikan"
     )
+    _emit(on_event, "tahap", id="konteks", status="mulai")
     context_kurikulum, sources = retrieve_context_with_metadata(query)
     logger.info("Konteks diambil (%d karakter)", len(context_kurikulum))
+    _emit(on_event, "sumber", sumber=sources)
+    _emit(on_event, "tahap", id="konteks", status="selesai", detail=f"{len(sources)} potongan pedoman ditemukan")
 
     prompt = prompts.build_narasi_prompt(
         mk_name=mk_name,
@@ -177,6 +292,7 @@ def generate_narasi_evaluasi(
         context_kurikulum=context_kurikulum,
     )
 
+    _emit(on_event, "tahap", id="menulis", status="mulai", percobaan=1)
     raw = chat(
         messages=[
             {"role": "system", "content": prompts.SYSTEM_NARASI},
@@ -184,10 +300,17 @@ def generate_narasi_evaluasi(
         ],
         max_tokens=settings.narasi_max_tokens,
         temperature=settings.narasi_temperature,
+        on_token=_token_callback(on_event),
     )
+    _emit(on_event, "tahap", id="menulis", status="selesai", percobaan=1)
 
+    _emit(on_event, "tahap", id="validasi", status="mulai", percobaan=1)
     data = extract_json(raw)
     valid, errors = validate_narasi(data)
+    _emit(
+        on_event, "tahap", id="validasi", status="selesai", percobaan=1,
+        detail="Semua bagian lengkap" if valid else f"{len(errors)} bagian perlu diperiksa",
+    )
 
     if not valid:
         logger.warning("Narasi lolos parsing tetapi tidak lengkap: %s", errors)
@@ -195,6 +318,75 @@ def generate_narasi_evaluasi(
     return {
         "data": data,
         "valid": valid,
+        "pelanggaran_validasi": errors,
+        "sumber_dokumen": sources,
+    }
+
+
+def generate_evaluasi_cpmk(
+    mk_name: str,
+    prodi: str,
+    semester: str,
+    tahun_ajaran: str,
+    cpmk: List[Dict[str, Any]],
+    ambang: float = 70.0,
+    target_persen: float = 60.0,
+    target_rerata_skala: Any = None,
+    skala_maks: Any = None,
+) -> Dict[str, Any]:
+    """
+    Saran teks sheet Evaluasi portofolio: analisis pelaksanaan pembelajaran dan
+    rencana perbaikan semester depan untuk setiap CPMK.
+
+    Data dikembalikan sebagai {"evaluasi": [{"kode", "analisis", "rencana_perbaikan"}]}.
+    Bila ada CPMK yang terlewat, LLM diminta mengulang sekali dengan daftar kekurangannya.
+    """
+    logger.info("Memulai RAG pipeline evaluasi CPMK untuk: %s", mk_name)
+    query = (
+        f"evaluasi pemenuhan CPMK {mk_name} {prodi} analisis pelaksanaan pembelajaran "
+        "rencana perbaikan semester depan"
+    )
+    context_kurikulum, sources = retrieve_context_with_metadata(query)
+
+    prompt = prompts.build_evaluasi_cpmk_prompt(
+        mk_name=mk_name,
+        prodi=prodi,
+        semester=semester,
+        tahun_ajaran=tahun_ajaran,
+        ambang=ambang,
+        target_persen=target_persen,
+        cpmk=cpmk,
+        context_kurikulum=context_kurikulum,
+        target_rerata_skala=target_rerata_skala,
+        skala_maks=skala_maks,
+    )
+    messages = [
+        {"role": "system", "content": prompts.SYSTEM_EVALUASI_CPMK},
+        {"role": "user", "content": prompt},
+    ]
+    kode_wajib = [str(c.get("kode", "")).strip() for c in cpmk]
+
+    data: Dict[str, Any] = {}
+    errors: List[str] = []
+    for percobaan in range(2):
+        raw = chat(
+            messages=messages,
+            max_tokens=settings.narasi_max_tokens,
+            temperature=settings.narasi_temperature,
+        )
+        data = extract_json(raw)
+        valid, errors = validate_evaluasi_cpmk(data, kode_wajib)
+        if valid:
+            break
+        logger.warning("Evaluasi CPMK percobaan %d belum lengkap: %s", percobaan + 1, errors)
+        messages = messages + [
+            {"role": "assistant", "content": raw},
+            {"role": "user", "content": "Perbaiki JSON agar memenuhi aturan. Kekurangan: " + "; ".join(errors)},
+        ]
+
+    return {
+        "data": data,
+        "valid": not errors,
         "pelanggaran_validasi": errors,
         "sumber_dokumen": sources,
     }

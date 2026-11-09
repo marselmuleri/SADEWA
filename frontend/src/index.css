@@ -50,3 +50,60 @@
 body {
   @apply text-slate-700;
 }
+
+/* --- Tampilan proses AI (components/AiLoadingStage.jsx) --- */
+@layer components {
+  /* Baris teks yang sedang "dirangkum": sorotan netral menyapu pelan */
+  .ai-kilau {
+    background-image: linear-gradient(90deg, #E2E8F0 0%, #E2E8F0 40%, #F8FAFC 50%, #E2E8F0 60%, #E2E8F0 100%);
+    background-size: 200% 100%;
+  }
+}
+
+/* --- Animasi logo saat memuat (components/brand/SadewaLogo.jsx: SadewaLoader) ---
+   Busur atas tergambar, lalu busur bawah, data dan target capaian muncul. Satu siklus 2,8 detik. */
+.sadewa-gambar-1,
+.sadewa-gambar-2 {
+  stroke-dasharray: 100 100;
+}
+.sadewa-gambar-1 { animation: sadewa-gambar-1 2.8s ease-in-out infinite; }
+.sadewa-gambar-2 { animation: sadewa-gambar-2 2.8s ease-in-out infinite; }
+.sadewa-data { animation: sadewa-data 2.8s ease-out infinite; }
+.sadewa-target {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: sadewa-target 2.8s ease-out infinite;
+}
+.sadewa-siklus { animation: sadewa-siklus 2.8s ease-in-out infinite; }
+
+@keyframes sadewa-gambar-1 { 0% { stroke-dashoffset: 100; } 30%, 100% { stroke-dashoffset: 0; } }
+@keyframes sadewa-gambar-2 { 0%, 25% { stroke-dashoffset: 100; } 55%, 100% { stroke-dashoffset: 0; } }
+@keyframes sadewa-data { 0%, 50% { opacity: 0; } 65%, 100% { opacity: 1; } }
+@keyframes sadewa-target {
+  0%, 50% { transform: scale(0); }
+  65% { transform: scale(1.15); }
+  72%, 100% { transform: scale(1); }
+}
+@keyframes sadewa-siklus { 0%, 88% { opacity: 1; } 100% { opacity: 0; } }
+
+/* Hormati preferensi gerak minimal: semua gerak dimatikan, status & teks tetap berjalan */
+@media (prefers-reduced-motion: reduce) {
+  .ai-gerak,
+  .ai-gerak *,
+  .ai-sorot {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Logo tampil utuh dan diam */
+  .sadewa-gambar-1,
+  .sadewa-gambar-2,
+  .sadewa-data,
+  .sadewa-target,
+  .sadewa-siklus {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
+  }
+  .sadewa-target { transform: none !important; }
+}

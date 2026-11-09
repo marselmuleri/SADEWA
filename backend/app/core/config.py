@@ -18,5 +18,12 @@ class Settings:
     AI_SERVICE_URL: str = os.getenv("AI_SERVICE_URL", "http://localhost:8001")
     AI_SERVICE_TIMEOUT_SECONDS: int = int(os.getenv("AI_SERVICE_TIMEOUT_SECONDS", "60"))
 
+    # Penyimpanan berkas Portofolio (RPS & lampiran yang diunggah dosen)
+    UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", str(BACKEND_DIR / "uploads"))
+    UPLOAD_MAX_MB: int = int(os.getenv("UPLOAD_MAX_MB", "10"))
+
+    # Nama institusi pada cover export Portofolio (Excel)
+    NAMA_INSTITUSI: str = os.getenv("NAMA_INSTITUSI", "Universitas Diponegoro")
+
 
 settings = Settings()

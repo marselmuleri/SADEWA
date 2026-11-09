@@ -74,8 +74,12 @@ def seed(db: Session):
 
     # --- 3. Kurikulum, CPL, IK untuk IF ---
     kurikulum_if = KurikulumVersion(
-        program_studi_id=prodi_if.id, version_label="2025", semester=SemesterEnum.ganjil,
-        status=StatusKurikulum.published, created_by=admin_if.id,
+        program_studi_id=prodi_if.id,
+        version_label="2025",
+        deskripsi="Kurikulum OBE Informatika 2025",
+        tahun=2025,
+        status=StatusKurikulum.published,
+        created_by=admin_if.id,
         published_at=datetime.now(timezone.utc),
     )
     db.add(kurikulum_if)
@@ -230,8 +234,12 @@ def seed(db: Session):
 
     # --- 7. Data Lengkap untuk Prodi Kedua (Teknik Elektro / EL) ---
     kurikulum_el = KurikulumVersion(
-        program_studi_id=prodi_el.id, version_label="2025", semester=SemesterEnum.ganjil,
-        status=StatusKurikulum.published, created_by=admin_el.id,
+        program_studi_id=prodi_el.id,
+        version_label="2025",
+        deskripsi="Kurikulum OBE Teknik Elektro 2025",
+        tahun=2025,
+        status=StatusKurikulum.published,
+        created_by=admin_el.id,
         published_at=datetime.now(timezone.utc),
     )
     db.add(kurikulum_el)

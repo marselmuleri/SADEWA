@@ -4,7 +4,7 @@
 
 > Rancang Bangun Sistem Analisis Data Evaluasi Wawasan Akademik (SADEWA) Berbasis Web dengan Asisten Cerdas LLM pada Lingkungan Outcome-Based Education
 
-Dokumen perancangan lengkap ada di [`docs/PRD/PRD_SADEWA_v2.1.md`](docs/PRD/PRD_SADEWA_v2.1.md) dan [`docs/PRD/design/DESIGN.md`](docs/PRD/design/DESIGN.md).
+Dokumen perancangan lengkap ada di [`docs/PRD/PRD_SADEWA_v2.2.md`](docs/PRD/PRD_SADEWA_v2.2.md) dan [`docs/PRD/design/DESIGN.md`](docs/PRD/design/DESIGN.md).
 
 ---
 
@@ -296,6 +296,18 @@ Frontend otomatis menambahkan `/api/v1` ke alamat ini.
 
 ## Akun Seed
 
+### Seed demo lengkap (disarankan)
+
+```bash
+cd backend
+python -m app.core.seed_demo --reset   # MENGHAPUS semua tabel lalu mengisi ulang (±1 menit)
+```
+
+Isi: 2 fakultas, 5 prodi (Informatika, Teknik Elektro, Teknik Sipil, Manajemen, Akuntansi), kurikulum 2020 (diarsipkan) / 2024 (aktif) / 2026 (draf), 8 CPL × 3 IK per prodi, 62 mata kuliah dengan CPMK dan bobot yang lolos validasi, 600 mahasiswa angkatan 2022–2026, ±66 ribu nilai yang sudah dikalkulasi, 30 laporan evaluasi (draft/submitted/approved/rejected), 62 RPS, dan 20 arsip kurikulum/semester. Nilai dibuat dengan pola realistis (CPL lemah, menurun, dan kuat antar angkatan) agar Analitik OBE punya temuan. Akun utama sama dengan tabel di bawah; akun prodi lain memakai pola `adminprodi.<kode>@`, `kaprodi.<kode>@`, `dekan.feb@`, dan `nama.dosen@sadewa.ac.id`.
+
+### Seed minimal
+
+
 `python -m app.core.seed` membuat satu akun per peran. **Semua password: `password123`**.
 
 | Peran | Email |
@@ -317,10 +329,10 @@ Seed akan berhenti jika sudah ada data user. Registrasi publik (`POST /auth/regi
 | Peran | Cakupan data | Wewenang utama |
 |---|---|---|
 | Super Admin | Metadata operasional saja | Kelola fakultas, prodi, dan akun. **Tidak** bisa melihat kurikulum, nilai, atau laporan |
-| Admin Prodi | Prodi miliknya | Kelola kurikulum (CPL, IK, versi), mata kuliah, CPMK, nilai, RPS, laporan, akun di prodinya |
-| Dosen | Mata kuliah yang diampu | Kelola CPMK dan bentuk penilaian, input nilai, kalkulasi, generate RPS/narasi/laporan |
-| Kaprodi | Prodi miliknya | Lihat dashboard dan tren, validasi laporan (approve/reject) |
-| Dekan | Seluruh prodi di fakultasnya (view-only) | Lihat dashboard dan tren lintas prodi |
+| Admin Prodi | Prodi miliknya | Kelola kurikulum (CPL, IK, versi), mata kuliah, CPMK, mahasiswa, peserta, akun Dosen/Kaprodi. **Tidak** punya akses Analitik OBE |
+| Dosen | Mata kuliah yang diampu | Bentuk penilaian, input nilai, kalkulasi, Analitik OBE per mata kuliah, generate RPS/laporan |
+| Kaprodi | Prodi miliknya | Analitik OBE dan tren prodi, validasi laporan (approve/reject) |
+| Dekan | Seluruh prodi di fakultasnya (view-only) | Analitik OBE dan tren per prodi, pantau laporan |
 
 Isolasi dilakukan di backend lewat `program_studi_id` / `fakultas_id` pada token pengguna, bukan hanya di frontend.
 
@@ -331,7 +343,8 @@ Implementasi di `backend/app/services/calculation/` mengikuti formula SIMAK-NG. 
 - **Poin sel** = `bobot_sel × nilai / 100`
 - **Poin IK** = jumlah poin sel lintas bentuk penilaian untuk IK tersebut
 - **Poin CPL** = jumlah poin IK milik CPL pada mata kuliah itu
-- **Persen CPL** = `poin_cpl / bobot_cp × 100` (0 jika `bobot_cp = 0`)
+- **Persen CPL** = `poin_cpl / bobot_cp × 100` (0 jika `bobot_cp = 0`), disimpan per mata kuliah bersama `bobot_cp`
+- **CPL gabungan** (lintas mata kuliah) = `Σ(persen_cpl × bobot_cp) / Σ bobot_cp`, dihitung saat dibaca (`calculation/cpl_aggregate.py`)
 - **Nilai akhir** = akumulasi poin sel yang belum dibulatkan, dibulatkan sekali di akhir. Bisa berbeda 0,01 dari jumlah poin CPL yang sudah dibulatkan
 - **Huruf mutu** = huruf dengan batas minimum terbesar yang masih ≤ nilai akhir, berdasarkan skala nilai kurikulum
 

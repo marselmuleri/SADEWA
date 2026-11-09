@@ -9,6 +9,13 @@ class RPSGenerateRequest(BaseModel):
     topik: Optional[str] = None
 
 
+class RPSUpdate(BaseModel):
+    """Simpan hasil edit draf RPS. konten mengikuti bentuk RPSData dari AI Service."""
+    konten: Dict[str, Any]
+    tahun_ajaran: Optional[str] = None
+    semester: Optional[Literal["Ganjil", "Genap"]] = None
+
+
 class RPSResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -20,3 +27,4 @@ class RPSResponse(BaseModel):
     konten: Optional[Union[Dict[str, Any], List[Any], str]] = None
     sumber_dokumen_rag: Optional[Union[Dict[str, Any], List[Any]]] = None
     created_at: datetime
+    updated_at: Optional[datetime] = None

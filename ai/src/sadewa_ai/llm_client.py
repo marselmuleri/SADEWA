@@ -21,7 +21,7 @@ import json
 import logging
 import threading
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from openai import (
     APIError,
@@ -67,8 +67,15 @@ def chat(
     max_tokens: int,
     temperature: float,
     model: Optional[str] = None,
+    on_token: Optional[Callable[[str], None]] = None,
 ) -> str:
-    """Panggil LLM (streaming) dan kembalikan teks jawaban utuh, dengan error informatif."""
+    """
+    Panggil LLM (streaming) dan kembalikan teks jawaban utuh, dengan error informatif.
+
+    on_token (opsional) dipanggil untuk setiap potongan teks yang diterima, sehingga
+    pemanggil bisa meneruskan hasil secara bertahap ke pengguna. Kegagalan di dalam
+    callback diabaikan agar tidak menggagalkan proses generate.
+    """
     client = get_client()
     nama_model = model or settings.qwen_model
 
@@ -97,6 +104,11 @@ def chat(
             pilihan = chunk.choices[0]
             if pilihan.delta and pilihan.delta.content:
                 potongan.append(pilihan.delta.content)
+                if on_token is not None:
+                    try:
+                        on_token(pilihan.delta.content)
+                    except Exception:  # noqa: BLE001 - callback tidak boleh memutus generate
+                        logger.debug("Callback on_token gagal", exc_info=True)
             if pilihan.finish_reason:
                 finish_reason = pilihan.finish_reason
     except AuthenticationError as exc:

@@ -9,6 +9,7 @@ from app.models import (
     MKBentukPenilaian, Mahasiswa, PesertaMataKuliah, CPL, IK,
     NilaiBentukPenilaian, HasilEvaluasi
 )
+from app.models.cpl_achievement import CPLAchievement
 from app.models.enums import UserRole, StatusKurikulum, SemesterEnum, StatusMasuk
 from tests.conftest import TestingSessionLocal
 
@@ -43,12 +44,14 @@ def audit_data(db_session: Session):
     admin_a = User(nama="Admin A", email="admin_a@test.com", password_hash="x", role=UserRole.admin_prodi, program_studi_id=prodi_a.id, is_active=True)
     dosen_a = User(nama="Dosen A", email="dosen_a@test.com", password_hash="x", role=UserRole.dosen, program_studi_id=prodi_a.id, is_active=True)
     dosen_b = User(nama="Dosen B", email="dosen_b@test.com", password_hash="x", role=UserRole.dosen, program_studi_id=prodi_b.id, is_active=True)
-    db_session.add_all([admin_a, dosen_a, dosen_b])
+    kaprodi_a = User(nama="Kaprodi A", email="kaprodi_a@test.com", password_hash="x", role=UserRole.kaprodi, program_studi_id=prodi_a.id, is_active=True)
+    dekan = User(nama="Dekan FT", email="dekan@test.com", password_hash="x", role=UserRole.dekan, fakultas_id=fakultas.id, is_active=True)
+    db_session.add_all([admin_a, dosen_a, dosen_b, kaprodi_a, dekan])
     db_session.flush()
 
     # Kurikulum
-    kur_a = KurikulumVersion(program_studi_id=prodi_a.id, version_label="2025-IF", semester=SemesterEnum.ganjil, status=StatusKurikulum.published)
-    kur_b = KurikulumVersion(program_studi_id=prodi_b.id, version_label="2025-EL", semester=SemesterEnum.ganjil, status=StatusKurikulum.published)
+    kur_a = KurikulumVersion(program_studi_id=prodi_a.id, version_label="2025-IF", status=StatusKurikulum.published)
+    kur_b = KurikulumVersion(program_studi_id=prodi_b.id, version_label="2025-EL", status=StatusKurikulum.published)
     db_session.add_all([kur_a, kur_b])
     db_session.flush()
 
@@ -100,6 +103,8 @@ def audit_data(db_session: Session):
         "admin_a": admin_a,
         "dosen_a": dosen_a,
         "dosen_b": dosen_b,
+        "kaprodi_a": kaprodi_a,
+        "dekan": dekan,
         "kur_a": kur_a,
         "kur_b": kur_b,
         "mk_a": mk_a,
@@ -389,3 +394,170 @@ def test_seed_data_siap_dinilai_dan_kalkulasi_langsung(client: TestClient, db_se
     data_calc = res_calc.json()
     assert data_calc["mata_kuliah_id"] == mk_if201.id
     assert data_calc["jumlah_peserta_diproses"] == 20
+
+
+def test_create_kurikulum_version_only(client: TestClient, audit_data: dict):
+    """Pastikan pembuatan versi kurikulum mendukung 'versi', 'deskripsi', 'tahun' tanpa semester."""
+    admin_a = audit_data["admin_a"]
+    headers = auth_header(admin_a)
+
+    # 1. Payload dengan atribut versi, deskripsi, tahun
+    payload = {
+        "versi": "2026-Rev",
+        "deskripsi": "Revisi Kurikulum OBE 2026",
+        "tahun": 2026,
+    }
+    res = client.post("/api/v1/kurikulum/versions", json=payload, headers=headers)
+    assert res.status_code == 200
+    data = res.json()
+    assert data["versi"] == "2026-Rev"
+    assert data["version_label"] == "2026-Rev"
+    assert data["deskripsi"] == "Revisi Kurikulum OBE 2026"
+    assert data["tahun"] == 2026
+    assert data["status"] == "draft"
+
+    # 2. Kompatibilitas mundur dengan version_label
+    payload_legacy = {
+        "version_label": "2027-Legacy",
+        "deskripsi": "Format legacy version_label",
+        "tahun": 2027,
+    }
+    res_legacy = client.post("/api/v1/kurikulum/versions", json=payload_legacy, headers=headers)
+    assert res_legacy.status_code == 200
+    data_legacy = res_legacy.json()
+    assert data_legacy["versi"] == "2027-Legacy"
+    assert data_legacy["version_label"] == "2027-Legacy"
+    assert data_legacy["tahun"] == 2027
+
+
+def test_admin_prodi_forbidden_on_dashboard_and_trending(client: TestClient, audit_data: dict, db_session: Session):
+    """
+    Pastikan Admin Prodi dilarang (403 Forbidden) mengakses endpoint dashboard dan trending analisis data OBE.
+    Hanya Dosen, Kaprodi, dan Dekan yang diizinkan.
+    """
+    admin_a = audit_data["admin_a"]
+    dosen_a = audit_data["dosen_a"]
+    kaprodi_a = audit_data["kaprodi_a"]
+    dekan = audit_data["dekan"]
+    mk_a = audit_data["mk_a"]
+    prodi_a = audit_data["prodi_a"]
+
+    # Buat CPL dan IK untuk prodi A agar endpoint ik-breakdown valid
+    kur_a = audit_data["kur_a"]
+    cpl = CPL(kurikulum_version_id=kur_a.id, kode="CPL-01", deskripsi="Kemampuan coding", program_studi_id=prodi_a.id)
+    db_session.add(cpl)
+    db_session.flush()
+
+    ik = IK(cpl_id=cpl.id, kode="IK-01.1", deskripsi="Indikator Kinerja 1")
+    db_session.add(ik)
+    db_session.commit()
+
+    h_admin = auth_header(admin_a)
+    h_dosen = auth_header(dosen_a)
+    h_kaprodi = auth_header(kaprodi_a)
+    h_dekan = auth_header(dekan)
+
+    # 1. Admin Prodi DITOLAK (403) pada semua endpoint dashboard & trending
+    res_cpl_admin = client.get("/api/v1/dashboard/cpl-overview", headers=h_admin)
+    assert res_cpl_admin.status_code == 403
+    assert "Admin Prodi tidak memiliki akses" in res_cpl_admin.json()["detail"]
+
+    res_ik_admin = client.get(f"/api/v1/dashboard/ik-breakdown/{cpl.id}", headers=h_admin)
+    assert res_ik_admin.status_code == 403
+    assert "Admin Prodi tidak memiliki akses" in res_ik_admin.json()["detail"]
+
+    res_mk_admin = client.get(f"/api/v1/dashboard/{mk_a.id}", headers=h_admin)
+    assert res_mk_admin.status_code == 403
+    assert "Admin Prodi tidak memiliki akses" in res_mk_admin.json()["detail"]
+
+    res_trend_admin = client.get("/api/v1/trending/cpl-by-angkatan", headers=h_admin)
+    assert res_trend_admin.status_code == 403
+    assert "Admin Prodi tidak memiliki akses" in res_trend_admin.json()["detail"]
+
+    # 2. Dosen, Kaprodi, Dekan TIDAK mendapat 403 (diizinkan)
+    # Dosen A (pengampu mk_a)
+    assert client.get("/api/v1/dashboard/cpl-overview", headers=h_dosen).status_code == 200
+    assert client.get(f"/api/v1/dashboard/ik-breakdown/{cpl.id}", headers=h_dosen).status_code == 200
+    assert client.get(f"/api/v1/dashboard/{mk_a.id}", headers=h_dosen).status_code == 200
+    assert client.get("/api/v1/trending/cpl-by-angkatan", headers=h_dosen).status_code == 200
+
+    # Kaprodi A
+    assert client.get("/api/v1/dashboard/cpl-overview", headers=h_kaprodi).status_code == 200
+    assert client.get(f"/api/v1/dashboard/ik-breakdown/{cpl.id}", headers=h_kaprodi).status_code == 200
+    assert client.get(f"/api/v1/dashboard/{mk_a.id}", headers=h_kaprodi).status_code == 200
+    assert client.get("/api/v1/trending/cpl-by-angkatan", headers=h_kaprodi).status_code == 200
+
+    # Dekan
+    assert client.get(f"/api/v1/dashboard/cpl-overview?program_studi_id={prodi_a.id}", headers=h_dekan).status_code == 200
+    assert client.get(f"/api/v1/dashboard/ik-breakdown/{cpl.id}", headers=h_dekan).status_code == 200
+    assert client.get(f"/api/v1/dashboard/{mk_a.id}", headers=h_dekan).status_code == 200
+    assert client.get(f"/api/v1/trending/cpl-by-angkatan?program_studi_id={prodi_a.id}", headers=h_dekan).status_code == 200
+
+
+
+def test_rapor_dosen_hanya_mata_kuliah_diampu(client: TestClient, audit_data: dict, db_session: Session):
+    """Dosen hanya boleh membuka rapor mahasiswa di MK yang diampu, isinya hanya MK itu."""
+    prodi_a = audit_data["prodi_a"]
+    kur_a = audit_data["kur_a"]
+    mk_a = audit_data["mk_a"]
+    mhs_a = audit_data["mhs_a"]
+
+    # Dosen lain di prodi yang sama, tidak mengampu mk_a
+    dosen_lain = User(nama="Dosen Lain", email="dosen_lain@test.com", password_hash="x", role=UserRole.dosen, program_studi_id=prodi_a.id, is_active=True)
+    # MK kedua di prodi A yang tidak diampu dosen_a, mhs_a juga peserta di sana
+    mk_lain = MataKuliah(
+        kurikulum_version_id=kur_a.id, kode="IF102", nama="Basis Data", sks=3,
+        semester=SemesterEnum.ganjil, tahun_ajaran="2025/2026", program_studi_id=prodi_a.id,
+    )
+    db_session.add_all([dosen_lain, mk_lain])
+    db_session.flush()
+    peserta_lain = PesertaMataKuliah(mata_kuliah_id=mk_lain.id, mahasiswa_id=mhs_a.id, kelas="A")
+    db_session.add(peserta_lain)
+    db_session.flush()
+    peserta_a = db_session.query(PesertaMataKuliah).filter_by(mata_kuliah_id=mk_a.id, mahasiswa_id=mhs_a.id).first()
+    db_session.add_all([
+        HasilEvaluasi(peserta_mata_kuliah_id=peserta_a.id, nilai_akhir=80, nilai_huruf="A"),
+        HasilEvaluasi(peserta_mata_kuliah_id=peserta_lain.id, nilai_akhir=60, nilai_huruf="C"),
+    ])
+    db_session.commit()
+
+    # Capaian CPL per mata kuliah: mk_a 80% (bobot IK 30), mk_lain 40% (bobot IK 10)
+    cpl = CPL(kurikulum_version_id=kur_a.id, kode="CPL-R", deskripsi="CPL rapor", program_studi_id=prodi_a.id)
+    db_session.add(cpl)
+    db_session.flush()
+    db_session.add_all([
+        CPLAchievement(mahasiswa_id=mhs_a.id, cpl_id=cpl.id, mata_kuliah_id=mk_a.id, nilai=80, bobot_cp=30, angkatan=2024),
+        CPLAchievement(mahasiswa_id=mhs_a.id, cpl_id=cpl.id, mata_kuliah_id=mk_lain.id, nilai=40, bobot_cp=10, angkatan=2024),
+    ])
+    db_session.commit()
+
+    url = f"/api/v1/rapor/mahasiswa/{mhs_a.id}"
+
+    # Dosen pengampu mk_a: hanya hasil & capaian CPL mk_a, tanpa gabungan lintas MK
+    res = client.get(url, headers=auth_header(audit_data["dosen_a"]))
+    assert res.status_code == 200
+    body = res.json()
+    assert [h["mata_kuliah_id"] for h in body["hasil_evaluasi"]] == [mk_a.id]
+    assert [(c["mata_kuliah_id"], float(c["nilai"])) for c in body["cpl_achievement"]] == [(mk_a.id, 80.0)]
+    assert body["cpl_gabungan"] == []
+
+    # Dosen yang tidak mengampu MK mana pun milik mahasiswa ini: ditolak
+    res_lain = client.get(url, headers=auth_header(dosen_lain))
+    assert res_lain.status_code == 403
+    assert "bukan peserta mata kuliah yang Anda ampu" in res_lain.json()["detail"]
+
+    # Kaprodi tetap melihat seluruh mata kuliah
+    res_kaprodi = client.get(url, headers=auth_header(audit_data["kaprodi_a"]))
+    assert res_kaprodi.status_code == 200
+    body_k = res_kaprodi.json()
+    assert {h["mata_kuliah_id"] for h in body_k["hasil_evaluasi"]} == {mk_a.id, mk_lain.id}
+    assert {c["mata_kuliah_id"] for c in body_k["cpl_achievement"]} == {mk_a.id, mk_lain.id}
+    # Gabungan berbobot bobot IK: (80*30 + 40*10) / 40 = 70
+    assert float(body_k["cpl_gabungan"][0]["nilai"]) == 70.0
+    assert body_k["cpl_gabungan"][0]["jumlah_mata_kuliah"] == 2
+
+    # Dashboard Kaprodi memakai nilai gabungan yang sama (bukan rata-rata biasa 60)
+    overview = client.get("/api/v1/dashboard/cpl-overview", headers=auth_header(audit_data["kaprodi_a"])).json()
+    item = [o for o in overview if o["cpl_id"] == cpl.id][0]
+    assert float(item["rata_rata"]) == 70.0
+    assert item["jumlah_mahasiswa"] == 1

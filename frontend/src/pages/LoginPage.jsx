@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LockKeyhole, ShieldCheck, University, Loader2, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import useAuth from '../hooks/useAuth'
+import { SadewaMark } from '../components/brand/SadewaLogo'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -39,9 +40,7 @@ export default function LoginPage() {
         <section className="relative flex flex-col justify-between border-b border-[#223E63] bg-[#132D50] p-8 text-white lg:border-b-0 lg:border-r lg:p-12">
           {/* Header Logo */}
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-[6px] bg-[#F4A300] text-xl font-bold text-[#142B4A]">
-              S
-            </div>
+            <SadewaMark size={48} variant="onDark" className="shrink-0" />
             <div>
               <div className="text-2xl font-bold tracking-tight">SADEWA</div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#C8D3E1]">

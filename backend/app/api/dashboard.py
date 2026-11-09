@@ -6,6 +6,9 @@ from app.core.database import get_db
 from app.core.deps import AcademicScope, get_academic_scope
 from app.models.cpl import CPL
 from app.models.cpl_achievement import CPLAchievement
+from app.services.calculation.cpl_aggregate import gabung_capaian_cpl
+from app.services.calculation.obe_formula import persen_ik
+from app.services.analitik import bobot_ik_per_mk
 from app.models.cpmk import CPMK
 from app.models.cpmk_achievement import CPMKAchievement
 from app.models.enums import UserRole
@@ -25,9 +28,15 @@ router = APIRouter()
 
 def _resolve_prodi_id(db: Session, scope: AcademicScope, requested_prodi_id: int | None) -> int:
     """
-    Admin Prodi & Kaprodi: selalu prodi mereka sendiri, parameter client diabaikan.
+    Kaprodi & Dosen: selalu prodi mereka sendiri, parameter client diabaikan.
     Dekan: wajib pilih salah satu prodi di fakultasnya sendiri lewat parameter.
+    Admin Prodi: dilarang mengakses dashboard analisis OBE.
     """
+    if scope.user.role == UserRole.admin_prodi:
+        raise HTTPException(status_code=403, detail="Admin Prodi tidak memiliki akses ke dashboard analisis OBE")
+    if scope.user.role not in (UserRole.dosen, UserRole.kaprodi, UserRole.dekan):
+        raise HTTPException(status_code=403, detail="Role ini tidak memiliki akses dashboard")
+
     if scope.program_studi_id:
         return scope.program_studi_id
     if scope.fakultas_id:
@@ -56,7 +65,8 @@ def cpl_overview(
         query = db.query(CPLAchievement).filter(CPLAchievement.cpl_id == cpl.id)
         if semester:
             query = query.filter(CPLAchievement.semester == semester)
-        achs = query.all()
+        # Satu nilai per mahasiswa: gabungan berbobot bobot IK lintas mata kuliah.
+        achs = list(gabung_capaian_cpl(query.all()).values())
         if not achs:
             continue
         rata_rata = sum(a.nilai for a in achs) / len(achs)
@@ -80,6 +90,11 @@ def ik_breakdown_by_cpl(
     db: Session = Depends(get_db),
     scope: AcademicScope = Depends(get_academic_scope),
 ):
+    if scope.user.role == UserRole.admin_prodi:
+        raise HTTPException(status_code=403, detail="Admin Prodi tidak memiliki akses ke dashboard analisis OBE")
+    if scope.user.role not in (UserRole.dosen, UserRole.kaprodi, UserRole.dekan):
+        raise HTTPException(status_code=403, detail="Role ini tidak memiliki akses dashboard")
+
     cpl = db.query(CPL).filter(CPL.id == cpl_id).first()
     if not cpl:
         raise HTTPException(status_code=404, detail="CPL tidak ditemukan")
@@ -100,12 +115,15 @@ def ik_breakdown_by_cpl(
         achs = query.all()
         if not achs:
             continue
+        # IKAchievement.nilai berupa poin; ubah ke persen terhadap bobot IK di MK-nya.
+        bobot = bobot_ik_per_mk(db, {a.mata_kuliah_id for a in achs})
+        persen = [persen_ik(a.nilai, bobot.get((a.mata_kuliah_id, a.ik_id))) for a in achs]
         results.append(IKBreakdownItem(
             ik_id=ik.id,
             kode=ik.kode,
             deskripsi=ik.deskripsi,
-            rata_rata=sum(a.nilai for a in achs) / len(achs),
-            jumlah_mahasiswa=len(achs),
+            rata_rata=sum(persen) / len(persen),
+            jumlah_mahasiswa=len(persen),
         ))
     return results
 
@@ -118,6 +136,11 @@ def dashboard_mata_kuliah(
     db: Session = Depends(get_db),
     scope: AcademicScope = Depends(get_academic_scope),
 ):
+    if scope.user.role == UserRole.admin_prodi:
+        raise HTTPException(status_code=403, detail="Admin Prodi tidak memiliki akses ke dashboard analisis OBE")
+    if scope.user.role not in (UserRole.dosen, UserRole.kaprodi, UserRole.dekan):
+        raise HTTPException(status_code=403, detail="Role ini tidak memiliki akses dashboard")
+
     mk = db.query(MataKuliah).filter(MataKuliah.id == matkul_id).first()
     if not mk:
         raise HTTPException(status_code=404, detail="Mata kuliah tidak ditemukan")
@@ -143,9 +166,11 @@ def dashboard_mata_kuliah(
     rata_rata_akhir = (sum(h.nilai_akhir for h in hasil_list) / len(hasil_list)) if hasil_list else None
 
     ik_achs = db.query(IKAchievement).filter(IKAchievement.mata_kuliah_id == matkul_id).all()
+    bobot_ik = bobot_ik_per_mk(db, [matkul_id])
     ik_grouped: dict[int, list[Decimal]] = {}
     for a in ik_achs:
-        ik_grouped.setdefault(a.ik_id, []).append(a.nilai)
+        # Persen terhadap bobot IK di mata kuliah ini (nilai tersimpan berupa poin).
+        ik_grouped.setdefault(a.ik_id, []).append(persen_ik(a.nilai, bobot_ik.get((matkul_id, a.ik_id))))
     ik_breakdown = []
     for ik_id, nilai_list in ik_grouped.items():
         ik = db.query(IK).filter(IK.id == ik_id).first()
