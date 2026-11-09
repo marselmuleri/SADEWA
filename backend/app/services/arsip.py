@@ -87,7 +87,10 @@ def snapshot_kurikulum(db: Session, version: KurikulumVersion) -> dict:
             {"nama": j.nama, "bobot": _num(j.bobot), "bentuk_penilaian": sorted(b.nama for b in j.bentuk_penilaian)}
             for j in jenis
         ],
-        "skala_nilai": [{"huruf": s.huruf, "batas_min": _num(s.batas_min)} for s in version.skala_nilai],
+        "skala_nilai": [
+            {"huruf": s.huruf, "batas_min": _num(s.batas_min), "angkatan_min": s.angkatan_min, "angkatan_max": s.angkatan_max}
+            for s in version.skala_nilai
+        ],
     }
 
 

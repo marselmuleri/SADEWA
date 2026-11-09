@@ -26,8 +26,9 @@ from app.models.mk_bentuk_penilaian_ik_map import MKBentukPenilaianIKMap
 from app.models.peserta_mata_kuliah import PesertaMataKuliah
 from app.services.calculation.cpl_aggregate import gabung_capaian_cpl
 from app.services.calculation.obe_formula import persen_ik
+from app.services.portofolio_aturan import ambang_prodi
 
-AMBANG_CPMK = Decimal("70")
+# Ambang CPMK tercapai mengikuti Aturan Penilaian prodi (bawaan 70).
 
 
 def _f(val) -> float | None:
@@ -93,6 +94,7 @@ def _bangun_payload(
       - scope "mata_kuliah": satu MK (Dosen pengampu); CPL = capaian di MK itu saja.
     """
     versi = {v.id: v.version_label for v in db.query(KurikulumVersion).filter(KurikulumVersion.program_studi_id == prodi_id).all()}
+    ambang_cpmk = ambang_prodi(db, prodi_id)
     cpl_ids = [c.id for c in cpls]
     threshold = {c.id: Decimal(str(c.threshold_capaian or 70)) for c in cpls}
     mk_ids = [m.id for m in mks]
@@ -195,7 +197,7 @@ def _bangun_payload(
             "ik": [{"ik_id": m.ik_id, "bobot": _f(m.bobot)} for m in c.cpmk_ik_map],
             "rata_rata": _f(_mean(vals)),
             "jumlah_mahasiswa": len(vals),
-            "jumlah_tercapai": sum(1 for v in vals if v >= AMBANG_CPMK),
+            "jumlah_tercapai": sum(1 for v in vals if v >= ambang_cpmk),
         })
     capaian_cpmk = [
         {"cpmk_id": cpmk_id, "angkatan": angkatan, "nilai": sorted(vals)}
@@ -206,7 +208,7 @@ def _bangun_payload(
         "scope": scope,
         "program_studi_id": prodi_id,
         "semester": semester,
-        "ambang_cpmk": _f(AMBANG_CPMK),
+        "ambang_cpmk": _f(ambang_cpmk),
         "cpl": [
             {"cpl_id": c.id, "kode": c.kode, "deskripsi": c.deskripsi, "threshold": _f(threshold[c.id]),
              "kurikulum": versi.get(c.kurikulum_version_id)}

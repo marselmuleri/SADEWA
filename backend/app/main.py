@@ -41,6 +41,15 @@ def auto_sync_schema(db_engine):
             "ALTER TABLE kurikulum_versions DROP COLUMN IF EXISTS semester;",
             "ALTER TABLE kurikulum_versions ADD COLUMN IF NOT EXISTS deskripsi TEXT;",
             "ALTER TABLE kurikulum_versions ADD COLUMN IF NOT EXISTS tahun INTEGER;",
+            # Portofolio: kolom RPP tambahan
+            "ALTER TABLE rpp_pertemuan ADD COLUMN IF NOT EXISTS waktu VARCHAR(100);",
+            "ALTER TABLE rpp_pertemuan ADD COLUMN IF NOT EXISTS pengalaman_belajar TEXT;",
+            "ALTER TABLE rpp_pertemuan ADD COLUMN IF NOT EXISTS indikator_kriteria TEXT;",
+            # Skala huruf per angkatan: keunikan kini per kelompok angkatan (divalidasi di API)
+            "ALTER TABLE skala_nilai DROP CONSTRAINT IF EXISTS uq_skala_nilai_kurikulum_huruf;",
+            "ALTER TABLE skala_nilai DROP CONSTRAINT IF EXISTS uq_skala_nilai_kurikulum_batas;",
+            "ALTER TABLE skala_nilai ADD COLUMN IF NOT EXISTS angkatan_min INTEGER;",
+            "ALTER TABLE skala_nilai ADD COLUMN IF NOT EXISTS angkatan_max INTEGER;",
         ]
         # Satu transaksi per perintah: di PostgreSQL satu perintah yang gagal
         # membatalkan seluruh transaksi, jadi perintah lain tidak boleh ikut batal.

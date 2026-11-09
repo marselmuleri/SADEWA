@@ -20,7 +20,7 @@ terpisah untuk tiap jenis error dari pipeline AI.
 import asyncio
 import logging
 import time
-from typing import Any, Callable, Dict
+from typing import Any, AsyncIterator, Callable, Dict, Tuple
 
 from pydantic import ValidationError
 
@@ -28,7 +28,7 @@ from . import rag_chain
 from .config import ConfigError, settings
 from .llm_client import JSONExtractionError, LLMError
 from .retriever import VectorstoreNotFoundError, count_chunks, warmup as _warmup
-from .schemas import AIResponse, HealthStatus, NarasiRequest, RPSRequest
+from .schemas import AIResponse, EvaluasiCPMKRequest, HealthStatus, NarasiRequest, RPSRequest
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +112,87 @@ def generate_narasi_service(**kwargs: Any) -> AIResponse:
 async def generate_narasi_service_async(**kwargs: Any) -> AIResponse:
     """Versi async-safe untuk dipanggil dari endpoint FastAPI."""
     return await asyncio.to_thread(generate_narasi_service, **kwargs)
+
+
+# --- Layanan Evaluasi CPMK (sheet Evaluasi portofolio) -------------------------
+
+
+def generate_evaluasi_cpmk_service(**kwargs: Any) -> AIResponse:
+    """
+    Saran Analisis Pelaksanaan Pembelajaran & Rencana Perbaikan per CPMK.
+    Terima keyword argument sesuai field `EvaluasiCPMKRequest`.
+    """
+    try:
+        req = EvaluasiCPMKRequest(**kwargs)
+    except ValidationError as exc:
+        return AIResponse(success=False, error=_pesan_validasi(exc))
+
+    return _jalankan(rag_chain.generate_evaluasi_cpmk, **req.model_dump())
+
+
+async def generate_evaluasi_cpmk_service_async(**kwargs: Any) -> AIResponse:
+    """Versi async-safe untuk dipanggil dari endpoint FastAPI."""
+    return await asyncio.to_thread(generate_evaluasi_cpmk_service, **kwargs)
+
+
+# --- Versi streaming (progres + teks bertahap) -----------------------------------
+
+Event = Tuple[str, Dict[str, Any]]
+
+
+async def _stream(fungsi: Callable[..., Dict[str, Any]], **kwargs: Any) -> AsyncIterator[Event]:
+    """
+    Jalankan pipeline di thread terpisah dan alirkan event progresnya.
+
+    Menghasilkan pasangan (jenis, data): event dari rag_chain ("tahap", "sumber",
+    "token", "ulang") lalu tepat satu event penutup "hasil" berisi AIResponse
+    (sukses maupun gagal, bentuknya sama dengan versi non-streaming).
+    """
+    loop = asyncio.get_running_loop()
+    antrean: "asyncio.Queue[Event | None]" = asyncio.Queue()
+
+    def kirim(jenis: str, data: Dict[str, Any]) -> None:
+        loop.call_soon_threadsafe(antrean.put_nowait, (jenis, data))
+
+    def kerja() -> None:
+        try:
+            hasil = _jalankan(fungsi, on_event=kirim, **kwargs)
+            kirim("hasil", hasil.model_dump())
+        finally:
+            loop.call_soon_threadsafe(antrean.put_nowait, None)
+
+    tugas = loop.run_in_executor(None, kerja)
+    try:
+        while True:
+            item = await antrean.get()
+            if item is None:
+                break
+            yield item
+    finally:
+        # Klien bisa memutus koneksi di tengah jalan. Thread LLM tidak bisa dihentikan
+        # paksa, jadi biarkan selesai di belakang tanpa ditunggu.
+        if not tugas.done():
+            tugas.add_done_callback(lambda t: t.exception())
+
+
+async def _stream_validasi(model: Any, fungsi: Callable[..., Dict[str, Any]], kwargs: Dict[str, Any]) -> AsyncIterator[Event]:
+    try:
+        req = model(**kwargs)
+    except ValidationError as exc:
+        yield "hasil", AIResponse(success=False, error=_pesan_validasi(exc)).model_dump()
+        return
+    async for event in _stream(fungsi, **req.model_dump()):
+        yield event
+
+
+def stream_rps_service(**kwargs: Any) -> AsyncIterator[Event]:
+    """Generate RPS sambil mengalirkan progres. Parameter sama dengan generate_rps_service()."""
+    return _stream_validasi(RPSRequest, rag_chain.generate_rps, kwargs)
+
+
+def stream_narasi_service(**kwargs: Any) -> AsyncIterator[Event]:
+    """Generate narasi sambil mengalirkan progres. Parameter sama dengan generate_narasi_service()."""
+    return _stream_validasi(NarasiRequest, rag_chain.generate_narasi_evaluasi, kwargs)
 
 
 # --- Utilitas untuk backend ----------------------------------------------------

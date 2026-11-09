@@ -9,6 +9,7 @@ pydantic[email]
 pydantic-settings
 openai
 pandas
+openpyxl
 numpy
 scikit-learn
 joblib

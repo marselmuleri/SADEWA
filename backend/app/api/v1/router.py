@@ -1,9 +1,10 @@
 from fastapi import APIRouter
 
 from app.api import (
-    analitik, arsip, auth, bentuk_penilaian, cpl, cpmk, dashboard, dokumen, fakultas, ik, jenis_evaluasi,
+    analitik, arsip, aturan_penilaian, auth, bentuk_penilaian, cpl, cpmk, dashboard, dokumen, fakultas, ik, jenis_evaluasi,
     kalkulasi, kurikulum_version, laporan, mahasiswa, mata_kuliah, mk_bentuk_penilaian,
-    narasi, nilai, pengampu_mata_kuliah, peserta_mata_kuliah, prodi, range_nilai_cpl, rapor, rps, trending, users, validasi,
+    narasi, nilai, pengampu_mata_kuliah, peserta_mata_kuliah, portofolio, prodi, range_nilai_cpl, rapor, rps, trending,
+    users, validasi,
 )
 
 
@@ -36,3 +37,5 @@ api_v1_router.include_router(rapor.router, prefix="/rapor", tags=["rapor"])
 api_v1_router.include_router(arsip.router, prefix="/arsip", tags=["arsip-kurikulum"])
 api_v1_router.include_router(analitik.router, prefix="/analitik", tags=["analitik"])
 api_v1_router.include_router(range_nilai_cpl.router, prefix="/prodi", tags=["range-nilai-cpl"])
+api_v1_router.include_router(portofolio.router, prefix="/portofolio", tags=["portofolio"])
+api_v1_router.include_router(aturan_penilaian.router, prefix="/aturan-penilaian", tags=["aturan-penilaian"])

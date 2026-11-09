@@ -9,6 +9,9 @@ File ini membungkus service.py menjadi tiga endpoint kecil:
     GET  /health              -> status vectorstore & konfigurasi LLM
     POST /api/v1/rps          -> generate draf RPS
     POST /api/v1/narasi       -> generate narasi evaluasi kurikulum
+    POST /api/v1/evaluasi-cpmk -> saran analisis & rencana perbaikan per CPMK
+    POST /api/v1/rps/stream    -> generate RPS + progres langsung (Server-Sent Events)
+    POST /api/v1/narasi/stream -> generate narasi + progres langsung (Server-Sent Events)
 
 Kalau backend justru satu repo Python yang sama dengan modul ini, endpoint ini
 TIDAK wajib dipakai — import langsung `sadewa_ai.service` juga tetap didukung
@@ -20,18 +23,22 @@ Jalankan lokal:
 Dokumentasi interaktif otomatis tersedia di /docs (Swagger) dan /redoc.
 """
 
+import json
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from typing import Any, AsyncIterator, Dict, Tuple
 
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from .logging_config import setup_logging
-from .schemas import AIResponse, HealthStatus, NarasiRequest, RPSRequest
+from .schemas import AIResponse, EvaluasiCPMKRequest, HealthStatus, NarasiRequest, RPSRequest
 from .service import (
+    generate_evaluasi_cpmk_service_async,
     generate_narasi_service_async,
     generate_rps_service_async,
     health_check,
+    stream_narasi_service,
+    stream_rps_service,
     warmup,
 )
 
@@ -70,6 +77,41 @@ async def post_generate_narasi(payload: NarasiRequest) -> AIResponse:
     """Bangkitkan laporan narasi evaluasi kurikulum (endpoint SADEWA-21)."""
     kwargs = payload.model_dump()
     return await generate_narasi_service_async(**kwargs)
+
+
+def _sse(events: AsyncIterator[Tuple[str, Dict[str, Any]]]) -> StreamingResponse:
+    """Bungkus event (jenis, data) menjadi Server-Sent Events."""
+
+    async def badan() -> AsyncIterator[str]:
+        async for jenis, data in events:
+            yield f"event: {jenis}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        badan(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@app.post("/api/v1/rps/stream", tags=["rps"])
+async def post_stream_rps(payload: RPSRequest) -> StreamingResponse:
+    """
+    Sama seperti /api/v1/rps, tetapi mengalirkan progres sebagai Server-Sent Events:
+    tahap, sumber, token (teks JSON bertahap), ulang, lalu satu event `hasil` (AIResponse).
+    """
+    return _sse(stream_rps_service(**payload.model_dump()))
+
+
+@app.post("/api/v1/narasi/stream", tags=["narasi"])
+async def post_stream_narasi(payload: NarasiRequest) -> StreamingResponse:
+    """Versi streaming /api/v1/narasi. Format event sama dengan /api/v1/rps/stream."""
+    return _sse(stream_narasi_service(**payload.model_dump()))
+
+
+@app.post("/api/v1/evaluasi-cpmk", response_model=AIResponse, tags=["evaluasi"])
+async def post_generate_evaluasi_cpmk(payload: EvaluasiCPMKRequest) -> AIResponse:
+    """Saran analisis pelaksanaan & rencana perbaikan per CPMK (sheet Evaluasi portofolio)."""
+    return await generate_evaluasi_cpmk_service_async(**payload.model_dump())
 
 
 @app.exception_handler(Exception)

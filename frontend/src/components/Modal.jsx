@@ -28,7 +28,7 @@ export default function Modal({ open, title, children, onClose, size = 'max-w-lg
             </button>
           )}
         </div>
-        <div className="p-5">{children}</div>
+        <div className="max-h-[calc(100vh-8rem)] overflow-y-auto p-5">{children}</div>
       </div>
     </div>
   )

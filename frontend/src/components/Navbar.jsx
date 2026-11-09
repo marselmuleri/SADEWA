@@ -6,6 +6,7 @@ import useToast from '../hooks/useToast'
 import { Badge } from './PageChrome'
 import { getRoleLabel } from '../data/demoUi'
 import { useDekanScope } from '../context/DekanScopeContext'
+import { SadewaMark } from './brand/SadewaLogo'
 
 const pageTitles = {
   '/dashboard': 'Ikhtisar',
@@ -14,6 +15,7 @@ const pageTitles = {
   '/penilaian': 'Penilaian',
   '/nilai': 'Penilaian',
   '/analisis': 'Analitik OBE',
+  '/portofolio': 'Portofolio',
   '/kurikulum/cpl': 'Capaian Pembelajaran (CPL)',
   '/kurikulum/pemetaan': 'Pemetaan IK',
   '/kurikulum/mata-kuliah': 'Mata Kuliah & Pengampu',
@@ -23,6 +25,7 @@ const pageTitles = {
   '/kurikulum': 'Kurikulum OBE',
   '/dokumen': 'Validasi Laporan',
   '/pengaturan': 'Manajemen Pengguna',
+  '/aturan-penilaian': 'Aturan Penilaian',
   '/data-master/kurikulum': 'DATA MASTER > Versi Kurikulum',
   '/data-master/cpl': 'DATA MASTER > CPL',
   '/data-master/ik': 'DATA MASTER > IK',
@@ -168,6 +171,7 @@ export default function Navbar({ children }) {
         { label: 'Peserta Kuliah', path: '/peserta' },
         { label: 'Penilaian', path: '/penilaian' },
         { label: 'Analitik OBE', path: '/analisis' },
+        { label: 'Portofolio', path: '/portofolio' },
         { label: 'Data Master', path: '/data-master' },
         {
           label: 'Kurikulum OBE',
@@ -189,6 +193,7 @@ export default function Navbar({ children }) {
         { label: 'Data Master', path: '/data-master' },
         // Kurikulum OBE is rendered separately as collapsible group.
         // Analitik OBE sengaja tidak ada: wewenang Dosen, Kaprodi, dan Dekan.
+        { label: 'Aturan Penilaian', path: '/aturan-penilaian' },
         { label: 'Validasi Laporan', path: '/dokumen' },
         { label: 'Manajemen Pengguna', path: '/pengaturan' },
       ]
@@ -197,6 +202,7 @@ export default function Navbar({ children }) {
     const baseMenus = [
       { label: 'Ikhtisar', path: '/dashboard' },
       { label: 'Analitik OBE', path: '/analisis' },
+      { label: 'Portofolio', path: '/portofolio', suffix: 'Mode Lihat' },
       { label: 'Data Master', path: '/data-master' },
       {
         label: 'Kurikulum OBE',
@@ -234,9 +240,7 @@ export default function Navbar({ children }) {
         {/* Brand Header */}
         <div className="border-b border-white/10 px-5 py-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[6px] bg-[#F4A300] text-lg font-bold text-[#142B4A]">
-              S
-            </div>
+            <SadewaMark size={40} variant="onDark" className="shrink-0" />
             <div>
               <div className="text-lg font-bold tracking-tight">SADEWA</div>
               <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#C8D3E1]">
@@ -316,7 +320,10 @@ export default function Navbar({ children }) {
                   <SidebarLink
                     key={`${item.path}-${item.label}`}
                     item={item}
-                    active={location.pathname === item.path}
+                    active={
+                      location.pathname === item.path ||
+                      (item.path === '/portofolio' && location.pathname.startsWith('/portofolio/'))
+                    }
                   />
                 )
               ))

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   CheckCircle2,
   Plus,
@@ -21,15 +22,15 @@ import {
 import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
 import Modal from '../components/Modal'
 import RpsList from '../components/RpsList'
-import AiLoadingStage, { useElapsedSeconds } from '../components/AiLoadingStage'
+import AiLoadingStage from '../components/AiLoadingStage'
 import useAuth from '../hooks/useAuth'
 import { useRole } from '../hooks/useRole'
 import useDosenCourses from '../hooks/useDosenCourses'
 import useToast from '../hooks/useToast'
+import useAiJobs from '../hooks/useAiJobs'
 import api from '../services/api'
 import { getApiErrorMessage } from './superAdminHelpers'
 import { formatNarasi } from '../utils/narasiFormat'
-import { isDibatalkan, pesanErrorAi } from '../utils/aiError'
 import { IMPORT_ACCEPT, bacaFileLaporan } from '../utils/importDokumen'
 import { exportToCsv } from '../utils/csvExport'
 import { useDekanScope } from '../context/DekanScopeContext'
@@ -40,6 +41,9 @@ export default function DokumenPage() {
   const { pushToast } = useToast()
   const { courses, loading: coursesLoading } = useDosenCourses()
   const { prodiList } = useDekanScope()
+  const { jobs, mulaiRps, mulaiNarasi, batal, keLatar, kembalikan, hapus, ulangi } = useAiJobs()
+  const location = useLocation()
+  const navigate = useNavigate()
 
   const currentRole = activeRole || role || user?.role || 'admin_prodi'
   const isDosen = currentRole === 'dosen'
@@ -62,26 +66,24 @@ export default function DokumenPage() {
   const [openAiModal, setOpenAiModal] = useState(false)
   const [activeLaporan, setActiveLaporan] = useState(null)
   const [createForm, setCreateForm] = useState({ semester: 'Ganjil', konten: '', narasiId: null })
-  const [generatingNarasi, setGeneratingNarasi] = useState(false)
   const [importing, setImporting] = useState(false)
   const [importedFile, setImportedFile] = useState('')
   const importInputRef = useRef(null)
   const [editContent, setEditContent] = useState('')
   const [aiPrompt, setAiPrompt] = useState({ topik: '', tahun_ajaran: '2025/2026' })
-  const [generatingAi, setGeneratingAi] = useState(false)
   const [rpsRefresh, setRpsRefresh] = useState(0)
-  // Proses AI: 'idle' | 'running' | 'success' | 'error'
-  const [rpsStatus, setRpsStatus] = useState('idle')
-  const [rpsError, setRpsError] = useState('')
   const [rpsBaruId, setRpsBaruId] = useState(null)
-  const rpsAbortRef = useRef(null)
-  const [narasiStatus, setNarasiStatus] = useState('idle')
-  const [narasiError, setNarasiError] = useState('')
   const [sorotKonten, setSorotKonten] = useState(0)
-  const narasiAbortRef = useRef(null)
   const kontenRef = useRef(null)
-  const detikRps = useElapsedSeconds(rpsStatus === 'running')
-  const detikNarasi = useElapsedSeconds(narasiStatus === 'running')
+
+  // Proses AI hidup di AiJobContext supaya tetap berjalan saat jendela ditutup atau pindah halaman.
+  // Job yang `latar`-nya true sedang ditampilkan di AiJobDock, bukan di jendela halaman ini.
+  const jobRps = jobs.rps
+  const jobNarasi = jobs.narasi
+  const generatingAi = jobRps?.status === 'running'
+  const generatingNarasi = jobNarasi?.status === 'running'
+  const rpsDiJendela = Boolean(jobRps && !jobRps.latar)
+  const narasiDiJendela = Boolean(jobNarasi && !jobNarasi.latar && openCreateModal)
 
   // Modals for Kaprodi / Validation
   const [detailModalOpen, setDetailModalOpen] = useState(false)
@@ -183,42 +185,35 @@ export default function DokumenPage() {
 
   // Generate Narasi evaluasi dengan AI di dalam form Buat Laporan (Dosen).
   // Hasilnya mengisi kolom isi laporan dan masih bisa diedit sebelum disimpan.
-  const handleGenerateNarasi = async () => {
-    if (!selectedMkId || generatingNarasi) return
+  const handleGenerateNarasi = () => {
+    if (!currentCourse || generatingNarasi) return
     if (createForm.konten.trim() && !window.confirm('Isi laporan yang sudah ada akan diganti dengan narasi baru. Lanjutkan?')) return
-    const controller = new AbortController()
-    narasiAbortRef.current = controller
-    setGeneratingNarasi(true)
-    setNarasiError('')
-    setNarasiStatus('running')
-    try {
-      const res = await api.post(
-        `/narasi/generate/${selectedMkId}`,
-        { tipe: 'rekomendasi_umum' },
-        { timeout: 120000, signal: controller.signal },
-      )
-      // Keadaan selesai sebentar, lalu isi textarea dengan sorotan halus.
-      setNarasiStatus('success')
-      await new Promise((r) => setTimeout(r, 700))
-      setCreateForm((f) => ({ ...f, konten: formatNarasi(res.data?.konten), narasiId: res.data?.id ?? null }))
-      setImportedFile('')
-      setNarasiStatus('idle')
-      setSorotKonten((n) => n + 1)
-      requestAnimationFrame(() => kontenRef.current?.focus())
-    } catch (err) {
-      if (isDibatalkan(err)) {
-        setNarasiStatus('idle') // isi lama tetap utuh
-      } else {
-        setNarasiError(pesanErrorAi(err, 'Gagal menyusun narasi. Anda tetap bisa menulis isi laporan secara manual.'))
-        setNarasiStatus('error')
-      }
-    } finally {
-      narasiAbortRef.current = null
-      setGeneratingNarasi(false)
-    }
+    mulaiNarasi({ id: currentCourse.id, kode: currentCourse.kode, nama: currentCourse.nama })
   }
 
-  const batalNarasi = () => narasiAbortRef.current?.abort()
+  // Masukkan hasil narasi ke kolom isi laporan dengan sorotan halus.
+  const pakaiHasilNarasi = (hasil) => {
+    setCreateForm((f) => ({ ...f, konten: formatNarasi(hasil?.konten), narasiId: hasil?.id ?? null }))
+    setImportedFile('')
+    setSorotKonten((n) => n + 1)
+    requestAnimationFrame(() => kontenRef.current?.focus())
+  }
+
+  // Narasi selesai saat jendela terbuka: tampilkan keadaan selesai sebentar, lalu isi kolom.
+  useEffect(() => {
+    if (!narasiDiJendela || jobNarasi.status !== 'success') return undefined
+    const t = setTimeout(() => {
+      pakaiHasilNarasi(jobNarasi.hasil)
+      hapus('narasi')
+    }, 700)
+    return () => clearTimeout(t)
+  }, [narasiDiJendela, jobNarasi?.status]) // eslint-disable-line react-hooks/exhaustive-deps -- hanya bereaksi pada perubahan status/navigasi
+
+  const tutupBuatLaporan = () => {
+    // Menutup jendela saat narasi masih disusun tidak membatalkannya: proses pindah ke latar belakang.
+    if (generatingNarasi && !jobNarasi.latar) keLatar('narasi')
+    setOpenCreateModal(false)
+  }
 
   // Import laporan yang sudah ditulis dosen sendiri (Word .docx / .txt) ke kolom isi.
   const handleImportFile = async (e) => {
@@ -244,8 +239,7 @@ export default function DokumenPage() {
   }
 
   const openBuatLaporan = () => {
-    setNarasiStatus('idle')
-    setNarasiError('')
+    if (jobNarasi && jobNarasi.status !== 'running') hapus('narasi')
     setCreateForm({ semester: currentCourse?.semester || 'Ganjil', konten: '', narasiId: null })
     setImportedFile('')
     setOpenCreateModal(true)
@@ -287,52 +281,88 @@ export default function DokumenPage() {
   }
 
   // Generate RPS dengan AI (Dosen)
-  const handleTriggerAiAssist = async () => {
-    if (!selectedMkId || generatingAi) return
-    const controller = new AbortController()
-    rpsAbortRef.current = controller
-    setGeneratingAi(true)
-    setRpsError('')
-    setRpsStatus('running')
-    try {
-      const res = await api.post(
-        `/rps/${selectedMkId}/generate`,
-        {
-          tahun_ajaran: aiPrompt.tahun_ajaran,
-          semester: currentCourse?.semester || 'Ganjil',
-          topik: aiPrompt.topik,
-        },
-        { timeout: 120000, signal: controller.signal },
-      )
-      // Keadaan selesai sebentar, lalu tutup modal dan sorot draf baru di daftar.
-      setRpsStatus('success')
-      await new Promise((r) => setTimeout(r, 700))
-      setRpsBaruId(res.data?.id ?? null)
-      setOpenAiModal(false)
-      setRpsStatus('idle')
-      setRpsRefresh((n) => n + 1)
-      pushToast('Draf RPS selesai disusun dan tersimpan')
-    } catch (err) {
-      if (isDibatalkan(err)) {
-        setRpsStatus('idle') // kembali ke form tanpa pesan error
-      } else {
-        setRpsError(pesanErrorAi(err, 'Gagal menyusun draf RPS. Coba lagi nanti.'))
-        setRpsStatus('error')
-      }
-    } finally {
-      rpsAbortRef.current = null
-      setGeneratingAi(false)
-    }
+  const handleTriggerAiAssist = () => {
+    if (!currentCourse || generatingAi) return
+    mulaiRps(
+      { id: currentCourse.id, kode: currentCourse.kode, nama: currentCourse.nama },
+      {
+        tahun_ajaran: aiPrompt.tahun_ajaran,
+        semester: currentCourse?.semester || 'Ganjil',
+        topik: aiPrompt.topik,
+      },
+    )
   }
 
-  const batalRps = () => rpsAbortRef.current?.abort()
+  // RPS selesai saat jendela terbuka (atau dibuka dari notifikasi): tampilkan keadaan selesai
+  // sebentar, lalu tutup jendela dan sorot draf baru di daftar.
+  useEffect(() => {
+    if (!rpsDiJendela || jobRps.status !== 'success') return undefined
+    const t = setTimeout(() => {
+      const hasil = jobRps.hasil
+      if (hasil?.mata_kuliah_id && String(hasil.mata_kuliah_id) !== String(selectedMkId)) {
+        setSelectedMkId(hasil.mata_kuliah_id)
+      }
+      setRpsBaruId(hasil?.id ?? null)
+      setOpenAiModal(false)
+      setRpsRefresh((n) => n + 1)
+      hapus('rps')
+      pushToast('Draf RPS selesai disusun dan tersimpan')
+    }, openAiModal ? 700 : 0)
+    return () => clearTimeout(t)
+  }, [rpsDiJendela, jobRps?.status]) // eslint-disable-line react-hooks/exhaustive-deps -- hanya bereaksi pada perubahan status/navigasi
+
+  const bukaModalRps = () => {
+    // Bila ada proses yang berjalan di latar belakang, tampilkan kembali prosesnya.
+    if (jobRps) kembalikan('rps')
+    setOpenAiModal(true)
+  }
+
+  const rpsKeLatar = () => {
+    keLatar('rps')
+    setOpenAiModal(false)
+  }
 
   const tutupModalRps = () => {
-    if (rpsStatus === 'running' || rpsStatus === 'success') return
+    if (jobRps?.status === 'success') return
+    if (generatingAi) {
+      rpsKeLatar()
+      return
+    }
+    if (jobRps?.status === 'error') hapus('rps')
     setOpenAiModal(false)
-    setRpsStatus('idle')
-    setRpsError('')
   }
+
+  // Dibuka dari notifikasi di pojok layar (AiJobDock): "Lihat proses" atau "Lihat hasil".
+  useEffect(() => {
+    const target = location.state?.aiJob
+    if (!target) return
+    const job = jobs[target]
+    navigate('.', { replace: true, state: null })
+    if (!job) return
+    if (job.mk?.id && String(job.mk.id) !== String(selectedMkId)) setSelectedMkId(job.mk.id)
+    if (target === 'rps') {
+      if (job.status !== 'success') setOpenAiModal(true)
+    } else if (target === 'narasi') {
+      if (job.status === 'success') {
+        if (createForm.konten.trim() && openCreateModal && !window.confirm('Ganti isi laporan dengan narasi yang baru selesai?')) {
+          hapus('narasi')
+          return
+        }
+        if (!openCreateModal) {
+          setCreateForm({ semester: currentCourse?.semester || 'Ganjil', konten: '', narasiId: null })
+          setOpenCreateModal(true)
+        }
+        pakaiHasilNarasi(job.hasil)
+        hapus('narasi')
+      } else {
+        if (!openCreateModal) {
+          setCreateForm({ semester: currentCourse?.semester || 'Ganjil', konten: '', narasiId: null })
+          setImportedFile('')
+          setOpenCreateModal(true)
+        }
+      }
+    }
+  }, [location.state]) // eslint-disable-line react-hooks/exhaustive-deps -- hanya bereaksi pada perubahan status/navigasi
 
   // Kaprodi Decision Handlers
   const handleOpenApproveModal = (report) => {
@@ -474,7 +504,7 @@ export default function DokumenPage() {
             <div className="flex flex-wrap items-center gap-2">
               <ActionButton
                 variant="secondary"
-                onClick={() => setOpenAiModal(true)}
+                onClick={bukaModalRps}
                 disabled={!selectedMkId}
                 data-testid="btn-generate-rps"
               >
@@ -996,8 +1026,7 @@ export default function DokumenPage() {
       {/* Modal Dosen: Buat Laporan Baru */}
       <Modal
         open={openCreateModal}
-        onClose={() => { if (!generatingNarasi) setOpenCreateModal(false) }}
-        dismissible={!generatingNarasi}
+        onClose={tutupBuatLaporan}
         title="Buat Draf Laporan Evaluasi Baru"
         size="max-w-2xl"
       >
@@ -1077,27 +1106,24 @@ export default function DokumenPage() {
                 rows={12}
                 value={createForm.konten}
                 onChange={(e) => setCreateForm({ ...createForm, konten: e.target.value })}
-                readOnly={narasiStatus !== 'idle'}
+                readOnly={narasiDiJendela}
                 placeholder="Klik Generate Narasi dengan AI, atau tulis evaluasi pelaksanaan perkuliahan, kendala, dan rencana tindak lanjut..."
                 className={`ai-sorot block min-h-[340px] w-full rounded-[6px] border border-[#CBD5E1] bg-white p-3 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none ${
                   sorotKonten ? 'animate-sorot-pudar' : ''
-                }`}
+                } ${narasiDiJendela ? 'hidden' : ''}`}
                 data-testid="create-laporan-konten"
               />
-              {narasiStatus !== 'idle' && (
-                <div
-                  className="absolute inset-0 overflow-y-auto rounded-[6px] border border-[#1A3A6B]/30 bg-white"
-                  data-testid="overlay-narasi"
-                >
+              {/* Selama narasi disusun, panel proses menggantikan kolom isi (kolom tetap ada, hanya disembunyikan)
+                  supaya data capaian dan tips tidak terpotong; jendela bisa digulir bila perlu. */}
+              {narasiDiJendela && (
+                <div className="min-h-[340px] rounded-[6px] border border-[#1A3A6B]/30 bg-white" data-testid="overlay-narasi">
                   <AiLoadingStage
-                    variant="narasi"
+                    job={jobNarasi}
                     compact
-                    status={narasiStatus}
-                    elapsedSeconds={detikNarasi}
-                    errorMessage={narasiError}
-                    onCancel={batalNarasi}
-                    onRetry={() => { setNarasiStatus('idle'); handleGenerateNarasi() }}
-                    onClose={() => { setNarasiStatus('idle'); setNarasiError('') }}
+                    onCancel={() => batal('narasi')}
+                    onRetry={() => ulangi('narasi')}
+                    onClose={() => hapus('narasi')}
+                    onBackground={() => keLatar('narasi')}
                   />
                 </div>
               )}
@@ -1105,10 +1131,10 @@ export default function DokumenPage() {
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <ActionButton variant="secondary" onClick={() => setOpenCreateModal(false)} disabled={generatingNarasi}>
+            <ActionButton variant="secondary" onClick={tutupBuatLaporan}>
               Batal
             </ActionButton>
-            <ActionButton type="submit" disabled={submitting || generatingNarasi || narasiStatus !== 'idle'}>
+            <ActionButton type="submit" disabled={submitting || generatingNarasi || narasiDiJendela}>
               {submitting ? 'Menyimpan...' : 'Buat Draf'}
             </ActionButton>
           </div>
@@ -1150,17 +1176,16 @@ export default function DokumenPage() {
         open={openAiModal}
         onClose={tutupModalRps}
         title="Generate RPS dengan AI"
-        dismissible={rpsStatus === 'idle' || rpsStatus === 'error'}
+        dismissible={jobRps?.status !== 'success'}
+        size={rpsDiJendela ? 'max-w-3xl' : undefined}
       >
-        {rpsStatus !== 'idle' ? (
+        {rpsDiJendela ? (
           <AiLoadingStage
-            variant="rps"
-            status={rpsStatus}
-            elapsedSeconds={detikRps}
-            errorMessage={rpsError}
-            onCancel={batalRps}
-            onRetry={() => { setRpsStatus('idle'); handleTriggerAiAssist() }}
+            job={jobRps}
+            onCancel={() => batal('rps')}
+            onRetry={() => ulangi('rps')}
             onClose={tutupModalRps}
+            onBackground={rpsKeLatar}
           />
         ) : (
         <div className="space-y-4">

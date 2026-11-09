@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import PageErrorBoundary from './components/PageErrorBoundary'
+import AiJobDock from './components/AiJobDock'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
 import LoginPage from './pages/LoginPage'
@@ -31,6 +32,9 @@ import DataMasterCplPage from './pages/datamaster/DataMasterCplPage'
 import DataMasterIkPage from './pages/datamaster/DataMasterIkPage'
 import DataMasterCpmkPage from './pages/datamaster/DataMasterCpmkPage'
 import DataMasterArsipPage from './pages/datamaster/DataMasterArsipPage'
+import PortofolioPage from './pages/portofolio/PortofolioPage'
+import PortofolioDetailPage from './pages/portofolio/PortofolioDetailPage'
+import AturanPenilaianPage from './pages/AturanPenilaianPage'
 
 import useAuth from './hooks/useAuth'
 
@@ -138,6 +142,29 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Portofolio mata kuliah: Dosen (kelola), Kaprodi & Dekan (lihat) */}
+        <Route
+          path="/portofolio"
+          element={
+            <ProtectedRoute allowedRoles={ANALYTICS_ROLES}>
+              <AppLayout>
+                <PortofolioPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/portofolio/:mkId/:section"
+          element={
+            <ProtectedRoute allowedRoles={ANALYTICS_ROLES}>
+              <AppLayout>
+                <PortofolioDetailPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/portofolio/:mkId" element={<Navigate to="rps" replace />} />
 
         {/* View-Only Academic Master Data */}
         <Route
@@ -275,6 +302,16 @@ export default function App() {
           }
         />
         <Route
+          path="/aturan-penilaian"
+          element={
+            <ProtectedRoute allowedRoles={['admin_prodi']}>
+              <AppLayout>
+                <AturanPenilaianPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/pengaturan"
           element={
             <ProtectedRoute allowedRoles={['admin_prodi']}>
@@ -335,6 +372,8 @@ export default function App() {
           }
         />
       </Routes>
+      {/* Proses AI (Generate RPS / Narasi) yang berjalan di latar belakang */}
+      <AiJobDock />
     </BrowserRouter>
   )
 }

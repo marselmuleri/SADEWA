@@ -28,4 +28,6 @@ from app.models.dokumen import Dokumen
 from app.models.skala_nilai import SkalaNilai
 from app.models.range_nilai_cpl import RangeNilaiCPL
 from app.models.arsip_kurikulum import ArsipKurikulum
+from app.models.portofolio import EvaluasiCPMK, PortofolioBerkas, PortofolioInfo, RPPPertemuan
+from app.models.aturan_penilaian import AturanPenilaianProdi
 

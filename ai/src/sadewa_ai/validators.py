@@ -150,3 +150,29 @@ def validate_narasi(data: Dict[str, Any]) -> Tuple[bool, List[str]]:
             errors.append(f"Field '{field}' harus berupa teks dan tidak boleh kosong.")
 
     return len(errors) == 0, errors
+
+
+def validate_evaluasi_cpmk(data: Dict[str, Any], kode_wajib: List[str]) -> Tuple[bool, List[str]]:
+    """Periksa saran evaluasi CPMK: setiap kode CPMK harus punya analisis dan rencana perbaikan."""
+    errors: List[str] = []
+    entri = data.get("evaluasi")
+    if not isinstance(entri, list) or not entri:
+        return False, ["Field 'evaluasi' harus berupa list dan tidak boleh kosong."]
+
+    ada = set()
+    for i, item in enumerate(entri):
+        if not isinstance(item, dict):
+            errors.append(f"Entri evaluasi ke-{i + 1} bukan objek.")
+            continue
+        kode = str(item.get("kode", "")).strip()
+        ada.add(kode)
+        for field in ("analisis", "rencana_perbaikan"):
+            nilai = item.get(field)
+            if not isinstance(nilai, str) or not nilai.strip():
+                errors.append(f"{kode or f'Entri ke-{i + 1}'}: field '{field}' kosong.")
+
+    for kode in kode_wajib:
+        if kode not in ada:
+            errors.append(f"Tidak ada evaluasi untuk {kode}.")
+
+    return len(errors) == 0, errors
