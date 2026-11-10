@@ -181,27 +181,36 @@ def test_dosen_pengampu_boleh_ubah_nama_cpmk(client):
     assert resp.json()["deskripsi"] == "Deskripsi baru oleh dosen pengampu"
 
 
-def test_dosen_pengampu_dilarang_ubah_bobot_dan_mapping_ik(client):
+def test_dosen_pengampu_boleh_ubah_bobot_dan_mapping_ik(client):
     """
-    Dosen pengampu TIDAK BOLEH mengubah bobot CPMK maupun mapping IK (ditolak 403).
-    Bobot dan mapping IK dikendalikan oleh kurikulum/prodi.
+    [KEPUTUSAN Nov 2026] Dosen pengampu boleh mengatur bobot CPMK dan memetakan
+    CPMK ke IK/CPL pada mata kuliah yang diampu (menggantikan aturan C10).
     """
     env = _setup_akses_env(client)
     dosen_p_token = env["dosen_pengampu_token"]
     cpmk_id = env["cpmk"]["id"]
     ik_id = env["ik"]["id"]
 
-    # 1. Dosen mencoba ubah bobot CPMK -> HARUS 403 Forbidden
-    resp_bobot = client.put(f"/api/v1/cpmk/{cpmk_id}", json={
-        "bobot": 80.0,
+    # Mapping IK sekaligus menyetel bobot CPMK (jalur atomik)
+    resp_map = client.put(f"/api/v1/cpmk/{cpmk_id}/map-ik", json={
+        "bobot_cpmk": 80.0,
+        "mappings": [{"ik_id": ik_id, "bobot": 80.0}],
     }, headers=_auth_headers(dosen_p_token))
-    assert resp_bobot.status_code == 403
+    assert resp_map.status_code == 200, resp_map.text
 
-    # 2. Dosen mencoba ubah mapping IK CPMK -> HARUS 403 Forbidden
-    resp_map = client.put(f"/api/v1/cpmk/{cpmk_id}/map-ik", json={"mappings": [
-        {"ik_id": ik_id, "bobot": 100.0},
-    ]}, headers=_auth_headers(dosen_p_token))
-    assert resp_map.status_code == 403
+    mapping = client.get(f"/api/v1/cpmk/{cpmk_id}/map-ik", headers=_auth_headers(dosen_p_token)).json()
+    assert [(m["ik_id"], float(m["bobot"])) for m in mapping] == [(ik_id, 80.0)]
+
+    # Dosen juga boleh membuat CPMK baru dengan bobot sendiri
+    resp_new = client.post("/api/v1/cpmk", json={
+        "mata_kuliah_id": env["mk"]["id"],
+        "kode": "CPMK-DOSEN",
+        "deskripsi": "CPMK baru oleh dosen",
+        "level_taksonomi": "C4",
+        "bobot": 20.0,
+    }, headers=_auth_headers(dosen_p_token))
+    assert resp_new.status_code == 200, resp_new.text
+    assert float(resp_new.json()["bobot"]) == 20.0
 
 
 def test_dosen_bukan_pengampu_ditolak_seluruh_operasi(client):
@@ -232,6 +241,12 @@ def test_dosen_bukan_pengampu_ditolak_seluruh_operasi(client):
         "records": [{"peserta_mata_kuliah_id": peserta_id, "mk_bentuk_penilaian_id": mbp_id, "ik_id": ik_id, "nilai": 75.0}],
     }, headers=_auth_headers(dosen_luar_token))
     assert resp_nilai.status_code == 403
+
+    # 1b. Tolak mapping IK dan hapus CPMK
+    resp_map = client.put(f"/api/v1/cpmk/{cpmk_id}/map-ik", json={"mappings": []}, headers=_auth_headers(dosen_luar_token))
+    assert resp_map.status_code == 403
+    resp_del = client.delete(f"/api/v1/cpmk/{cpmk_id}", headers=_auth_headers(dosen_luar_token))
+    assert resp_del.status_code == 403
 
     # 3. Tolak setting bobot matriks kelas
     resp_matriks = client.put(f"/api/v1/mk-bentuk-penilaian/{mbp_id}/map-ik", json={"mappings": [

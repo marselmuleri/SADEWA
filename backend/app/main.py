@@ -26,6 +26,7 @@ def auto_sync_schema(db_engine):
             "ALTER TABLE rps ADD COLUMN IF NOT EXISTS sumber_dokumen_rag JSON;",
             "ALTER TABLE jenis_evaluasi ADD COLUMN IF NOT EXISTS bobot NUMERIC(5, 2);",
             "ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS angkatan SMALLINT;",
+            "ALTER TABLE mahasiswa ADD COLUMN IF NOT EXISTS status_akademik VARCHAR(20) NOT NULL DEFAULT 'Aktif';",
             "ALTER TABLE cpl_achievement ADD COLUMN IF NOT EXISTS angkatan INTEGER;",
             "ALTER TABLE cpl_achievement ADD COLUMN IF NOT EXISTS mata_kuliah_id BIGINT REFERENCES mata_kuliah(id);",
             "ALTER TABLE cpl_achievement ADD COLUMN IF NOT EXISTS bobot_cp NUMERIC;",

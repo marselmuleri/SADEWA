@@ -45,6 +45,7 @@ import PetaKurikulum from '../components/analitik/PetaKurikulum'
 import CpmkPendukungIk from '../components/analitik/CpmkPendukungIk'
 import DrilldownModel from '../components/analitik/DrilldownModel'
 import TrenAngkatan from '../components/analitik/TrenAngkatan'
+import SearchableSelect from '../components/SearchableSelect'
 
 // Tab Analitik OBE tingkat prodi (Kaprodi & Dekan)
 const TABS = [
@@ -626,18 +627,20 @@ export default function AnalisisPage() {
               <label className="block text-xs font-semibold text-[#142B4A] mb-1.5">
                 Mata Kuliah Yang Diampu
               </label>
-              <select
+              <SearchableSelect
                 value={selectedDosenMkId}
-                onChange={(e) => setSelectedDosenMkId(e.target.value)}
-                className="w-full rounded-md border border-[#CBD5E1] bg-white px-3 py-2 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
+                onChange={(val) => setSelectedDosenMkId(String(val))}
+                buttonClassName="text-xs"
                 data-testid="dosen-course-select"
-              >
-                {dosenCourses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.kode} - {c.nama} ({c.sks} SKS, Semester {c.semester})
-                  </option>
-                ))}
-              </select>
+                aria-label="Mata kuliah yang diampu"
+                searchPlaceholder="Cari kode atau nama mata kuliah..."
+                options={dosenCourses.map((c) => ({
+                  value: c.id,
+                  label: `${c.kode} - ${c.nama}`,
+                  description: `${c.sks} SKS · Semester ${c.semester}`,
+                  searchText: c.nama,
+                }))}
+              />
             </div>
           )}
         </SectionCard>
@@ -777,19 +780,24 @@ export default function AnalisisPage() {
             }
           >
             <div className="flex flex-wrap items-center gap-3">
-              <select
+              <SearchableSelect
                 value={scopeMkId}
-                onChange={(e) => setScopeMkId(e.target.value)}
-                className="h-10 w-full max-w-xl rounded-md border border-[#CBD5E1] bg-white px-3 text-xs font-semibold text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
+                onChange={(val) => setScopeMkId(String(val))}
+                className="w-full max-w-xl"
+                buttonClassName="h-10 text-xs font-semibold"
                 data-testid="select-cakupan-analitik"
-              >
-                <option value="">Seluruh Program Studi ({courses.length} mata kuliah)</option>
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.kode} - {c.nama} ({c.sks} SKS, {c.semester})
-                  </option>
-                ))}
-              </select>
+                aria-label="Cakupan analitik"
+                searchPlaceholder="Cari kode atau nama mata kuliah..."
+                options={[
+                  { value: '', label: `Seluruh Program Studi (${courses.length} mata kuliah)` },
+                  ...courses.map((c) => ({
+                    value: c.id,
+                    label: `${c.kode} - ${c.nama}`,
+                    description: `${c.sks} SKS · Semester ${c.semester}`,
+                    searchText: c.nama,
+                  })),
+                ]}
+              />
               <Badge tone={scopeMkId ? 'warning' : 'default'}>
                 {scopeMkId ? 'Cakupan: satu mata kuliah' : 'Cakupan: seluruh prodi'}
               </Badge>
@@ -1057,19 +1065,22 @@ export default function AnalisisPage() {
           >
             <div className="mb-5 flex flex-wrap items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-semibold text-[#142B4A]">Pilih Mata Kuliah:</span>
-                <select
+                <span className="label-filter">Pilih Mata Kuliah:</span>
+                <SearchableSelect
                   value={selectedMkId}
-                  onChange={(e) => setSelectedMkId(e.target.value)}
-                  className="h-9 rounded-md border border-[#CBD5E1] bg-white px-3 text-xs font-semibold text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
+                  onChange={(val) => setSelectedMkId(String(val))}
+                  className="w-80"
+                  buttonClassName="h-9 text-xs font-semibold"
                   data-testid="select-level3-mk"
-                >
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.kode} - {c.nama} ({c.sks} SKS, Smt {c.semester})
-                    </option>
-                  ))}
-                </select>
+                  aria-label="Pilih mata kuliah"
+                  searchPlaceholder="Cari kode atau nama mata kuliah..."
+                  options={courses.map((c) => ({
+                    value: c.id,
+                    label: `${c.kode} - ${c.nama}`,
+                    description: `${c.sks} SKS · Semester ${c.semester}`,
+                    searchText: c.nama,
+                  }))}
+                />
               </div>
 
               {/* Deviasi PRD Label Note */}

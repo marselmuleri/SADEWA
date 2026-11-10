@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
 import Modal from '../components/Modal'
+import SearchableSelect from '../components/SearchableSelect'
 import useDosenCourses from '../hooks/useDosenCourses'
 import useToast from '../hooks/useToast'
 import api from '../services/api'
@@ -491,27 +492,29 @@ export default function NilaiPage() {
         <SectionCard className="xl:col-span-2" title="Mata Kuliah Yang Dinilai">
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="text-xs font-semibold text-[#64748B]">Mata Kuliah Diampu:</label>
+              <label className="label-filter">Mata Kuliah Diampu:</label>
               {coursesLoading ? (
                 <div className="mt-1 h-9 animate-pulse rounded bg-[#F8FAFC]" />
               ) : (
-                <select
+                <SearchableSelect
                   value={selectedMkId}
-                  onChange={(e) => setSelectedMkId(e.target.value)}
+                  onChange={(val) => setSelectedMkId(String(val))}
                   data-testid="select-nilai-mk"
-                  className="mt-1 w-full rounded-[6px] border border-[#CBD5E1] bg-white px-3 py-1.5 text-xs font-semibold text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
-                >
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.kode} - {c.nama}
-                    </option>
-                  ))}
-                </select>
+                  aria-label="Mata kuliah diampu"
+                  className="mt-1"
+                  buttonClassName="py-1.5 text-xs font-semibold"
+                  searchPlaceholder="Cari kode atau nama mata kuliah..."
+                  options={courses.map((c) => ({
+                    value: c.id,
+                    label: `${c.kode} - ${c.nama}`,
+                    searchText: c.nama,
+                  }))}
+                />
               )}
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-[#64748B]">Semester Evaluasi:</label>
+              <label className="label-filter">Semester Evaluasi:</label>
               <select
                 value={semester}
                 onChange={(e) => setSemester(e.target.value)}

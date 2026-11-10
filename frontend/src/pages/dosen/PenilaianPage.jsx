@@ -803,7 +803,7 @@ export default function PenilaianPage() {
                 setCurrentView('list')
                 navigate('/penilaian')
               }}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#1A3A6B] transition-colors"
+              className="btn-kembali"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Kembali ke Daftar Mata Kuliah</span>
@@ -975,7 +975,7 @@ export default function PenilaianPage() {
           <button
             type="button"
             onClick={() => setCurrentView('components')}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#1A3A6B] transition-colors"
+            className="btn-kembali"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Kembali ke Bentuk Penilaian</span>
@@ -1164,7 +1164,7 @@ export default function PenilaianPage() {
                 setCurrentView('list')
                 navigate('/penilaian')
               }}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#1A3A6B] transition-colors"
+              className="btn-kembali"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Kembali ke Daftar Mata Kuliah</span>
@@ -1418,7 +1418,7 @@ export default function PenilaianPage() {
                 setCurrentView('list')
                 navigate('/penilaian')
               }}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#64748B] hover:text-[#1A3A6B] transition-colors"
+              className="btn-kembali"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Kembali ke Daftar Mata Kuliah</span>

@@ -348,7 +348,7 @@ export default function PemetaanIkPage() {
         <div className="space-y-6">
           {/* CPL Selection Bar */}
           <div className="flex flex-wrap items-center gap-2 rounded-[8px] border border-[#E2E8F0] bg-white p-3 shadow-sm">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6D778E] mr-1">
+            <span className="label-filter mr-1">
               Pilih CPL:
             </span>
             {cplList.length === 0 ? (
@@ -363,7 +363,7 @@ export default function PemetaanIkPage() {
                     setSearchParams({ cplId: String(c.id) })
                   }}
                   data-testid={`cpl-filter-pill-${c.id}`}
-                  className={`inline-flex items-center gap-1.5 rounded-[6px] px-3 py-1 text-xs font-semibold transition-colors ${
+                  className={`inline-flex items-center gap-1.5 rounded-[6px] px-3.5 py-2 text-sm font-semibold transition-colors ${
                     activeCpl?.id === c.id
                       ? 'border border-[#1A3A6B] bg-[#1A3A6B] text-white'
                       : 'border border-[#CBD5E1] bg-white text-[#142B4A] hover:border-[#1A3A6B]'
@@ -371,7 +371,7 @@ export default function PemetaanIkPage() {
                 >
                   <span>{c.kode}</span>
                   <span
-                    className={`rounded-full px-1.5 py-0.2 text-[10px] ${
+                    className={`rounded-full px-2 py-0.5 text-xs ${
                       activeCpl?.id === c.id ? 'bg-white/20 text-white' : 'bg-[#F2F4F7] text-[#64748B]'
                     }`}
                   >

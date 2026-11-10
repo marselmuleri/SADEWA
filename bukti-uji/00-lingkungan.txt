@@ -1,0 +1,11 @@
+# Lingkungan eksekusi pengujian (dicatat otomatis)
+tanggal: 2026-11-10 11:17:11 WIB
+os: "Ubuntu 24.04.5 LTS" kernel 6.18.44-fc-v338
+cpu: 2 vCPU, Intel(R) Xeon(R) Processor
+ram: 7 GiB
+jenis mesin: container cloud sementara (bukan mesin tim, bukan server produksi)
+python: Python 3.10.20
+node: v22.23.4, npm: 10.9.9
+postgresql: postgres (PostgreSQL) 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)
+akses jaringan: DashScope (Qwen) dan huggingface.co DIBLOKIR dari container ini -> LLM tidak dipanggil sungguhan
+sumber kode: salinan berkas dari D:\Apps\SADEWA (mtime terakhir backend/app 2026-11-09), tanpa .env

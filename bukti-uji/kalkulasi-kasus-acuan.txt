@@ -1,0 +1,10 @@
+# perintah: cd backend && python ../bukti-uji/tes-tambahan/verifikasi_kasus_acuan.py
+# waktu: 2026-11-10 11:33:24 WIB
+CPL | poin harapan | poin sistem | selisih | persen harapan | persen sistem | selisih
+CP1 | 3.50 | 3.50 | 0.00 | 70.00 | 70.00 | 0.00
+CP2 | 17.50 | 17.50 | 0.00 | 87.50 | 87.50 | 0.00
+CP4 | 27.13 | 27.13 | 0.00 | 72.35 | 72.35 | 0.00
+CP6 | 9.38 | 9.38 | 0.00 | 75.04 | 75.04 | 0.00
+CP7 | 8.50 | 8.50 | 0.00 | 68.00 | 68.00 | 0.00
+CP8 | 8.25 | 8.25 | 0.00 | 66.00 | 66.00 | 0.00
+nilai_akhir | 74.25 | 74.25 | 0.00

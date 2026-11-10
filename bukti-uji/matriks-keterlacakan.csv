@@ -1,0 +1,211 @@
+suite,berkas,tes,status,srs_id,kecocokan,kode_kasus_c500
+backend (SQLite+PostgreSQL),test_ai_integration.py,test_ai_client_health_offline[asyncio],lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),(tidak dikutip di tabel kasus)
+backend (SQLite+PostgreSQL),test_ai_integration.py,test_ai_client_generate_rps_success[asyncio],lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),H101
+backend (SQLite+PostgreSQL),test_ai_integration.py,test_ai_client_connection_error_raises_503[asyncio],lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),H102
+backend (SQLite+PostgreSQL),test_ai_integration.py,test_ai_client_timeout_raises_504[asyncio],lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),H102
+backend (SQLite+PostgreSQL),test_ai_integration.py,test_narasi_empty_calculation_raises_422,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),H104
+backend (SQLite+PostgreSQL),test_ai_integration.py,test_rps_generate_prd_path_saves_konten,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),H101
+backend (SQLite+PostgreSQL),test_ai_stream.py,test_stream_rps_meneruskan_progres_dan_menyimpan_draf,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),H101
+backend (SQLite+PostgreSQL),test_ai_stream.py,test_stream_rps_gagal_dikirim_sebagai_event_error,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),H102
+backend (SQLite+PostgreSQL),test_ai_stream.py,test_stream_rps_tanpa_akses_tetap_403_biasa,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),H103
+backend (SQLite+PostgreSQL),test_ai_stream.py,test_stream_narasi_mengirim_data_capaian_dan_menyimpan,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),H105
+backend (SQLite+PostgreSQL),test_ai_stream.py,test_stream_narasi_tanpa_capaian_422_sebelum_stream,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),H104
+backend (SQLite+PostgreSQL),test_ai_stream.py,test_stream_ai_mengurai_sse[asyncio],lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),H101
+backend (SQLite+PostgreSQL),test_ai_stream.py,test_stream_ai_hasil_gagal_menjadi_http_exception[asyncio],lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),H102
+backend (SQLite+PostgreSQL),test_ai_stream.py,test_stream_ai_terputus_tanpa_hasil[asyncio],lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),H102
+backend (SQLite+PostgreSQL),test_ai_stream.py,test_stream_ai_tidak_bisa_terhubung[asyncio],lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),H102
+backend (SQLite+PostgreSQL),test_akses_cpmk.py,test_dosen_pengampu_boleh_ubah_nama_cpmk,lulus,SADEWA-11; SADEWA-01,cocok,D105
+backend (SQLite+PostgreSQL),test_akses_cpmk.py,test_dosen_pengampu_boleh_ubah_bobot_dan_mapping_ik,lulus,SADEWA-11; SADEWA-01,cocok,D105
+backend (SQLite+PostgreSQL),test_akses_cpmk.py,test_dosen_bukan_pengampu_ditolak_seluruh_operasi,lulus,SADEWA-11; SADEWA-01,cocok,B111
+backend (SQLite+PostgreSQL),test_akses_cpmk.py,test_admin_prodi_dan_kaprodi_boleh_ubah_bobot_dan_mapping,lulus,SADEWA-11; SADEWA-01,cocok,D105
+backend (SQLite+PostgreSQL),test_akses_cpmk.py,test_idor_admin_prodi_antar_prodi,lulus,SADEWA-11; SADEWA-01,cocok,B110
+backend (SQLite+PostgreSQL),test_analitik.py,test_rumus_persen_ik_dan_cpmk,lulus,SADEWA-05; SADEWA-03,cocok,F105
+backend (SQLite+PostgreSQL),test_analitik.py,test_kalkulasi_cpmk_dalam_persen_dan_analitik_prodi,lulus,SADEWA-05; SADEWA-03,cocok,F105
+backend (SQLite+PostgreSQL),test_analitik.py,test_akses_analitik_prodi,lulus,SADEWA-05; SADEWA-03,cocok,B104
+backend (SQLite+PostgreSQL),test_analitik.py,test_analitik_mata_kuliah_untuk_dosen,lulus,SADEWA-05; SADEWA-03,cocok,G102
+backend (SQLite+PostgreSQL),test_arsip.py,test_publish_membuat_arsip_dan_koreksi_tidak_mengubahnya,lulus,SADEWA-11,terdekat (arsip kurikulum tidak disebut di SRS),(tidak dikutip di tabel kasus)
+backend (SQLite+PostgreSQL),test_arsip.py,test_arsip_semester,lulus,SADEWA-11,terdekat (arsip kurikulum tidak disebut di SRS),(tidak dikutip di tabel kasus)
+backend (SQLite+PostgreSQL),test_arsip.py,test_akses_arsip_per_role,lulus,SADEWA-11,terdekat (arsip kurikulum tidak disebut di SRS),B112
+backend (SQLite+PostgreSQL),test_aturan_skala_info.py,test_aturan_default_simpan_dan_hak_akses,lulus,SADEWA-11; SADEWA-03,cocok,D111
+backend (SQLite+PostgreSQL),test_aturan_skala_info.py,test_ambang_prodi_dipakai_kalkulasi_dan_export,lulus,SADEWA-11; SADEWA-03,cocok,F107
+backend (SQLite+PostgreSQL),test_aturan_skala_info.py,test_skala_per_angkatan_api_dan_kalkulasi,lulus,SADEWA-11; SADEWA-03,cocok,D111
+backend (SQLite+PostgreSQL),test_aturan_skala_info.py,test_validasi_kelompok_skala,lulus,SADEWA-11; SADEWA-03,cocok,D111
+backend (SQLite+PostgreSQL),test_aturan_skala_info.py,test_data_portofolio_saran_semester_lalu_dan_export,lulus,SADEWA-11; SADEWA-03,cocok,(tidak dikutip di tabel kasus)
+backend (SQLite+PostgreSQL),test_auth.py,test_bootstrap_register_creates_super_admin,lulus,SADEWA-01; SADEWA-NF-02,cocok,A106
+backend (SQLite+PostgreSQL),test_auth.py,test_register_closed_after_first_user_exists,lulus,SADEWA-01; SADEWA-NF-02,cocok,A106
+backend (SQLite+PostgreSQL),test_auth.py,test_login_success_returns_token,lulus,SADEWA-01; SADEWA-NF-02,cocok,A101
+backend (SQLite+PostgreSQL),test_auth.py,test_login_wrong_password_rejected,lulus,SADEWA-01; SADEWA-NF-02,cocok,A102
+backend (SQLite+PostgreSQL),test_auth.py,test_endpoint_without_token_rejected,lulus,SADEWA-01; SADEWA-NF-02,cocok,B101
+backend (SQLite+PostgreSQL),test_auth.py,test_me_returns_current_user_profile,lulus,SADEWA-01; SADEWA-NF-02,cocok,A105
+backend (SQLite+PostgreSQL),test_cpl_aggregate.py,test_gabungan_berbobot_bobot_ik,lulus,SADEWA-03,cocok,F106
+backend (SQLite+PostgreSQL),test_cpl_aggregate.py,test_baris_lama_hanya_cadangan,lulus,SADEWA-03,cocok,F106
+backend (SQLite+PostgreSQL),test_cpl_aggregate.py,test_bobot_nol_diabaikan_dan_per_mahasiswa_terpisah,lulus,SADEWA-03,cocok,F106
+backend (SQLite+PostgreSQL),test_cpmk_hapus.py,test_hak_akses_hapus_cpmk,lulus,SADEWA-11,cocok,D108
+backend (SQLite+PostgreSQL),test_cpmk_hapus.py,test_hapus_cpmk_yang_memiliki_nilai_terkait_mengembalikan_409,lulus,SADEWA-11,cocok,D108
+backend (SQLite+PostgreSQL),test_cpmk_hapus.py,test_hapus_cpmk_tanpa_nilai_berhasil_dan_hapus_relasi_map,lulus,SADEWA-11,cocok,D108
+backend (SQLite+PostgreSQL),test_finalisasi_obe.py,test_finalisasi_peserta_berhasil_dan_terkunci,lulus,SADEWA-02,terdekat (finalisasi nilai tidak disebut di SRS),E106
+backend (SQLite+PostgreSQL),test_finalisasi_obe.py,test_finalisasi_penolakan_syarat,lulus,SADEWA-02,terdekat (finalisasi nilai tidak disebut di SRS),E106
+backend (SQLite+PostgreSQL),test_finalisasi_obe.py,test_alur_buka_kunci_dan_koreksi_nilai,lulus,SADEWA-02,terdekat (finalisasi nilai tidak disebut di SRS),E106
+backend (SQLite+PostgreSQL),test_hapus_obe.py,test_hapus_cpl_yang_memiliki_ik_mengembalikan_409,lulus,SADEWA-11,cocok,D108
+backend (SQLite+PostgreSQL),test_hapus_obe.py,test_hapus_ik_yang_termapping_cpmk_mengembalikan_409,lulus,SADEWA-11,cocok,D108
+backend (SQLite+PostgreSQL),test_hapus_obe.py,test_hapus_cpl_dan_ik_tanpa_relasi_berhasil,lulus,SADEWA-11,cocok,D108
+backend (SQLite+PostgreSQL),test_ik_contribution.py,test_single_bentuk_penilaian_full_weight,lulus,SADEWA-04,cocok,G101
+backend (SQLite+PostgreSQL),test_ik_contribution.py,test_ik_partial_weight_within_bentuk_penilaian,lulus,SADEWA-04,cocok,G101
+backend (SQLite+PostgreSQL),test_ik_contribution.py,test_multiple_bentuk_penilaian_summed,lulus,SADEWA-04,cocok,G101
+backend (SQLite+PostgreSQL),test_ik_contribution.py,test_bentuk_penilaian_without_ik_mapping_ignored,lulus,SADEWA-04,cocok,G101
+backend (SQLite+PostgreSQL),test_ik_contribution.py,test_zero_bobot_bentuk_penilaian_skipped_no_division_error,lulus,SADEWA-04,cocok,F104
+backend (SQLite+PostgreSQL),test_ik_contribution.py,test_empty_input_returns_zero,lulus,SADEWA-04,cocok,F104
+backend (SQLite+PostgreSQL),test_ik_contribution.py,test_nilai_zero,lulus,SADEWA-04,cocok,F104
+backend (SQLite+PostgreSQL),test_integrasi_obe.py,test_integrasi_putu_sandra_dan_mahasiswa_kosong,lulus,SADEWA-03,cocok,F108
+backend (SQLite+PostgreSQL),test_jenis_evaluasi_bobot.py,test_api_validasi_bobot_jenis_evaluasi,lulus,SADEWA-11,cocok,D106
+backend (SQLite+PostgreSQL),test_jenis_evaluasi_bobot.py,test_cek_siap_dinilai_kondisi_bobot_jenis_evaluasi,lulus,SADEWA-11,cocok,D106
+backend (SQLite+PostgreSQL),test_mahasiswa_status_akademik.py,test_status_akademik_default_aktif_dan_bisa_diubah,lulus,SADEWA-02,terdekat (data mahasiswa tidak disebut di SRS),E105
+backend (SQLite+PostgreSQL),test_mahasiswa_status_akademik.py,test_status_akademik_tidak_valid_ditolak,lulus,SADEWA-02,terdekat (data mahasiswa tidak disebut di SRS),E105
+backend (SQLite+PostgreSQL),test_mahasiswa_status_akademik.py,test_filter_daftar_berdasarkan_status_akademik,lulus,SADEWA-02,terdekat (data mahasiswa tidak disebut di SRS),E105
+backend (SQLite+PostgreSQL),test_master_evaluasi.py,test_bentuk_penilaian_crud,lulus,SADEWA-11; SADEWA-02; SADEWA-01,cocok,D107
+backend (SQLite+PostgreSQL),test_master_evaluasi.py,test_peserta_mata_kuliah_crud,lulus,SADEWA-11; SADEWA-02; SADEWA-01,cocok,E105
+backend (SQLite+PostgreSQL),test_master_evaluasi.py,test_kalkulasi_authorization,lulus,SADEWA-11; SADEWA-02; SADEWA-01,cocok,B106
+backend (SQLite+PostgreSQL),test_nilai_per_ik.py,test_input_nilai_per_ik_berhasil,lulus,SADEWA-02,cocok,E101
+backend (SQLite+PostgreSQL),test_nilai_per_ik.py,test_duplikat_nilai_kombinasi_peserta_bentuk_ik_ditolak,lulus,SADEWA-02,cocok,E103
+backend (SQLite+PostgreSQL),test_nilai_per_ik.py,test_nilai_ik_bobot_sel_nol_atau_tidak_di_matriks_ditolak,lulus,SADEWA-02,cocok,E103
+backend (SQLite+PostgreSQL),test_nilai_per_ik.py,test_nilai_di_luar_rentang_0_sampai_100_ditolak,lulus,SADEWA-02,cocok,E102
+backend (SQLite+PostgreSQL),test_obe_formula.py,test_cell_poin_rounding_half_up,lulus,SADEWA-03,cocok,F102
+backend (SQLite+PostgreSQL),test_obe_formula.py,test_kasus_putu_sandra,lulus,SADEWA-03,cocok,F103
+backend (SQLite+PostgreSQL),test_obe_formula.py,test_pembulatan_terpisah_nilai_akhir_vs_poin_cpl,lulus,SADEWA-03,cocok,F102
+backend (SQLite+PostgreSQL),test_obe_formula.py,test_kasus_nilai_kosong,lulus,SADEWA-03,cocok,F104
+backend (SQLite+PostgreSQL),test_obe_formula.py,test_kasus_multi_cpl_dalam_satu_cpmk,lulus,SADEWA-03,cocok,F104
+backend (SQLite+PostgreSQL),test_obe_formula.py,test_kasus_bobot_cp_nol_tidak_division_by_zero,lulus,SADEWA-03,cocok,F104
+backend (SQLite+PostgreSQL),test_portofolio.py,test_daftar_mk_sesuai_peran,lulus,-,TIDAK ADA SRS-id (fitur portofolio mata kuliah tidak ada di SRS),(tidak dikutip di tabel kasus)
+backend (SQLite+PostgreSQL),test_portofolio.py,test_unggah_unduh_hapus_rps,lulus,-,TIDAK ADA SRS-id (fitur portofolio mata kuliah tidak ada di SRS),(tidak dikutip di tabel kasus)
+backend (SQLite+PostgreSQL),test_portofolio.py,test_unggah_ditolak_bukan_pengampu_atau_format_salah,lulus,-,TIDAK ADA SRS-id (fitur portofolio mata kuliah tidak ada di SRS),(tidak dikutip di tabel kasus)
+backend (SQLite+PostgreSQL),test_portofolio.py,test_rpp_simpan_dan_lihat,lulus,-,TIDAK ADA SRS-id (fitur portofolio mata kuliah tidak ada di SRS),(tidak dikutip di tabel kasus)
+backend (SQLite+PostgreSQL),test_portofolio.py,test_capaian_nilai_cp_dan_sebaran,lulus,-,TIDAK ADA SRS-id (fitur portofolio mata kuliah tidak ada di SRS),(tidak dikutip di tabel kasus)
+backend (SQLite+PostgreSQL),test_portofolio_export.py,test_export_berisi_semua_sheet_dan_rumus,lulus,SADEWA-09,"sebagian (ekspor per mata kuliah, bukan laporan prodi)",H111
+backend (SQLite+PostgreSQL),test_portofolio_export.py,test_nilai_export_cocok_dengan_kalkulasi_sadewa,lulus,SADEWA-09,"sebagian (ekspor per mata kuliah, bukan laporan prodi)",H111
+backend (SQLite+PostgreSQL),test_portofolio_export.py,test_remidi_dan_ringkasan_cpmk,lulus,SADEWA-09,"sebagian (ekspor per mata kuliah, bukan laporan prodi)",H111
+backend (SQLite+PostgreSQL),test_portofolio_export.py,test_export_hak_akses,lulus,SADEWA-09,"sebagian (ekspor per mata kuliah, bukan laporan prodi)",H111
+backend (SQLite+PostgreSQL),test_portofolio_export.py,test_evaluasi_simpan_saran_dan_masuk_export,lulus,SADEWA-09,"sebagian (ekspor per mata kuliah, bukan laporan prodi)",H111
+backend (SQLite+PostgreSQL),test_portofolio_export.py,test_export_mata_kuliah_kosong_tidak_error,lulus,SADEWA-09,"sebagian (ekspor per mata kuliah, bukan laporan prodi)",H111
+backend (SQLite+PostgreSQL),test_portofolio_export.py,test_saran_ai_butuh_nilai,lulus,SADEWA-09,"sebagian (ekspor per mata kuliah, bukan laporan prodi)",(tidak dikutip di tabel kasus)
+backend (SQLite+PostgreSQL),test_range_nilai.py,test_lookup_kategori_cpl_service,lulus,SADEWA-11; SADEWA-03,cocok,F107
+backend (SQLite+PostgreSQL),test_range_nilai.py,test_api_validasi_range_nilai_cpl,lulus,SADEWA-11; SADEWA-03,cocok,D110
+backend (SQLite+PostgreSQL),test_range_nilai.py,test_api_crud_range_nilai_cpl_berhasil,lulus,SADEWA-11; SADEWA-03,cocok,D110
+backend (SQLite+PostgreSQL),test_rps_crud.py,test_dosen_pengampu_edit_dan_hapus_rps,lulus,SADEWA-07,cocok,H103
+backend (SQLite+PostgreSQL),test_rps_crud.py,test_rps_hanya_bisa_diubah_pengampu,lulus,SADEWA-07,cocok,H103
+backend (SQLite+PostgreSQL),test_rps_crud.py,test_buat_laporan_dengan_isi_narasi,lulus,SADEWA-07,cocok,H105
+backend (SQLite+PostgreSQL),test_siap_nilai_terpisah.py,test_kondisi_1_bobot_cpmk_bukan_100_ditolak,lulus,SADEWA-02; SADEWA-11,"cocok (nama ""siap"" = siap dinilai, bukan SIAP UNDIP)",E104
+backend (SQLite+PostgreSQL),test_siap_nilai_terpisah.py,test_kondisi_2_cpmk_tanpa_mapping_ditolak,lulus,SADEWA-02; SADEWA-11,"cocok (nama ""siap"" = siap dinilai, bukan SIAP UNDIP)",E104
+backend (SQLite+PostgreSQL),test_siap_nilai_terpisah.py,test_kondisi_3_total_bobot_bentuk_penilaian_bukan_100_ditolak,lulus,SADEWA-02; SADEWA-11,"cocok (nama ""siap"" = siap dinilai, bukan SIAP UNDIP)",E104
+backend (SQLite+PostgreSQL),test_siap_nilai_terpisah.py,test_kondisi_4_baris_matriks_tidak_sama_dengan_bobot_bentuk_ditolak,lulus,SADEWA-02; SADEWA-11,"cocok (nama ""siap"" = siap dinilai, bukan SIAP UNDIP)",E104
+backend (SQLite+PostgreSQL),test_siap_nilai_terpisah.py,test_kondisi_5_kolom_matriks_tidak_sama_dengan_bobot_ik_ditolak,lulus,SADEWA-02; SADEWA-11,"cocok (nama ""siap"" = siap dinilai, bukan SIAP UNDIP)",E104
+backend (SQLite+PostgreSQL),test_siap_nilai_terpisah.py,test_kondisi_6_matriks_berisi_ik_di_luar_cpmk_ditolak,lulus,SADEWA-02; SADEWA-11,"cocok (nama ""siap"" = siap dinilai, bukan SIAP UNDIP)",E104
+backend (SQLite+PostgreSQL),test_siap_nilai_terpisah.py,test_kasus_lengkap_semua_syarat_terpenuhi_diterima,lulus,SADEWA-02; SADEWA-11,"cocok (nama ""siap"" = siap dinilai, bukan SIAP UNDIP)",E104
+backend (SQLite+PostgreSQL),test_skala_nilai.py,test_pilih_huruf_lookup_logic,lulus,SADEWA-03; SADEWA-11,cocok,F107
+backend (SQLite+PostgreSQL),test_skala_nilai.py,test_api_atur_skala_nilai_validasi,lulus,SADEWA-03; SADEWA-11,cocok,D110
+backend (SQLite+PostgreSQL),test_skala_nilai.py,test_dua_kurikulum_beda_skala,lulus,SADEWA-03; SADEWA-11,cocok,F107
+backend (SQLite+PostgreSQL),test_skala_nilai.py,test_snapshot_nilai_final_tidak_berubah_saat_skala_diedit,lulus,SADEWA-03; SADEWA-11,cocok,F107
+backend (SQLite+PostgreSQL),test_ui_audit_fixes.py,test_dosen_scope_filtering,lulus,SADEWA-01; SADEWA-11; SADEWA-02; SADEWA-03,cocok per tes,B109
+backend (SQLite+PostgreSQL),test_ui_audit_fixes.py,test_dosen_self_service_endpoints,lulus,SADEWA-01; SADEWA-11; SADEWA-02; SADEWA-03,cocok per tes,B109
+backend (SQLite+PostgreSQL),test_ui_audit_fixes.py,test_single_ketua_atomic_demotion,lulus,SADEWA-01; SADEWA-11; SADEWA-02; SADEWA-03,cocok per tes,D112
+backend (SQLite+PostgreSQL),test_ui_audit_fixes.py,test_duplicate_prevention,lulus,SADEWA-01; SADEWA-11; SADEWA-02; SADEWA-03,cocok per tes,D109
+backend (SQLite+PostgreSQL),test_ui_audit_fixes.py,test_mahasiswa_angkatan_derivation,lulus,SADEWA-01; SADEWA-11; SADEWA-02; SADEWA-03,cocok per tes,E105
+backend (SQLite+PostgreSQL),test_ui_audit_fixes.py,test_batch_import_mahasiswa_and_peserta,lulus,SADEWA-01; SADEWA-11; SADEWA-02; SADEWA-03,cocok per tes,E105
+backend (SQLite+PostgreSQL),test_ui_audit_fixes.py,test_delete_protection_and_endpoints,lulus,SADEWA-01; SADEWA-11; SADEWA-02; SADEWA-03,cocok per tes,D108
+backend (SQLite+PostgreSQL),test_ui_audit_fixes.py,test_seed_data_siap_dinilai_dan_kalkulasi_langsung,lulus,SADEWA-01; SADEWA-11; SADEWA-02; SADEWA-03,cocok per tes,F108
+backend (SQLite+PostgreSQL),test_ui_audit_fixes.py,test_create_kurikulum_version_only,lulus,SADEWA-01; SADEWA-11; SADEWA-02; SADEWA-03,cocok per tes,D102
+backend (SQLite+PostgreSQL),test_ui_audit_fixes.py,test_admin_prodi_forbidden_on_dashboard_and_trending,lulus,SADEWA-01; SADEWA-11; SADEWA-02; SADEWA-03,cocok per tes,B108
+backend (SQLite+PostgreSQL),test_ui_audit_fixes.py,test_rapor_dosen_hanya_mata_kuliah_diampu,lulus,SADEWA-01; SADEWA-11; SADEWA-02; SADEWA-03,cocok per tes,B109
+backend (SQLite+PostgreSQL),test_users.py,test_super_admin_can_create_fakultas_and_prodi,lulus,SADEWA-10; SADEWA-01,cocok,D101
+backend (SQLite+PostgreSQL),test_users.py,test_super_admin_can_create_admin_prodi_account,lulus,SADEWA-10; SADEWA-01,cocok,C101
+backend (SQLite+PostgreSQL),test_users.py,test_admin_prodi_creation_requires_program_studi_id,lulus,SADEWA-10; SADEWA-01,cocok,C102
+backend (SQLite+PostgreSQL),test_users.py,test_super_admin_cannot_access_academic_data,lulus,SADEWA-10; SADEWA-01,cocok,B107
+backend (SQLite+PostgreSQL),test_users.py,test_admin_prodi_can_only_create_dosen_or_kaprodi,lulus,SADEWA-10; SADEWA-01,cocok,C103
+backend (SQLite+PostgreSQL),test_users.py,test_admin_prodi_cannot_see_users_outside_own_prodi,lulus,SADEWA-10; SADEWA-01,cocok,C104
+backend (SQLite+PostgreSQL),test_users.py,test_dosen_cannot_create_prodi,lulus,SADEWA-10; SADEWA-01,cocok,D101
+backend (SQLite+PostgreSQL),test_validasi_obe.py,test_c3_total_bobot_ik_harus_sama_persis_dengan_cpmk,lulus,SADEWA-11,cocok,D103
+backend (SQLite+PostgreSQL),test_validasi_obe.py,test_c3_revalidasi_saat_bobot_cpmk_diubah,lulus,SADEWA-11,cocok,D103
+backend (SQLite+PostgreSQL),test_validasi_obe.py,test_c4_tolak_mapping_ik_dari_prodi_lain,lulus,SADEWA-11,cocok,D104
+backend (SQLite+PostgreSQL),test_validasi_obe.py,test_c12_tolak_ik_tanpa_cpl,lulus,SADEWA-11,cocok,D104
+backend (SQLite+PostgreSQL),test_validasi_obe.py,test_c13_cpmk_tanpa_mapping_ik_tidak_siap_dinilai,lulus,SADEWA-11,cocok,E104
+backend (SQLite+PostgreSQL),test_validasi_obe.py,test_syarat_siap_dinilai_dan_penolakan_input_nilai,lulus,SADEWA-11,cocok,E104
+ai,test_api.py,test_health_endpoint,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),(tidak dikutip di tabel kasus)
+ai,test_api.py,test_generate_rps_endpoint_sukses,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),(tidak dikutip di tabel kasus)
+ai,test_api.py,test_generate_rps_endpoint_validasi_gagal,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),(tidak dikutip di tabel kasus)
+ai,test_api.py,test_generate_narasi_endpoint_sukses,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),(tidak dikutip di tabel kasus)
+ai,test_evaluasi_cpmk.py,test_validator_menerima_data_lengkap,lulus,SADEWA-06,terdekat (saran evaluasi CPMK portofolio tidak disebut di SRS),(tidak dikutip di tabel kasus)
+ai,test_evaluasi_cpmk.py,test_validator_menolak_cpmk_terlewat_dan_teks_kosong,lulus,SADEWA-06,terdekat (saran evaluasi CPMK portofolio tidak disebut di SRS),(tidak dikutip di tabel kasus)
+ai,test_evaluasi_cpmk.py,test_prompt_memuat_angka_dan_status,lulus,SADEWA-06,terdekat (saran evaluasi CPMK portofolio tidak disebut di SRS),(tidak dikutip di tabel kasus)
+ai,test_evaluasi_cpmk.py,test_pipeline_mengulang_bila_cpmk_terlewat,lulus,SADEWA-06,terdekat (saran evaluasi CPMK portofolio tidak disebut di SRS),(tidak dikutip di tabel kasus)
+ai,test_evaluasi_cpmk.py,test_endpoint_evaluasi_cpmk,lulus,SADEWA-06,terdekat (saran evaluasi CPMK portofolio tidak disebut di SRS),(tidak dikutip di tabel kasus)
+ai,test_hf_offline.py,test_model_lengkap_terdeteksi,lulus,SADEWA-12,terdekat (infrastruktur model embedding),I102
+ai,test_hf_offline.py,test_model_tanpa_bobot_atau_belum_ada,lulus,SADEWA-12,terdekat (infrastruktur model embedding),I102
+ai,test_hf_offline.py,test_offline_hanya_bila_model_ada,lulus,SADEWA-12,terdekat (infrastruktur model embedding),I102
+ai,test_hf_offline.py,test_bisa_dimatikan,lulus,SADEWA-12,terdekat (infrastruktur model embedding),I102
+ai,test_llm_parsing.py,test_json_polos,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_llm_parsing.py,test_json_dengan_pagar_markdown,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_llm_parsing.py,test_json_dengan_pagar_tanpa_label,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_llm_parsing.py,test_json_dengan_kalimat_pembuka,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_llm_parsing.py,test_json_dengan_kalimat_pembuka_dan_penutup,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_llm_parsing.py,test_json_bersarang_diambil_utuh,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_llm_parsing.py,test_kurung_kurawal_di_dalam_string_tidak_mengacaukan,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_llm_parsing.py,test_escape_quote_di_dalam_string,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_llm_parsing.py,test_respons_tanpa_json_melempar_error,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_llm_parsing.py,test_json_rusak_melempar_error,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_llm_parsing.py,test_json_array_bukan_objek_melempar_error,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_llm_parsing.py,test_prompt_rps_memuat_parameter,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_llm_parsing.py,test_prompt_rps_tidak_lagi_menyebut_skill_industri,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_llm_parsing.py,test_prompt_narasi_memuat_angka_capaian,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_llm_parsing.py,test_prompt_narasi_capaian_kosong_tetap_aman,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_schemas.py,test_rps_request_valid,lulus,SADEWA-07; SADEWA-06,cocok,(tidak dikutip di tabel kasus)
+ai,test_schemas.py,test_rps_request_sks_tidak_valid_ditolak,lulus,SADEWA-07; SADEWA-06,cocok,(tidak dikutip di tabel kasus)
+ai,test_schemas.py,test_rps_request_semester_tidak_valid_ditolak,lulus,SADEWA-07; SADEWA-06,cocok,(tidak dikutip di tabel kasus)
+ai,test_schemas.py,test_rps_request_nama_kosong_ditolak,lulus,SADEWA-07; SADEWA-06,cocok,(tidak dikutip di tabel kasus)
+ai,test_schemas.py,test_narasi_request_valid,lulus,SADEWA-07; SADEWA-06,cocok,(tidak dikutip di tabel kasus)
+ai,test_schemas.py,test_narasi_request_capaian_kosong_ditolak,lulus,SADEWA-07; SADEWA-06,cocok,(tidak dikutip di tabel kasus)
+ai,test_schemas.py,test_narasi_request_nilai_bukan_angka_ditolak,lulus,SADEWA-07; SADEWA-06,cocok,(tidak dikutip di tabel kasus)
+ai,test_stream.py,test_stream_rps_mengirim_tahap_token_dan_hasil,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),(tidak dikutip di tabel kasus)
+ai,test_stream.py,test_stream_rps_mengirim_ulang_saat_validasi_gagal,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),(tidak dikutip di tabel kasus)
+ai,test_stream.py,test_stream_narasi_gagal_tetap_ditutup_event_hasil,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),(tidak dikutip di tabel kasus)
+ai,test_stream.py,test_stream_rps_input_tidak_valid,lulus,SADEWA-07; SADEWA-06,cocok (LLM tiruan),(tidak dikutip di tabel kasus)
+ai,test_validators.py,test_rps_valid_lolos,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_validators.py,test_total_bobot_salah_terdeteksi,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_validators.py,test_jumlah_pertemuan_kurang_terdeteksi,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_validators.py,test_uts_bukan_di_minggu_8_terdeteksi,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_validators.py,test_uas_bukan_di_minggu_16_terdeteksi,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_validators.py,test_minggu_duplikat_terdeteksi,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_validators.py,test_cpmk_tidak_terdaftar_terdeteksi,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_validators.py,test_field_wajib_hilang_terdeteksi,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_validators.py,test_bobot_bukan_angka_terdeteksi,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_validators.py,test_pertemuan_bukan_list_terdeteksi,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_validators.py,test_narasi_valid_lolos,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_validators.py,test_narasi_field_hilang_terdeteksi,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_validators.py,test_narasi_list_kosong_terdeteksi,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+ai,test_validators.py,test_narasi_ringkasan_kosong_terdeteksi,lulus,SADEWA-07; SADEWA-06; SADEWA-NF-04,"sebagian NF-04 (format, bukan akurasi isi)",(tidak dikutip di tabel kasus)
+tambahan,test_tambahan_c500.py,test_t01_login_setiap_peran_mendapat_token_berisi_peran[super_admin],lulus,SADEWA-01; SADEWA-NF-02,cocok,A101
+tambahan,test_tambahan_c500.py,test_t01_login_setiap_peran_mendapat_token_berisi_peran[admin_prodi_if],lulus,SADEWA-01; SADEWA-NF-02,cocok,A101
+tambahan,test_tambahan_c500.py,test_t01_login_setiap_peran_mendapat_token_berisi_peran[kaprodi_if],lulus,SADEWA-01; SADEWA-NF-02,cocok,A101
+tambahan,test_tambahan_c500.py,test_t01_login_setiap_peran_mendapat_token_berisi_peran[dosen_if],lulus,SADEWA-01; SADEWA-NF-02,cocok,A101
+tambahan,test_tambahan_c500.py,test_t01_login_setiap_peran_mendapat_token_berisi_peran[dekan_ft],lulus,SADEWA-01; SADEWA-NF-02,cocok,A101
+tambahan,test_tambahan_c500.py,test_t02_login_email_tidak_terdaftar_ditolak,lulus,SADEWA-01; SADEWA-NF-02,cocok,A103
+tambahan,test_tambahan_c500.py,test_t03_login_dengan_pola_sql_injection_tidak_menyebabkan_error_server,lulus,SADEWA-01; SADEWA-NF-02,cocok,A104
+tambahan,test_tambahan_c500.py,test_t04_me_mengembalikan_profil_tanpa_password_hash,lulus,SADEWA-01; SADEWA-NF-02,cocok,A105
+tambahan,test_tambahan_c500.py,test_t05_password_tersimpan_sebagai_hash_bcrypt,lulus,SADEWA-01; SADEWA-NF-02,cocok,(tidak dikutip di tabel kasus)
+tambahan,test_tambahan_c500.py,test_t06_token_kedaluwarsa_ditolak,lulus,SADEWA-01; SADEWA-NF-02,cocok,A107
+tambahan,test_tambahan_c500.py,test_t07_token_dengan_kunci_tanda_tangan_lain_ditolak,lulus,SADEWA-01; SADEWA-NF-02,cocok,A108
+tambahan,test_tambahan_c500.py,test_t08_token_akun_yang_dinonaktifkan_langsung_ditolak,lulus,SADEWA-01; SADEWA-NF-02,cocok,A109
+tambahan,test_tambahan_c500.py,test_t09_akses_tanpa_token_ditolak_pada_endpoint_data_akademik,lulus,SADEWA-01; SADEWA-NF-02,cocok,B101
+tambahan,test_tambahan_c500.py,test_t10_dosen_tidak_boleh_membuat_akun,lulus,SADEWA-01,cocok,B102
+tambahan,test_tambahan_c500.py,test_t11_dekan_hanya_lihat_tidak_boleh_membuat_cpl,lulus,SADEWA-01,cocok,B103
+tambahan,test_tambahan_c500.py,test_t12_dekan_boleh_membaca_analitik_prodi_di_fakultasnya,lulus,SADEWA-01,cocok,B104
+tambahan,test_tambahan_c500.py,test_t13_admin_prodi_tidak_boleh_membuka_mata_kuliah_prodi_lain,lulus,SADEWA-01,cocok,B105
+tambahan,test_tambahan_c500.py,test_t14_dosen_prodi_lain_tidak_boleh_menjalankan_kalkulasi,lulus,SADEWA-01,cocok,B106
+tambahan,test_tambahan_c500.py,test_t15_kalkulasi_dijalankan_dan_hasil_dapat_dibaca,lulus,SADEWA-03,cocok,F101
+tambahan,test_tambahan_c500.py,test_t16_sinkronisasi_siap_mengembalikan_not_configured_dan_mencatat_log,lulus,SADEWA-02,cocok,E107
+tambahan,test_tambahan_c500.py,test_t17_laporan_diajukan_lalu_disetujui_kaprodi,lulus,SADEWA-09,terdekat (alur validasi laporan tidak eksplisit di SRS),H107
+tambahan,test_tambahan_c500.py,test_t18_laporan_ditolak_dengan_catatan_lalu_dosen_merevisi,lulus,SADEWA-09,terdekat (alur validasi laporan tidak eksplisit di SRS),H108
+tambahan,test_tambahan_c500.py,test_t19_admin_prodi_tidak_boleh_menyetujui_laporan,lulus,SADEWA-09,terdekat (alur validasi laporan tidak eksplisit di SRS),H109
+tambahan,test_tambahan_c500.py,test_t20_kaprodi_prodi_lain_tidak_boleh_menyetujui_laporan,lulus,SADEWA-09,terdekat (alur validasi laporan tidak eksplisit di SRS),H109
+tambahan,test_tambahan_c500.py,test_t21_laporan_tanpa_konten_tidak_bisa_diajukan,lulus,SADEWA-09,terdekat (alur validasi laporan tidak eksplisit di SRS),H110
+tambahan,test_tambahan_c500.py,test_t22_admin_prodi_mengubah_nama_akun_dosen_prodinya,lulus,SADEWA-10,cocok,C105
+tambahan,test_tambahan_c500.py,test_t23_hapus_akun_menonaktifkan_dan_akun_tidak_bisa_login,lulus,SADEWA-10,cocok,C106
+tambahan,test_tambahan_c500.py,test_t24_admin_prodi_tidak_boleh_mengubah_atau_menghapus_akun_prodi_lain,lulus,SADEWA-10,cocok,C107

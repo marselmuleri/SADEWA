@@ -168,7 +168,7 @@ export default function CplIndikatorPage() {
         <Link
           to="/kurikulum/cpl"
           data-testid="back-to-cpl-list"
-          className="inline-flex items-center gap-1.5 rounded-[6px] border border-[#CBD5E1] bg-white px-3 py-1.5 text-xs font-semibold text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B] transition-colors"
+          className="btn-kembali"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <span>Kembali ke Daftar CPL</span>

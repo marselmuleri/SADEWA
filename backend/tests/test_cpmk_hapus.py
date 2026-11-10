@@ -103,8 +103,8 @@ def _setup_cpmk_hapus_env(client, prefix="delcpmk"):
 
 def test_hak_akses_hapus_cpmk(client):
     """
-    1. Dosen pengampu DILARANG menghapus CPMK (403 Forbidden).
-    2. Admin prodi lain DILARANG menghapus CPMK (403 Forbidden).
+    1. Admin prodi lain DILARANG menghapus CPMK (403 Forbidden).
+    2. Dosen pengampu BOLEH menghapus CPMK pada mata kuliah yang diampu.
     """
     env = _setup_cpmk_hapus_env(client, "akses")
     mk_id = env["mk_id"]
@@ -120,13 +120,13 @@ def test_hak_akses_hapus_cpmk(client):
         "bobot": 50.0,
     }, headers=_auth_headers(admin_if)).json()
 
-    # Dosen mencoba menghapus -> 403 Forbidden
-    del_dosen = client.delete(f"/api/v1/cpmk/{cpmk['id']}", headers=_auth_headers(dosen_p))
-    assert del_dosen.status_code == 403
-
     # Admin prodi lain mencoba menghapus -> 403 Forbidden
     del_el = client.delete(f"/api/v1/cpmk/{cpmk['id']}", headers=_auth_headers(admin_el))
     assert del_el.status_code == 403
+
+    # Dosen pengampu menghapus CPMK di mata kuliah yang diampu -> berhasil
+    del_dosen = client.delete(f"/api/v1/cpmk/{cpmk['id']}", headers=_auth_headers(dosen_p))
+    assert del_dosen.status_code == 200
 
 
 def test_hapus_cpmk_yang_memiliki_nilai_terkait_mengembalikan_409(client):

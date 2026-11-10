@@ -12,6 +12,9 @@ class Mahasiswa(Base):
     semester_aktif = Column(SmallInteger)
     angkatan = Column(SmallInteger, nullable=True)
     status_masuk = Column(SAEnum(StatusMasuk, name="status_masuk_enum", values_callable=lambda e: [x.value for x in e]))
+    # Status keaktifan akademik (Aktif/Cuti/Non-Aktif/Lulus/Keluar).
+    # Berbeda dari is_active, yang dipakai sebagai penanda data dihapus (soft delete).
+    status_akademik = Column(String(20), nullable=False, default="Aktif", server_default="Aktif")
     program_studi_id = Column(BigInteger, ForeignKey("program_studi.id"))
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(TIMESTAMP, server_default=func.now())

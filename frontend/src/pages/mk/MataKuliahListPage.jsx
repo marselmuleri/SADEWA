@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import { PageHeader, SectionCard, Badge, ActionButton } from '../../components/PageChrome'
 import Modal from '../../components/Modal'
+import SearchableSelect from '../../components/SearchableSelect'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import KurikulumVersionSelector from '../../components/KurikulumVersionSelector'
 import api from '../../services/api'
@@ -863,19 +864,22 @@ export default function MataKuliahListPage() {
             {/* Sub-form: Tambah Dosen ke List */}
             <div className="flex flex-col sm:flex-row items-center gap-2 rounded-[6px] border border-[#E2E8F0] bg-[#F8FAFC] p-2.5">
               <div className="flex-1 w-full">
-                <select
+                <SearchableSelect
                   value={selectedDosenToAdd}
-                  onChange={(e) => setSelectedDosenToAdd(e.target.value)}
+                  onChange={(val) => setSelectedDosenToAdd(String(val))}
                   data-testid="select-dosen-pengampu"
-                  className="w-full rounded-[4px] border border-[#CBD5E1] bg-white px-2.5 py-1.5 text-xs focus:border-[#1A3A6B] focus:outline-none"
-                >
-                  <option value="">-- Pilih Dosen Aktif Prodi --</option>
-                  {availableDosenToAdd.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.nama} {d.nip ? `(NIP: ${d.nip})` : ''}
-                    </option>
-                  ))}
-                </select>
+                  aria-label="Pilih dosen pengampu"
+                  buttonClassName="px-2.5 py-1.5 text-xs"
+                  placeholder="-- Pilih Dosen Aktif Prodi --"
+                  searchPlaceholder="Cari nama atau NIP dosen..."
+                  emptyText="Tidak ada dosen yang cocok"
+                  options={availableDosenToAdd.map((d) => ({
+                    value: d.id,
+                    label: d.nama,
+                    description: d.nip ? `NIP: ${d.nip}` : undefined,
+                    searchText: d.nip || '',
+                  }))}
+                />
               </div>
 
               <label className="inline-flex items-center gap-1.5 text-xs text-[#142B4A] cursor-pointer shrink-0">

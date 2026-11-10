@@ -14,6 +14,15 @@ class StatusMasuk(str, enum.Enum):
     transfer = "Transfer"
 
 
+class StatusAkademik(str, enum.Enum):
+    """Status keaktifan mahasiswa (mengikuti kode status PDDikti)."""
+    aktif = "Aktif"
+    cuti = "Cuti"
+    non_aktif = "Non-Aktif"
+    lulus = "Lulus"
+    keluar = "Keluar"
+
+
 class StatusKurikulum(str, enum.Enum):
     draft = "draft"
     published = "published"

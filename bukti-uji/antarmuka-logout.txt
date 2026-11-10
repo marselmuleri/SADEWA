@@ -1,0 +1,4 @@
+# perintah: node tes-tambahan/uji_logout_playwright.js
+# waktu: 2026-11-10 11:34:14 WIB ; Chromium headless, frontend vite preview :5173, backend :8000 PostgreSQL
+{"kunci_token_sebelum":1,"url_setelah_keluar":"/login","kunci_token_sesudah":0,"buka_dashboard_tanpa_sesi_diarahkan_ke":"/login"}
+# exit=0

@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react'
 import { SectionCard, Badge } from '../../components/PageChrome'
+import SearchableSelect from '../../components/SearchableSelect'
 import useAuth from '../../hooks/useAuth'
 
 export default function DataMasterPage({ section, data }) {
@@ -251,10 +252,10 @@ export default function DataMasterPage({ section, data }) {
       <SectionCard>
         {/* Global Toolbar: Search & Dynamic Filters */}
         <div className="py-4 border-b border-[#E2E8F0] space-y-3">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex flex-col gap-3">
             {/* Search Input per Tab */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#64748B]" />
+            <div className="relative w-full max-w-xl">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#64748B]" />
               <input
                 type="text"
                 data-testid={`input-search-${activeTab}`}
@@ -292,7 +293,7 @@ export default function DataMasterPage({ section, data }) {
                     ? 'Cari kode IK, deskripsi, kode CPL induk...'
                     : 'Cari kode CPMK, deskripsi, level taksonomi, mata kuliah...'
                 }
-                className="w-full pl-9 pr-3 py-2 text-xs rounded-md border border-[#CBD5E1] bg-white text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B]"
+                className="w-full pl-10 pr-9 py-2.5 text-sm rounded-md border border-[#CBD5E1] bg-white text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B]"
               />
               {(activeTab === 'kurikulum' ? searchKurikulum : activeTab === 'cpl' ? searchCpl : activeTab === 'ik' ? searchIk : searchCpmk) && (
                 <button
@@ -305,17 +306,17 @@ export default function DataMasterPage({ section, data }) {
                   }}
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#94A3B8] hover:text-[#142B4A]"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
                 </button>
               )}
             </div>
 
             {/* Filter Dropdowns */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
               {/* Role prodi memakai label read-only; hanya Dekan yang boleh memilih prodi. */}
               {isSingleProdiRole && (
-                <div data-testid="datamaster-prodi-readonly" className="inline-flex items-center gap-1.5 rounded-md border border-[#CBD5E1] bg-[#F8FAFC] px-2.5 py-1.5 text-xs text-[#142B4A]">
-                  <span className="font-semibold text-[#64748B]">Program Studi:</span>
+                <div data-testid="datamaster-prodi-readonly" className="inline-flex items-center gap-1.5 rounded-md border border-[#CBD5E1] bg-[#F8FAFC] px-3 py-2 text-sm text-[#142B4A]">
+                  <span className="font-semibold">Program Studi:</span>
                   <span className="font-medium">{readOnlyProdiLabel}</span>
                 </div>
               )}
@@ -323,36 +324,35 @@ export default function DataMasterPage({ section, data }) {
               {/* Filter Program Studi khusus Dekan, dari daftar prodi fakultasnya. */}
               {isDekan && availableProdiOptions.length > 0 && (
                 <div className="flex items-center gap-1.5">
-                  <label htmlFor="filter-prodi" className="text-[11px] font-semibold text-[#64748B] whitespace-nowrap">
+                  <label htmlFor="filter-prodi" className="label-filter">
                     Prodi:
                   </label>
-                  <select
+                  <SearchableSelect
                     id="filter-prodi"
                     data-testid="filter-prodi"
                     value={filterProdiId}
-                    onChange={(e) => {
-                      setFilterProdiId(e.target.value)
+                    onChange={(val) => {
+                      setFilterProdiId(String(val))
                       setPageKurikulum(1)
                       setPageCpl(1)
                       setPageIk(1)
                       setPageCpmk(1)
                     }}
-                    className="rounded-md border border-[#CBD5E1] bg-white px-2.5 py-1.5 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
-                  >
-                    <option value="ALL">Semua Program Studi ({availableProdiOptions.length})</option>
-                    {availableProdiOptions.map((opt) => (
-                      <option key={opt.id} value={opt.id}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                    className="w-56"
+                    buttonClassName="px-3 py-2 text-sm"
+                    searchPlaceholder="Cari program studi..."
+                    options={[
+                      { value: 'ALL', label: `Semua Program Studi (${availableProdiOptions.length})` },
+                      ...availableProdiOptions.map((opt) => ({ value: opt.id, label: opt.label })),
+                    ]}
+                  />
                 </div>
               )}
 
               {/* Filter Kurikulum (Tab CPL, IK, CPMK) */}
               {activeTab !== 'kurikulum' && availableKurikulumOptions.length > 0 && (
                 <div className="flex items-center gap-1.5">
-                  <label htmlFor="filter-kurikulum" className="text-[11px] font-semibold text-[#64748B] whitespace-nowrap">
+                  <label htmlFor="filter-kurikulum" className="label-filter">
                     Kurikulum:
                   </label>
                   <select
@@ -365,7 +365,7 @@ export default function DataMasterPage({ section, data }) {
                       setPageIk(1)
                       setPageCpmk(1)
                     }}
-                    className="rounded-md border border-[#CBD5E1] bg-white px-2.5 py-1.5 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
+                    className="rounded-md border border-[#CBD5E1] bg-white px-3 py-2 text-sm text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B]"
                   >
                     <option value="ALL">Semua Versi</option>
                     {availableKurikulumOptions.map((opt) => (
@@ -380,33 +380,32 @@ export default function DataMasterPage({ section, data }) {
               {/* Filter Mata Kuliah (Khusus Tab CPMK) */}
               {activeTab === 'cpmk' && availableMataKuliahOptions.length > 0 && (
                 <div className="flex items-center gap-1.5">
-                  <label htmlFor="filter-mk" className="text-[11px] font-semibold text-[#64748B] whitespace-nowrap">
+                  <label htmlFor="filter-mk" className="label-filter">
                     Mata Kuliah:
                   </label>
-                  <select
+                  <SearchableSelect
                     id="filter-mk"
                     data-testid="filter-mata-kuliah"
                     value={filterMataKuliahId}
-                    onChange={(e) => {
-                      setFilterMataKuliahId(e.target.value)
+                    onChange={(val) => {
+                      setFilterMataKuliahId(String(val))
                       setPageCpmk(1)
                     }}
-                    className="max-w-[200px] truncate rounded-md border border-[#CBD5E1] bg-white px-2.5 py-1.5 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
-                  >
-                    <option value="ALL">Semua Mata Kuliah ({availableMataKuliahOptions.length})</option>
-                    {availableMataKuliahOptions.map((opt) => (
-                      <option key={opt.id} value={opt.id}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                    className="w-56"
+                    buttonClassName="px-3 py-2 text-sm"
+                    searchPlaceholder="Cari kode atau nama mata kuliah..."
+                    options={[
+                      { value: 'ALL', label: `Semua Mata Kuliah (${availableMataKuliahOptions.length})` },
+                      ...availableMataKuliahOptions.map((opt) => ({ value: opt.id, label: opt.label })),
+                    ]}
+                  />
                 </div>
               )}
 
               {/* Filter Level Taksonomi (Khusus Tab CPMK) */}
               {activeTab === 'cpmk' && availableTaksonomiOptions.length > 0 && (
                 <div className="flex items-center gap-1.5">
-                  <label htmlFor="filter-taksonomi" className="text-[11px] font-semibold text-[#64748B] whitespace-nowrap">
+                  <label htmlFor="filter-taksonomi" className="label-filter">
                     Taksonomi:
                   </label>
                   <select
@@ -417,7 +416,7 @@ export default function DataMasterPage({ section, data }) {
                       setFilterLevelTaksonomi(e.target.value)
                       setPageCpmk(1)
                     }}
-                    className="rounded-md border border-[#CBD5E1] bg-white px-2.5 py-1.5 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
+                    className="rounded-md border border-[#CBD5E1] bg-white px-3 py-2 text-sm text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B]"
                   >
                     <option value="ALL">Semua Level</option>
                     {availableTaksonomiOptions.map((lvl) => (
@@ -432,7 +431,7 @@ export default function DataMasterPage({ section, data }) {
               {/* Filter Status Bobot MK (Khusus Tab CPMK) */}
               {activeTab === 'cpmk' && (
                 <div className="flex items-center gap-1.5">
-                  <label htmlFor="filter-bobot" className="text-[11px] font-semibold text-[#64748B] whitespace-nowrap">
+                  <label htmlFor="filter-bobot" className="label-filter">
                     Bobot MK:
                   </label>
                   <select
@@ -443,7 +442,7 @@ export default function DataMasterPage({ section, data }) {
                       setFilterStatusBobot(e.target.value)
                       setPageCpmk(1)
                     }}
-                    className="rounded-md border border-[#CBD5E1] bg-white px-2.5 py-1.5 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
+                    className="rounded-md border border-[#CBD5E1] bg-white px-3 py-2 text-sm text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B]"
                   >
                     <option value="ALL">Semua Status Bobot</option>
                     <option value="100">Total Pas 100%</option>
@@ -455,7 +454,7 @@ export default function DataMasterPage({ section, data }) {
               {/* Filter Status Kurikulum (Khusus Tab Kurikulum) */}
               {activeTab === 'kurikulum' && (
                 <div className="flex items-center gap-1.5">
-                  <label htmlFor="filter-status" className="text-[11px] font-semibold text-[#64748B] whitespace-nowrap">
+                  <label htmlFor="filter-status" className="label-filter">
                     Status:
                   </label>
                   <select
@@ -466,7 +465,7 @@ export default function DataMasterPage({ section, data }) {
                       setFilterStatusKurikulum(e.target.value)
                       setPageKurikulum(1)
                     }}
-                    className="rounded-md border border-[#CBD5E1] bg-white px-2.5 py-1.5 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
+                    className="rounded-md border border-[#CBD5E1] bg-white px-3 py-2 text-sm text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B]"
                   >
                     <option value="ALL">Semua Status</option>
                     <option value="published">Published</option>
@@ -481,10 +480,10 @@ export default function DataMasterPage({ section, data }) {
                   type="button"
                   onClick={handleResetFilters}
                   data-testid="btn-reset-filters"
-                  className="inline-flex items-center gap-1 rounded-md border border-[#E2E8F0] bg-[#F1F5F9] px-2.5 py-1.5 text-xs font-semibold text-[#64748B] hover:text-[#142B4A] hover:bg-[#E2E8F0] transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-[#CBD5E1] bg-[#F1F5F9] px-3 py-2 text-sm font-semibold text-[#142B4A] hover:bg-[#E2E8F0] transition-colors"
                   title="Reset seluruh filter dan kata kunci pencarian"
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
                   <span>Reset</span>
                 </button>
               )}

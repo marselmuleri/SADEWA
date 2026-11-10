@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Building2, Loader2, Plus, Search, Pencil, Trash2, Shield, UserCog, UserCheck, UserX, Eye, EyeOff } from 'lucide-react'
 import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
 import Modal from '../components/Modal'
+import SearchableSelect from '../components/SearchableSelect'
 import useToast from '../hooks/useToast'
 import api from '../services/api'
 import { getApiErrorMessage, toId } from './superAdminHelpers'
@@ -535,18 +536,21 @@ export default function UserManagementSAPage() {
 
               <label className="block space-y-1 md:col-span-2">
                 <span className="text-xs font-semibold text-[#142B4A]">Program Studi</span>
-                <select
+                <SearchableSelect
                   value={form.program_studi_id}
-                  onChange={(event) => setForm((current) => ({ ...current, program_studi_id: event.target.value }))}
+                  onChange={(val) => setForm((current) => ({ ...current, program_studi_id: String(val) }))}
                   disabled={!facultyFilter}
-                  className="h-10 w-full rounded-[6px] border border-[#CBD5E1] bg-white px-2.5 text-sm focus:border-[#1A3A6B] focus:outline-none disabled:cursor-not-allowed disabled:bg-[#F8FAFC]"
+                  buttonClassName="h-10 px-2.5 text-sm"
                   data-testid="user-form-prodi"
-                >
-                  <option value="">{facultyFilter ? 'Pilih prodi' : 'Pilih fakultas terlebih dahulu'}</option>
-                  {availableProdi.map((item) => (
-                    <option key={item.id} value={item.id}>{item.nama} ({item.kode})</option>
-                  ))}
-                </select>
+                  aria-label="Program studi"
+                  placeholder={facultyFilter ? 'Pilih prodi' : 'Pilih fakultas terlebih dahulu'}
+                  searchPlaceholder="Cari nama atau kode prodi..."
+                  options={availableProdi.map((item) => ({
+                    value: item.id,
+                    label: `${item.nama} (${item.kode})`,
+                    searchText: item.kode,
+                  }))}
+                />
                 {fieldErrors.program_studi_id ? <p className="text-xs text-red-700">{fieldErrors.program_studi_id}</p> : null}
               </label>
             </>

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from app.models.enums import StatusMasuk
+from app.models.enums import StatusAkademik, StatusMasuk
 from app.schemas.common import ORMBaseModel
 
 
@@ -9,6 +9,7 @@ class MahasiswaBase(BaseModel):
     semester_aktif: int
     status_masuk: StatusMasuk
     angkatan: int | None = None
+    status_akademik: StatusAkademik = StatusAkademik.aktif
 
 
 class MahasiswaCreate(MahasiswaBase):
@@ -25,6 +26,7 @@ class MahasiswaUpdate(BaseModel):
     semester_aktif: int | None = None
     status_masuk: StatusMasuk | None = None
     angkatan: int | None = None
+    status_akademik: StatusAkademik | None = None
     is_active: bool | None = None
 
 

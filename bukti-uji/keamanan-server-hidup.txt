@@ -1,0 +1,24 @@
+# uji keamanan pada server hidup (uvicorn + PostgreSQL), 2026-11-10 11:28:44 WIB. Token tidak dicetak.
+## K1 tanpa token GET /mata-kuliah:
+401
+## K2 token rusak:
+401
+## K3 Admin Prodi IF buka MK prodi TE (id=14):
+{"detail":"Mata kuliah ini di luar prodi Anda"} -> 403
+## K4 Dosen IF jalankan kalkulasi MK TE:
+{"detail":"Anda bukan dosen pengampu mata kuliah ini"} -> 403
+## K5 login pola SQL injection:
+{"detail":[{"type":"value_error","loc":["body","email"],"msg":"value is not a valid email address: An email address must have an @-sign.","input":"' OR '1'='1","ctx":{"reason":"An email address must have an @-sign."}}]} -> 422
+
+## K6 generate RPS saat AI Service mati:
+{"detail":"AI Service tidak dapat dihubungi. Pastikan AI Service aktif di port 8001."} -> 503
+## K7 CORS preflight dari origin http://localhost:5173:
+HTTP/1.1 200 OK
+access-control-allow-origin: http://localhost:5173
+## K8 CORS preflight dari origin asing http://contoh-asing.test:
+HTTP/1.1 400 Bad Request
+## K9 header respons GET / (cek header keamanan):
+HTTP/1.1 200 OK
+server: uvicorn
+## K10 /docs terbuka tanpa login:
+200

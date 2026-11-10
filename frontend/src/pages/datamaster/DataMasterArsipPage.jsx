@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom'
 import { Archive, ArrowLeft, GitCompare } from 'lucide-react'
 import { ActionButton, Badge, SectionCard } from '../../components/PageChrome'
 import Modal from '../../components/Modal'
+import SearchableSelect from '../../components/SearchableSelect'
 import useAuth from '../../hooks/useAuth'
 import useToast from '../../hooks/useToast'
 import { createArsipSemester, fetchArsipDetail, fetchArsipList } from '../../services/api'
@@ -351,16 +352,17 @@ export default function DataMasterArsipPage() {
         }
       >
         {isDekan && (
-          <select
+          <SearchableSelect
             aria-label="Program studi"
             value={prodiId}
-            onChange={(e) => setProdiId(e.target.value)}
-            className="mb-4 h-9 rounded-md border border-[#CBD5E1] bg-white px-3 text-xs font-semibold text-[#142B4A]"
+            onChange={(val) => setProdiId(String(val))}
+            className="mb-4 w-72"
+            buttonClassName="h-9 text-xs font-semibold"
             data-testid="arsip-filter-prodi"
-          >
-            <option value="">Pilih program studi</option>
-            {prodis.map((p) => <option key={p.id} value={p.id}>{p.nama}</option>)}
-          </select>
+            placeholder="Pilih program studi"
+            searchPlaceholder="Cari program studi..."
+            options={prodis.map((p) => ({ value: p.id, label: p.nama }))}
+          />
         )}
 
         {error && <div role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-xs text-red-700">{error}</div>}

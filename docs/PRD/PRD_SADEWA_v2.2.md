@@ -55,6 +55,7 @@
 | R14 | **Capaian CPL disimpan per mata kuliah** (`cpl_achievement.mata_kuliah_id`, `bobot_cp`). Capaian CPL gabungan = rata-rata capaian per mata kuliah **dibobot dengan bobot IK** yang mengacu ke CPL itu: Σ(persen_cpl × bobot_cp) / Σ bobot_cp. Dosen dapat mengakses capaian CPL untuk mata kuliah yang diampu. | Keputusan tim atas gap G11 (November 2026). Sebelumnya kalkulasi satu mata kuliah menimpa capaian CPL mata kuliah lain. |
 | R15 | **Data Master vs Data Current.** Halaman kerja (Kurikulum OBE, dsb.) = *Data Current*: data terbaru, boleh dikoreksi kapan saja. *Data Master* = **arsip data yang sudah fix dipakai**, diambil otomatis saat versi kurikulum dipublish dan oleh Admin Prodi saat menutup semester. Koreksi salah input **tidak** tercatat di Data Master. | Keputusan tim (November 2026). |
 | R16 | **Analitik OBE diperluas** untuk Kaprodi & Dekan (cakupan prodi) dan **Dosen dengan fitur yang sama untuk cakupan mata kuliah yang diampu**: Ringkasan Evaluasi (kartu temuan + papan prioritas), Perbandingan Angkatan + heatmap, drill-down sampai CPMK, Simulator Threshold, Peta Kurikulum. **Rumus IK & CPMK diperbaiki** ke skala persen (sebelumnya CPMK dihitung dari poin sehingga mahasiswa sempurna hanya bernilai 52%). | Rekomendasi tim untuk bahan evaluasi kurikulum (November 2026). |
+| R17 | **Dosen pengampu mengelola CPMK mata kuliah yang diampu**: tambah, ubah (termasuk **bobot**), hapus CPMK, dan memetakan CPMK → IK/CPL beserta bobotnya. Menggantikan larangan C10. Data dasar mata kuliah (kode, nama, SKS, semester) tetap wewenang Admin Prodi. Hapus CPMK tetap ditolak bila sudah ada nilai atau hasil evaluasi final. UI: menu Dosen **Mata Kuliah Saya** (`/mata-kuliah-saya`) dan **CPMK Saya** (`/cpmk-saya`). | Keputusan tim atas gap G4 (November 2026). |
 
 ---
 
@@ -214,7 +215,7 @@ STEP 6  Prodi beroperasi mandiri tanpa Super Admin
 | Batas Admin Prodi | **Boleh melihat semua data** prodinya (kurikulum, MK, mahasiswa, peserta, nilai, hasil kalkulasi per MK). **Tidak boleh** melihat analitik capaian: dashboard CPL/IK/CPMK, tren, rapor capaian mahasiswa. |
 | CPL, IK, versi kurikulum (tulis) | Admin Prodi. Threshold CPL: Admin Prodi & Kaprodi. |
 | Mata kuliah, pengampu (tulis) | Admin Prodi. |
-| CPMK & pemetaan CPMK→IK (tulis) | Admin Prodi, Kaprodi, Dosen (Dosen: hanya MK yang diampu, tidak boleh mengubah bobot CPMK). UI saat ini hanya untuk Admin Prodi. |
+| CPMK & pemetaan CPMK→IK (tulis) | Admin Prodi, Kaprodi, Dosen (Dosen: hanya MK yang diampu, termasuk bobot CPMK dan hapus CPMK; lihat R17). UI: Admin Prodi di Kurikulum OBE, Dosen di Mata Kuliah Saya & CPMK Saya. |
 | Jenis evaluasi | Admin Prodi, Kaprodi. Bentuk penilaian: Admin Prodi. |
 | Bobot bentuk penilaian per MK & matriks IK | Admin Prodi, Dosen (MK diampu). |
 | Nilai, kalkulasi | Admin Prodi, Dosen (MK diampu). Finalisasi: Admin Prodi, Kaprodi, Dosen. Unlock: Admin Prodi, Kaprodi. |
@@ -661,7 +662,7 @@ Capaian CPMK    = Σ(persen IK × bobot pemetaan) / Σ bobot pemetaan   (rata-ra
 | G1 | Sinkronisasi SIAP UNDIP belum ada | Nilai harus diinput manual | Tunggu akses API; desain preview → confirm sudah ada di v2.1 |
 | G2 | Upload nilai CSV/Excel belum ada | Input massal lambat | Tambah endpoint upload + preview validasi |
 | G3 | Menu "Validasi Laporan" tampil untuk Admin Prodi, tetapi halaman tidak memuat data (API validasi hanya Kaprodi/Dekan) | Halaman kosong untuk Admin Prodi | Putuskan: hapus menu dari Admin Prodi, atau beri tampilan monitoring status laporan |
-| G4 | Dosen bisa menulis CPMK lewat API, tetapi UI CPMK hanya untuk Admin Prodi | Tidak konsisten | Putuskan siapa pemilik CPMK, samakan API & UI |
+| G4 | ~~Dosen bisa menulis CPMK lewat API, tetapi UI CPMK hanya untuk Admin Prodi~~ | **Selesai** (R17) | Dosen pengampu mengelola CPMK & pemetaan IK lewat UI sendiri |
 | G5 | Finalisasi/unlock hasil, skala nilai huruf, range nilai CPL, rapor mahasiswa: API ada, UI belum | Fitur tidak terpakai | Tambahkan UI atau tandai ditunda |
 | G6 | Form versi kurikulum & Data Master di frontend masih memakai field `semester` yang sudah dihapus dari backend | Label "(undefined)" di dropdown | Ganti ke `tahun` / `deskripsi` |
 | G7 | ~~Rapor mahasiswa bisa diakses Admin Prodi~~ | — | **Selesai (R13):** rapor termasuk Analitik OBE, Admin Prodi ditolak 403 |
