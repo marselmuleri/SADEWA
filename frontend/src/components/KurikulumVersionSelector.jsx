@@ -60,7 +60,7 @@ export default function KurikulumVersionSelector({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-[8px] border border-[#E2E8F0] bg-white p-3.5 shadow-sm">
       <div className="flex flex-wrap items-center gap-2.5">
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6D778E]">
+        <span className="label-filter">
           Versi Kurikulum:
         </span>
         {loading ? (
@@ -74,7 +74,7 @@ export default function KurikulumVersionSelector({
               value={selectedVersionId || ''}
               onChange={(e) => onSelectVersion(Number(e.target.value))}
               data-testid="version-selector-dropdown"
-              className="h-8 appearance-none rounded-[6px] border border-[#CBD5E1] bg-[#F8FAFC] pl-3 pr-8 text-xs font-semibold text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B]"
+              className="h-10 appearance-none rounded-[6px] border border-[#CBD5E1] bg-[#F8FAFC] pl-3 pr-9 text-sm font-semibold text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B]"
             >
               {versions.map((v) => (
                 <option key={v.id} value={v.id}>
@@ -82,7 +82,7 @@ export default function KurikulumVersionSelector({
                 </option>
               ))}
             </select>
-            <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-3.5 w-3.5 text-[#64748B]" />
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#64748B]" />
           </div>
         ) : (
           <span className="text-xs text-[#94A3B8]">Belum ada versi kurikulum</span>

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
 import Modal from '../components/Modal'
+import SearchableSelect from '../components/SearchableSelect'
 import useAuth from '../hooks/useAuth'
 import useDosenCourses from '../hooks/useDosenCourses'
 import useToast from '../hooks/useToast'
@@ -533,7 +534,7 @@ export default function PesertaMataKuliahPage() {
           title={isDosen ? 'Mata Kuliah Yang Diampu' : 'Pilihan Mata Kuliah'}
         >
           <div className="space-y-3">
-            <label className="text-xs font-semibold text-[#64748B]">
+            <label className="label-filter">
               {isDosen
                 ? 'Pilih Mata Kuliah yang Anda Ampu:'
                 : 'Pilih Mata Kuliah untuk Mengelola Roster Peserta:'}
@@ -547,18 +548,20 @@ export default function PesertaMataKuliahPage() {
                   : 'Belum ada mata kuliah yang tersedia di program studi ini.'}
               </div>
             ) : (
-              <select
+              <SearchableSelect
                 value={selectedMkId}
-                onChange={(e) => setSelectedMkId(e.target.value)}
+                onChange={(val) => setSelectedMkId(String(val))}
                 data-testid="select-mata-kuliah"
-                className="w-full rounded-[6px] border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-semibold text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B]"
-              >
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.kode} - {c.nama} ({c.sks} SKS · Semester {c.semester})
-                  </option>
-                ))}
-              </select>
+                aria-label="Pilih mata kuliah"
+                searchPlaceholder="Cari kode atau nama mata kuliah..."
+                buttonClassName="font-semibold"
+                options={courses.map((c) => ({
+                  value: c.id,
+                  label: `${c.kode} - ${c.nama}`,
+                  description: `${c.sks} SKS · Semester ${c.semester}`,
+                  searchText: c.nama,
+                }))}
+              />
             )}
 
             {currentCourse && (
@@ -750,20 +753,21 @@ export default function PesertaMataKuliahPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-[#64748B]">Pilih Mahasiswa *</label>
-                <select
+                <SearchableSelect
                   value={form.mahasiswa_id}
-                  onChange={(e) => setForm({ ...form, mahasiswa_id: e.target.value })}
+                  onChange={(val) => setForm({ ...form, mahasiswa_id: String(val) })}
                   data-testid="select-mahasiswa"
-                  required
-                  className="mt-1 w-full rounded-[6px] border border-[#CBD5E1] bg-white px-3 py-2 text-xs text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B]"
-                >
-                  <option value="">-- Pilih Mahasiswa --</option>
-                  {mahasiswaList.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.nim} - {m.nama} (Semester {m.semester_aktif || '-'})
-                    </option>
-                  ))}
-                </select>
+                  aria-label="Pilih mahasiswa"
+                  className="mt-1"
+                  placeholder="-- Pilih Mahasiswa --"
+                  searchPlaceholder="Cari NIM atau nama mahasiswa..."
+                  options={mahasiswaList.map((m) => ({
+                    value: m.id,
+                    label: `${m.nim} - ${m.nama}`,
+                    description: `Semester ${m.semester_aktif || '-'}`,
+                    searchText: m.nama,
+                  }))}
+                />
               </div>
 
               <div>

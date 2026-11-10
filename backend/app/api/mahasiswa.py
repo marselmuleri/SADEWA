@@ -6,6 +6,7 @@ from app.core.deps import AcademicScope, get_academic_scope, get_scoped_prodi_id
 from app.schemas.mahasiswa import MahasiswaBatchCreate, MahasiswaCreate, MahasiswaResponse, MahasiswaUpdate
 from app.models.mahasiswa import Mahasiswa
 from app.models.program_studi import ProgramStudi
+from app.models.enums import StatusAkademik
 
 router = APIRouter()
 
@@ -42,6 +43,7 @@ def create_mahasiswa(payload: MahasiswaCreate, db: Session = Depends(get_db), pr
     angkatan_val = derive_angkatan(payload.nim, payload.angkatan)
     dump_data = payload.model_dump()
     dump_data["angkatan"] = angkatan_val
+    dump_data["status_akademik"] = payload.status_akademik.value
     dump_data["program_studi_id"] = prodi_id
 
     data = Mahasiswa(**dump_data)
@@ -72,6 +74,7 @@ def batch_create_mahasiswa(payload: MahasiswaBatchCreate, db: Session = Depends(
         angkatan_val = derive_angkatan(item.nim, item.angkatan)
         dump_data = item.model_dump()
         dump_data["angkatan"] = angkatan_val
+        dump_data["status_akademik"] = item.status_akademik.value
         dump_data["program_studi_id"] = prodi_id
 
         data = Mahasiswa(**dump_data)
@@ -88,6 +91,7 @@ def batch_create_mahasiswa(payload: MahasiswaBatchCreate, db: Session = Depends(
 def list_mahasiswa(
     search: str | None = Query(default=None),
     angkatan: int | None = Query(default=None),
+    status_akademik: StatusAkademik | None = Query(default=None),
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
@@ -99,6 +103,8 @@ def list_mahasiswa(
         query = query.filter((Mahasiswa.nama.ilike(pattern)) | (Mahasiswa.nim.ilike(pattern)))
     if angkatan:
         query = query.filter(Mahasiswa.angkatan == angkatan)
+    if status_akademik:
+        query = query.filter(Mahasiswa.status_akademik == status_akademik.value)
     if scope.program_studi_id:
         query = query.filter(Mahasiswa.program_studi_id == scope.program_studi_id)
     elif scope.fakultas_id:
@@ -126,6 +132,10 @@ def update_mahasiswa(mahasiswa_id: int, payload: MahasiswaUpdate, db: Session = 
     if data.program_studi_id != prodi_id:
         raise HTTPException(status_code=403, detail="Tidak boleh mengubah mahasiswa di luar prodi Anda")
     for key, value in payload.model_dump(exclude_unset=True).items():
+        if key == "status_akademik":
+            if value is None:
+                continue
+            value = value.value
         setattr(data, key, value)
     db.commit()
     db.refresh(data)

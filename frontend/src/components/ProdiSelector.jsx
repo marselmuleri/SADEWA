@@ -1,5 +1,6 @@
 import { Building2, AlertCircle } from 'lucide-react'
 import { useDekanScope } from '../context/DekanScopeContext'
+import SearchableSelect from './SearchableSelect'
 
 export default function ProdiSelector({ className = '' }) {
   const {
@@ -43,21 +44,20 @@ export default function ProdiSelector({ className = '' }) {
             </div>
           ) : (
             <div className="w-full sm:w-72">
-              <select
+              <SearchableSelect
                 value={selectedProdiId || ''}
-                onChange={(e) => setSelectedProdiId(e.target.value)}
+                onChange={(val) => setSelectedProdiId(String(val))}
                 data-testid="dekan-prodi-selector"
-                className="h-9 w-full rounded-[6px] border border-[#CBD5E1] bg-white px-3 text-xs font-semibold text-[#142B4A] shadow-sm transition-colors focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B] cursor-pointer"
-              >
-                <option value="" disabled>
-                  -- Pilih Program Studi --
-                </option>
-                {prodiList.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nama} ({p.kode})
-                  </option>
-                ))}
-              </select>
+                aria-label="Pilih program studi"
+                buttonClassName="h-9 text-xs font-semibold shadow-sm"
+                placeholder="-- Pilih Program Studi --"
+                searchPlaceholder="Cari nama atau kode prodi..."
+                options={prodiList.map((p) => ({
+                  value: p.id,
+                  label: `${p.nama} (${p.kode})`,
+                  searchText: p.kode,
+                }))}
+              />
             </div>
           )}
         </div>

@@ -32,16 +32,33 @@ export function SectionCard({ title, description, children, className = '', acti
   )
 }
 
-export function StatCard({ label, value, caption, icon, accent = 'text-[#1A3A6B]' }) {
+// Warna `accent` lama (kelas teks) dipetakan ke nada kartu agar makna warnanya tetap
+// (mis. merah untuk laporan ditolak). Tanpa accent, warna kartu bergiliran (lihat index.css).
+function toneFromAccent(accent) {
+  if (!accent) return undefined
+  if (/DC2626|EF4444|red-/i.test(accent)) return 'red'
+  if (/F4A300|D97706|amber-/i.test(accent)) return 'amber'
+  if (/10B981|047857|emerald-|green-/i.test(accent)) return 'green'
+  if (/64748B|slate-/i.test(accent)) return 'slate'
+  return undefined
+}
+
+export function StatCard({ label, value, caption, icon, accent, tone }) {
+  const cardTone = tone || toneFromAccent(accent)
   return (
-    <article className="rounded-lg border border-[#E2E8F0] bg-white p-5 transition-transform hover:-translate-y-px hover:shadow-sm">
+    <article
+      data-tone={cardTone}
+      className="stat-card rounded-lg p-5 shadow-sm transition-transform hover:-translate-y-px hover:shadow-md"
+    >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6D778E]">{label}</p>
-          <div className="mt-3 text-[30px] font-semibold tracking-tight text-[#142B4A]">{value}</div>
-          {caption ? <p className="mt-2 text-sm text-[#64748B]">{caption}</p> : null}
+          <p className="text-xs font-bold uppercase tracking-[0.1em] text-[#334155]">{label}</p>
+          <div className="stat-card-nilai mt-3 text-[32px] font-bold tracking-tight">{value}</div>
+          {caption ? <p className="mt-2 text-sm font-medium text-[#475569]">{caption}</p> : null}
         </div>
-        {icon ? <div className={`rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-2 ${accent}`}>{icon}</div> : null}
+        {icon ? (
+          <div className="stat-card-ikon shrink-0 rounded-lg p-2.5 shadow-sm [&_svg]:h-5 [&_svg]:w-5">{icon}</div>
+        ) : null}
       </div>
     </article>
   )

@@ -118,7 +118,7 @@ export default function PortofolioDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link to="/portofolio" className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#1A3A6B] hover:underline">
+      <Link to="/portofolio" className="btn-kembali">
         <ArrowLeft className="h-3.5 w-3.5" /> Kembali ke daftar portofolio
       </Link>
 

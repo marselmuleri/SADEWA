@@ -26,6 +26,8 @@ import MataKuliahListPage from './pages/mk/MataKuliahListPage'
 import JenisEvaluasiPage from './pages/evaluasi/JenisEvaluasiPage'
 import BentukPenilaianPage from './pages/evaluasi/BentukPenilaianPage'
 import PenilaianPage from './pages/dosen/PenilaianPage'
+import MataKuliahSayaPage from './pages/dosen/MataKuliahSayaPage'
+import CpmkSayaPage from './pages/dosen/CpmkSayaPage'
 import DataMasterLayout from './pages/datamaster/DataMasterLayout'
 import DataMasterKurikulumPage from './pages/datamaster/DataMasterKurikulumPage'
 import DataMasterCplPage from './pages/datamaster/DataMasterCplPage'
@@ -251,9 +253,31 @@ export default function App() {
         <Route
           path="/kurikulum/cpmk/mk/:mkId"
           element={
-            <ProtectedRoute allowedRoles={['admin_prodi']}>
+            <ProtectedRoute allowedRoles={['admin_prodi', 'dosen']}>
               <AppLayout>
                 <CpmkDetailPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Ruang kerja dosen: kelola CPL, IK & CPMK pada mata kuliah yang diampu */}
+        <Route
+          path="/mata-kuliah-saya"
+          element={
+            <ProtectedRoute allowedRoles={['dosen']}>
+              <AppLayout>
+                <MataKuliahSayaPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cpmk-saya"
+          element={
+            <ProtectedRoute allowedRoles={['dosen']}>
+              <AppLayout>
+                <CpmkSayaPage />
               </AppLayout>
             </ProtectedRoute>
           }

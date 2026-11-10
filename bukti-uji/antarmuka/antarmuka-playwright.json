@@ -1,0 +1,534 @@
+{
+  "browser": "Chromium 153.0.8010.12",
+  "viewport": "1366x768",
+  "ulang": 3,
+  "peran": [
+    {
+      "peran": "Super Admin",
+      "login": {
+        "berhasil": true,
+        "url_akhir": "/super-admin/prodi",
+        "ms": 1142
+      },
+      "halaman": [
+        {
+          "halaman": "/super-admin/fakultas",
+          "url_akhir": "/super-admin/fakultas",
+          "judul_h1": "Daftar Fakultas",
+          "ms_h1": [
+            290,
+            301,
+            334
+          ],
+          "rata2_h1_ms": 308,
+          "maks_h1_ms": 334,
+          "ms_networkidle": [
+            782,
+            794,
+            834
+          ],
+          "rata2_ms": 803,
+          "maks_ms": 834
+        },
+        {
+          "halaman": "/super-admin/prodi",
+          "url_akhir": "/super-admin/prodi",
+          "judul_h1": "Daftar Program Studi",
+          "ms_h1": [
+            269,
+            295,
+            250
+          ],
+          "rata2_h1_ms": 271,
+          "maks_h1_ms": 295,
+          "ms_networkidle": [
+            775,
+            796,
+            748
+          ],
+          "rata2_ms": 773,
+          "maks_ms": 796
+        },
+        {
+          "halaman": "/super-admin/users",
+          "url_akhir": "/super-admin/users",
+          "judul_h1": "Manajemen Pengguna Lintas Prodi",
+          "ms_h1": [
+            274,
+            319,
+            308
+          ],
+          "rata2_h1_ms": 300,
+          "maks_h1_ms": 319,
+          "ms_networkidle": [
+            774,
+            827,
+            817
+          ],
+          "rata2_ms": 806,
+          "maks_ms": 827
+        }
+      ],
+      "error_konsol": [
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+      ]
+    },
+    {
+      "peran": "Admin Prodi",
+      "login": {
+        "berhasil": true,
+        "url_akhir": "/dashboard",
+        "ms": 1066
+      },
+      "halaman": [
+        {
+          "halaman": "/dashboard",
+          "url_akhir": "/dashboard",
+          "judul_h1": "Selamat datang, Admin Prodi Informatika",
+          "ms_h1": [
+            270,
+            305,
+            225
+          ],
+          "rata2_h1_ms": 267,
+          "maks_h1_ms": 305,
+          "ms_networkidle": [
+            802,
+            839,
+            751
+          ],
+          "rata2_ms": 797,
+          "maks_ms": 839
+        },
+        {
+          "halaman": "/kurikulum/cpl",
+          "url_akhir": "/kurikulum/cpl",
+          "judul_h1": "Capaian Pembelajaran Lulusan (CPL)",
+          "ms_h1": [
+            297,
+            276,
+            276
+          ],
+          "rata2_h1_ms": 283,
+          "maks_h1_ms": 297,
+          "ms_networkidle": [
+            803,
+            796,
+            811
+          ],
+          "rata2_ms": 803,
+          "maks_ms": 811
+        },
+        {
+          "halaman": "/kurikulum/pemetaan",
+          "url_akhir": "/kurikulum/pemetaan",
+          "judul_h1": "Pemetaan Indikator Kinerja (IK) ke Mata Kuliah",
+          "ms_h1": [
+            356,
+            286,
+            296
+          ],
+          "rata2_h1_ms": 313,
+          "maks_h1_ms": 356,
+          "ms_networkidle": [
+            877,
+            826,
+            842
+          ],
+          "rata2_ms": 848,
+          "maks_ms": 877
+        },
+        {
+          "halaman": "/kurikulum/mata-kuliah",
+          "url_akhir": "/kurikulum/mata-kuliah",
+          "judul_h1": "Mata Kuliah & Tim Dosen Pengampu",
+          "ms_h1": [
+            315,
+            314,
+            300
+          ],
+          "rata2_h1_ms": 310,
+          "maks_h1_ms": 315,
+          "ms_networkidle": [
+            844,
+            822,
+            824
+          ],
+          "rata2_ms": 830,
+          "maks_ms": 844
+        },
+        {
+          "halaman": "/mahasiswa",
+          "url_akhir": "/mahasiswa",
+          "judul_h1": "Data Mahasiswa",
+          "ms_h1": [
+            261,
+            302,
+            282
+          ],
+          "rata2_h1_ms": 282,
+          "maks_h1_ms": 302,
+          "ms_networkidle": [
+            765,
+            810,
+            791
+          ],
+          "rata2_ms": 789,
+          "maks_ms": 810
+        },
+        {
+          "halaman": "/aturan-penilaian",
+          "url_akhir": "/aturan-penilaian",
+          "judul_h1": "Aturan Penilaian",
+          "ms_h1": [
+            282,
+            305,
+            241
+          ],
+          "rata2_h1_ms": 276,
+          "maks_h1_ms": 305,
+          "ms_networkidle": [
+            827,
+            840,
+            765
+          ],
+          "rata2_ms": 811,
+          "maks_ms": 840
+        }
+      ],
+      "error_konsol": [
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+      ]
+    },
+    {
+      "peran": "Dosen",
+      "login": {
+        "berhasil": true,
+        "url_akhir": "/dashboard",
+        "ms": 1090
+      },
+      "halaman": [
+        {
+          "halaman": "/dashboard",
+          "url_akhir": "/dashboard",
+          "judul_h1": "Evaluasi Pembelajaran: Algoritma dan Pemrograman",
+          "ms_h1": [
+            315,
+            335,
+            316
+          ],
+          "rata2_h1_ms": 322,
+          "maks_h1_ms": 335,
+          "ms_networkidle": [
+            1041,
+            954,
+            926
+          ],
+          "rata2_ms": 974,
+          "maks_ms": 1041
+        },
+        {
+          "halaman": "/mata-kuliah-saya",
+          "url_akhir": "/mata-kuliah-saya",
+          "judul_h1": "Mata Kuliah Saya",
+          "ms_h1": [
+            296,
+            300,
+            286
+          ],
+          "rata2_h1_ms": 294,
+          "maks_h1_ms": 300,
+          "ms_networkidle": [
+            964,
+            961,
+            920
+          ],
+          "rata2_ms": 948,
+          "maks_ms": 964
+        },
+        {
+          "halaman": "/penilaian",
+          "url_akhir": "/penilaian",
+          "judul_h1": "Penilaian Perkuliahan",
+          "ms_h1": [
+            288,
+            303,
+            307
+          ],
+          "rata2_h1_ms": 299,
+          "maks_h1_ms": 307,
+          "ms_networkidle": [
+            887,
+            871,
+            872
+          ],
+          "rata2_ms": 877,
+          "maks_ms": 887
+        },
+        {
+          "halaman": "/penilaian/1/hasil",
+          "url_akhir": "/penilaian/1/hasil",
+          "judul_h1": "Hasil Evaluasi Capaian: Algoritma dan Pemrograman",
+          "ms_h1": [
+            277,
+            265,
+            374
+          ],
+          "rata2_h1_ms": 305,
+          "maks_h1_ms": 374,
+          "ms_networkidle": [
+            890,
+            845,
+            958
+          ],
+          "rata2_ms": 898,
+          "maks_ms": 958
+        },
+        {
+          "halaman": "/analisis",
+          "url_akhir": "/analisis",
+          "judul_h1": "Analisis Ketercapaian Pembelajaran",
+          "ms_h1": [
+            274,
+            260,
+            283
+          ],
+          "rata2_h1_ms": 272,
+          "maks_h1_ms": 283,
+          "ms_networkidle": [
+            869,
+            858,
+            883
+          ],
+          "rata2_ms": 870,
+          "maks_ms": 883
+        },
+        {
+          "halaman": "/dokumen",
+          "url_akhir": "/dokumen",
+          "judul_h1": "Laporan Saya",
+          "ms_h1": [
+            295,
+            294,
+            279
+          ],
+          "rata2_h1_ms": 289,
+          "maks_h1_ms": 295,
+          "ms_networkidle": [
+            878,
+            900,
+            860
+          ],
+          "rata2_ms": 879,
+          "maks_ms": 900
+        },
+        {
+          "halaman": "/portofolio",
+          "url_akhir": "/portofolio",
+          "judul_h1": "Portofolio",
+          "ms_h1": [
+            344,
+            331,
+            285
+          ],
+          "rata2_h1_ms": 320,
+          "maks_h1_ms": 344,
+          "ms_networkidle": [
+            911,
+            926,
+            881
+          ],
+          "rata2_ms": 906,
+          "maks_ms": 926
+        }
+      ],
+      "error_konsol": [
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+      ]
+    },
+    {
+      "peran": "Kaprodi",
+      "login": {
+        "berhasil": true,
+        "url_akhir": "/dashboard",
+        "ms": 1102
+      },
+      "halaman": [
+        {
+          "halaman": "/dashboard",
+          "url_akhir": "/dashboard",
+          "judul_h1": "Selamat pagi, Dr. Arif Setiawan, M.Kom.",
+          "ms_h1": [
+            366,
+            286,
+            293
+          ],
+          "rata2_h1_ms": 315,
+          "maks_h1_ms": 366,
+          "ms_networkidle": [
+            960,
+            887,
+            1012
+          ],
+          "rata2_ms": 953,
+          "maks_ms": 1012
+        },
+        {
+          "halaman": "/analisis",
+          "url_akhir": "/analisis",
+          "judul_h1": "Analisis Ketercapaian & Tren Pembelajaran",
+          "ms_h1": [
+            316,
+            315,
+            290
+          ],
+          "rata2_h1_ms": 307,
+          "maks_h1_ms": 316,
+          "ms_networkidle": [
+            1056,
+            1166,
+            1088
+          ],
+          "rata2_ms": 1103,
+          "maks_ms": 1166
+        },
+        {
+          "halaman": "/dokumen",
+          "url_akhir": "/dokumen",
+          "judul_h1": "Validasi Laporan Evaluasi",
+          "ms_h1": [
+            322,
+            301,
+            313
+          ],
+          "rata2_h1_ms": 312,
+          "maks_h1_ms": 322,
+          "ms_networkidle": [
+            824,
+            795,
+            830
+          ],
+          "rata2_ms": 816,
+          "maks_ms": 830
+        }
+      ],
+      "error_konsol": [
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+      ]
+    },
+    {
+      "peran": "Dekan",
+      "login": {
+        "berhasil": true,
+        "url_akhir": "/dashboard",
+        "ms": 1099
+      },
+      "halaman": [
+        {
+          "halaman": "/dashboard",
+          "url_akhir": "/dashboard",
+          "judul_h1": "Selamat pagi, Prof. Dr. Ir. Hartono Wibisono, M.T.",
+          "ms_h1": [
+            292,
+            304,
+            288
+          ],
+          "rata2_h1_ms": 295,
+          "maks_h1_ms": 304,
+          "ms_networkidle": [
+            945,
+            1018,
+            921
+          ],
+          "rata2_ms": 961,
+          "maks_ms": 1018
+        },
+        {
+          "halaman": "/analisis",
+          "url_akhir": "/analisis",
+          "judul_h1": "Analisis Ketercapaian & Tren Pembelajaran",
+          "ms_h1": [
+            279,
+            330,
+            297
+          ],
+          "rata2_h1_ms": 302,
+          "maks_h1_ms": 330,
+          "ms_networkidle": [
+            1102,
+            1068,
+            1105
+          ],
+          "rata2_ms": 1092,
+          "maks_ms": 1105
+        }
+      ],
+      "error_konsol": [
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED",
+        "Failed to load resource: net::ERR_TUNNEL_CONNECTION_FAILED"
+      ]
+    }
+  ]
+}

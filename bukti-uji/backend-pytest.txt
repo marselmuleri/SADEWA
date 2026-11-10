@@ -1,0 +1,205 @@
+# perintah: cd backend && ../.venv/bin/python -m pytest -q -rA --timeout=300 --junitxml=../../bukti-uji/backend-pytest.xml
+# mulai: 2026-11-10 11:17:16 WIB
+# DB: SQLite in-memory (dari tests/conftest.py), LLM/AI service: di-mock oleh tes
+........................................................................ [ 55%]
+.........................................................                [100%]
+=============================== warnings summary ===============================
+tests/test_ai_integration.py::test_narasi_empty_calculation_raises_422
+  /tmp/claude-0/-home-claude/183cda91-003a-542a-aee2-3a290a78911d/scratchpad/proj/backend/app/api/narasi.py:65: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    mk, capaian_data, prodi_nama, semester_val = _siapkan_narasi(db, user, matkul_id, payload)
+
+tests/test_ai_stream.py::test_stream_narasi_tanpa_capaian_422_sebelum_stream
+  /tmp/claude-0/-home-claude/183cda91-003a-542a-aee2-3a290a78911d/scratchpad/proj/backend/app/api/narasi.py:133: StarletteDeprecationWarning: 'HTTP_422_UNPROCESSABLE_ENTITY' is deprecated. Use 'HTTP_422_UNPROCESSABLE_CONTENT' instead.
+    mk, capaian_data, prodi_nama, semester_val = _siapkan_narasi(db, user, matkul_id, payload)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+==================================== PASSES ====================================
+_____________ test_ai_client_connection_error_raises_503[asyncio] ______________
+------------------------------ Captured log call -------------------------------
+ERROR    app.services.ai_client:ai_client.py:98 Gagal terhubung ke AI Service di http://localhost:8001/api/v1/rps: Connection refused
+__________________ test_ai_client_timeout_raises_504[asyncio] __________________
+------------------------------ Captured log call -------------------------------
+ERROR    app.services.ai_client:ai_client.py:104 Timeout membaca respons dari AI Service (60.0s)
+__________ test_stream_ai_hasil_gagal_menjadi_http_exception[asyncio] __________
+------------------------------ Captured log call -------------------------------
+ERROR    app.services.ai_client:ai_client.py:61 AI Service failure response: Folder vectorstore tidak ditemukan
+_________________ test_stream_ai_tidak_bisa_terhubung[asyncio] _________________
+------------------------------ Captured log call -------------------------------
+ERROR    app.services.ai_client:ai_client.py:203 Gagal terhubung ke AI Service di http://localhost:8001/api/v1/rps/stream: refused
+______________ test_cek_siap_dinilai_kondisi_bobot_jenis_evaluasi ______________
+------------------------------ Captured log setup ------------------------------
+ERROR    sqlalchemy.pool.impl.SingletonThreadPool:base.py:377 Exception closing connection <sqlite3.Connection object at 0x7f63254c0940>
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-claude/183cda91-003a-542a-aee2-3a290a78911d/scratchpad/proj/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 375, in _close_connection
+    self._dialect.do_close(connection)
+  File "/tmp/claude-0/-home-claude/183cda91-003a-542a-aee2-3a290a78911d/scratchpad/proj/.venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 733, in do_close
+    dbapi_connection.close()
+sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 140063827556032 and this is thread id 140063814969024.
+______________ test_status_akademik_default_aktif_dan_bisa_diubah ______________
+------------------------------ Captured log setup ------------------------------
+ERROR    sqlalchemy.pool.impl.SingletonThreadPool:base.py:377 Exception closing connection <sqlite3.Connection object at 0x7f63254c0c40>
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-claude/183cda91-003a-542a-aee2-3a290a78911d/scratchpad/proj/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 375, in _close_connection
+    self._dialect.do_close(connection)
+  File "/tmp/claude-0/-home-claude/183cda91-003a-542a-aee2-3a290a78911d/scratchpad/proj/.venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 733, in do_close
+    dbapi_connection.close()
+sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 140063827556032 and this is thread id 140063814969024.
+___________________ test_status_akademik_tidak_valid_ditolak ___________________
+------------------------------ Captured log setup ------------------------------
+ERROR    sqlalchemy.pool.impl.SingletonThreadPool:base.py:377 Exception closing connection <sqlite3.Connection object at 0x7f63255fb640>
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-claude/183cda91-003a-542a-aee2-3a290a78911d/scratchpad/proj/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 375, in _close_connection
+    self._dialect.do_close(connection)
+  File "/tmp/claude-0/-home-claude/183cda91-003a-542a-aee2-3a290a78911d/scratchpad/proj/.venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 733, in do_close
+    dbapi_connection.close()
+sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 140063827556032 and this is thread id 140063814969024.
+________________ test_filter_daftar_berdasarkan_status_akademik ________________
+------------------------------ Captured log setup ------------------------------
+ERROR    sqlalchemy.pool.impl.SingletonThreadPool:base.py:377 Exception closing connection <sqlite3.Connection object at 0x7f63254c1540>
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-claude/183cda91-003a-542a-aee2-3a290a78911d/scratchpad/proj/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 375, in _close_connection
+    self._dialect.do_close(connection)
+  File "/tmp/claude-0/-home-claude/183cda91-003a-542a-aee2-3a290a78911d/scratchpad/proj/.venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 733, in do_close
+    dbapi_connection.close()
+sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 140063827556032 and this is thread id 140063814969024.
+________________________ test_peserta_mata_kuliah_crud _________________________
+------------------------------ Captured log setup ------------------------------
+ERROR    sqlalchemy.pool.impl.SingletonThreadPool:base.py:377 Exception closing connection <sqlite3.Connection object at 0x7f63254c0240>
+Traceback (most recent call last):
+  File "/tmp/claude-0/-home-claude/183cda91-003a-542a-aee2-3a290a78911d/scratchpad/proj/.venv/lib/python3.10/site-packages/sqlalchemy/pool/base.py", line 375, in _close_connection
+    self._dialect.do_close(connection)
+  File "/tmp/claude-0/-home-claude/183cda91-003a-542a-aee2-3a290a78911d/scratchpad/proj/.venv/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 733, in do_close
+    dbapi_connection.close()
+sqlite3.ProgrammingError: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 140063827556032 and this is thread id 140063814969024.
+=========================== short test summary info ============================
+PASSED tests/test_ai_integration.py::test_ai_client_health_offline[asyncio]
+PASSED tests/test_ai_integration.py::test_ai_client_generate_rps_success[asyncio]
+PASSED tests/test_ai_integration.py::test_ai_client_connection_error_raises_503[asyncio]
+PASSED tests/test_ai_integration.py::test_ai_client_timeout_raises_504[asyncio]
+PASSED tests/test_ai_integration.py::test_narasi_empty_calculation_raises_422
+PASSED tests/test_ai_integration.py::test_rps_generate_prd_path_saves_konten
+PASSED tests/test_ai_stream.py::test_stream_rps_meneruskan_progres_dan_menyimpan_draf
+PASSED tests/test_ai_stream.py::test_stream_rps_gagal_dikirim_sebagai_event_error
+PASSED tests/test_ai_stream.py::test_stream_rps_tanpa_akses_tetap_403_biasa
+PASSED tests/test_ai_stream.py::test_stream_narasi_mengirim_data_capaian_dan_menyimpan
+PASSED tests/test_ai_stream.py::test_stream_narasi_tanpa_capaian_422_sebelum_stream
+PASSED tests/test_ai_stream.py::test_stream_ai_mengurai_sse[asyncio]
+PASSED tests/test_ai_stream.py::test_stream_ai_hasil_gagal_menjadi_http_exception[asyncio]
+PASSED tests/test_ai_stream.py::test_stream_ai_terputus_tanpa_hasil[asyncio]
+PASSED tests/test_ai_stream.py::test_stream_ai_tidak_bisa_terhubung[asyncio]
+PASSED tests/test_akses_cpmk.py::test_dosen_pengampu_boleh_ubah_nama_cpmk
+PASSED tests/test_akses_cpmk.py::test_dosen_pengampu_boleh_ubah_bobot_dan_mapping_ik
+PASSED tests/test_akses_cpmk.py::test_dosen_bukan_pengampu_ditolak_seluruh_operasi
+PASSED tests/test_akses_cpmk.py::test_admin_prodi_dan_kaprodi_boleh_ubah_bobot_dan_mapping
+PASSED tests/test_akses_cpmk.py::test_idor_admin_prodi_antar_prodi
+PASSED tests/test_analitik.py::test_rumus_persen_ik_dan_cpmk
+PASSED tests/test_analitik.py::test_kalkulasi_cpmk_dalam_persen_dan_analitik_prodi
+PASSED tests/test_analitik.py::test_akses_analitik_prodi
+PASSED tests/test_analitik.py::test_analitik_mata_kuliah_untuk_dosen
+PASSED tests/test_arsip.py::test_publish_membuat_arsip_dan_koreksi_tidak_mengubahnya
+PASSED tests/test_arsip.py::test_arsip_semester
+PASSED tests/test_arsip.py::test_akses_arsip_per_role
+PASSED tests/test_aturan_skala_info.py::test_aturan_default_simpan_dan_hak_akses
+PASSED tests/test_aturan_skala_info.py::test_ambang_prodi_dipakai_kalkulasi_dan_export
+PASSED tests/test_aturan_skala_info.py::test_skala_per_angkatan_api_dan_kalkulasi
+PASSED tests/test_aturan_skala_info.py::test_validasi_kelompok_skala
+PASSED tests/test_aturan_skala_info.py::test_data_portofolio_saran_semester_lalu_dan_export
+PASSED tests/test_auth.py::test_bootstrap_register_creates_super_admin
+PASSED tests/test_auth.py::test_register_closed_after_first_user_exists
+PASSED tests/test_auth.py::test_login_success_returns_token
+PASSED tests/test_auth.py::test_login_wrong_password_rejected
+PASSED tests/test_auth.py::test_endpoint_without_token_rejected
+PASSED tests/test_auth.py::test_me_returns_current_user_profile
+PASSED tests/test_cpl_aggregate.py::test_gabungan_berbobot_bobot_ik
+PASSED tests/test_cpl_aggregate.py::test_baris_lama_hanya_cadangan
+PASSED tests/test_cpl_aggregate.py::test_bobot_nol_diabaikan_dan_per_mahasiswa_terpisah
+PASSED tests/test_cpmk_hapus.py::test_hak_akses_hapus_cpmk
+PASSED tests/test_cpmk_hapus.py::test_hapus_cpmk_yang_memiliki_nilai_terkait_mengembalikan_409
+PASSED tests/test_cpmk_hapus.py::test_hapus_cpmk_tanpa_nilai_berhasil_dan_hapus_relasi_map
+PASSED tests/test_finalisasi_obe.py::test_finalisasi_peserta_berhasil_dan_terkunci
+PASSED tests/test_finalisasi_obe.py::test_finalisasi_penolakan_syarat
+PASSED tests/test_finalisasi_obe.py::test_alur_buka_kunci_dan_koreksi_nilai
+PASSED tests/test_hapus_obe.py::test_hapus_cpl_yang_memiliki_ik_mengembalikan_409
+PASSED tests/test_hapus_obe.py::test_hapus_ik_yang_termapping_cpmk_mengembalikan_409
+PASSED tests/test_hapus_obe.py::test_hapus_cpl_dan_ik_tanpa_relasi_berhasil
+PASSED tests/test_ik_contribution.py::test_single_bentuk_penilaian_full_weight
+PASSED tests/test_ik_contribution.py::test_ik_partial_weight_within_bentuk_penilaian
+PASSED tests/test_ik_contribution.py::test_multiple_bentuk_penilaian_summed
+PASSED tests/test_ik_contribution.py::test_bentuk_penilaian_without_ik_mapping_ignored
+PASSED tests/test_ik_contribution.py::test_zero_bobot_bentuk_penilaian_skipped_no_division_error
+PASSED tests/test_ik_contribution.py::test_empty_input_returns_zero
+PASSED tests/test_ik_contribution.py::test_nilai_zero
+PASSED tests/test_integrasi_obe.py::test_integrasi_putu_sandra_dan_mahasiswa_kosong
+PASSED tests/test_jenis_evaluasi_bobot.py::test_api_validasi_bobot_jenis_evaluasi
+PASSED tests/test_jenis_evaluasi_bobot.py::test_cek_siap_dinilai_kondisi_bobot_jenis_evaluasi
+PASSED tests/test_mahasiswa_status_akademik.py::test_status_akademik_default_aktif_dan_bisa_diubah
+PASSED tests/test_mahasiswa_status_akademik.py::test_status_akademik_tidak_valid_ditolak
+PASSED tests/test_mahasiswa_status_akademik.py::test_filter_daftar_berdasarkan_status_akademik
+PASSED tests/test_master_evaluasi.py::test_bentuk_penilaian_crud
+PASSED tests/test_master_evaluasi.py::test_peserta_mata_kuliah_crud
+PASSED tests/test_master_evaluasi.py::test_kalkulasi_authorization
+PASSED tests/test_nilai_per_ik.py::test_input_nilai_per_ik_berhasil
+PASSED tests/test_nilai_per_ik.py::test_duplikat_nilai_kombinasi_peserta_bentuk_ik_ditolak
+PASSED tests/test_nilai_per_ik.py::test_nilai_ik_bobot_sel_nol_atau_tidak_di_matriks_ditolak
+PASSED tests/test_nilai_per_ik.py::test_nilai_di_luar_rentang_0_sampai_100_ditolak
+PASSED tests/test_obe_formula.py::test_cell_poin_rounding_half_up
+PASSED tests/test_obe_formula.py::test_kasus_putu_sandra
+PASSED tests/test_obe_formula.py::test_pembulatan_terpisah_nilai_akhir_vs_poin_cpl
+PASSED tests/test_obe_formula.py::test_kasus_nilai_kosong
+PASSED tests/test_obe_formula.py::test_kasus_multi_cpl_dalam_satu_cpmk
+PASSED tests/test_obe_formula.py::test_kasus_bobot_cp_nol_tidak_division_by_zero
+PASSED tests/test_portofolio.py::test_daftar_mk_sesuai_peran
+PASSED tests/test_portofolio.py::test_unggah_unduh_hapus_rps
+PASSED tests/test_portofolio.py::test_unggah_ditolak_bukan_pengampu_atau_format_salah
+PASSED tests/test_portofolio.py::test_rpp_simpan_dan_lihat
+PASSED tests/test_portofolio.py::test_capaian_nilai_cp_dan_sebaran
+PASSED tests/test_portofolio_export.py::test_export_berisi_semua_sheet_dan_rumus
+PASSED tests/test_portofolio_export.py::test_nilai_export_cocok_dengan_kalkulasi_sadewa
+PASSED tests/test_portofolio_export.py::test_remidi_dan_ringkasan_cpmk
+PASSED tests/test_portofolio_export.py::test_export_hak_akses
+PASSED tests/test_portofolio_export.py::test_evaluasi_simpan_saran_dan_masuk_export
+PASSED tests/test_portofolio_export.py::test_export_mata_kuliah_kosong_tidak_error
+PASSED tests/test_portofolio_export.py::test_saran_ai_butuh_nilai
+PASSED tests/test_range_nilai.py::test_lookup_kategori_cpl_service
+PASSED tests/test_range_nilai.py::test_api_validasi_range_nilai_cpl
+PASSED tests/test_range_nilai.py::test_api_crud_range_nilai_cpl_berhasil
+PASSED tests/test_rps_crud.py::test_dosen_pengampu_edit_dan_hapus_rps
+PASSED tests/test_rps_crud.py::test_rps_hanya_bisa_diubah_pengampu
+PASSED tests/test_rps_crud.py::test_buat_laporan_dengan_isi_narasi
+PASSED tests/test_siap_nilai_terpisah.py::test_kondisi_1_bobot_cpmk_bukan_100_ditolak
+PASSED tests/test_siap_nilai_terpisah.py::test_kondisi_2_cpmk_tanpa_mapping_ditolak
+PASSED tests/test_siap_nilai_terpisah.py::test_kondisi_3_total_bobot_bentuk_penilaian_bukan_100_ditolak
+PASSED tests/test_siap_nilai_terpisah.py::test_kondisi_4_baris_matriks_tidak_sama_dengan_bobot_bentuk_ditolak
+PASSED tests/test_siap_nilai_terpisah.py::test_kondisi_5_kolom_matriks_tidak_sama_dengan_bobot_ik_ditolak
+PASSED tests/test_siap_nilai_terpisah.py::test_kondisi_6_matriks_berisi_ik_di_luar_cpmk_ditolak
+PASSED tests/test_siap_nilai_terpisah.py::test_kasus_lengkap_semua_syarat_terpenuhi_diterima
+PASSED tests/test_skala_nilai.py::test_pilih_huruf_lookup_logic
+PASSED tests/test_skala_nilai.py::test_api_atur_skala_nilai_validasi
+PASSED tests/test_skala_nilai.py::test_dua_kurikulum_beda_skala
+PASSED tests/test_skala_nilai.py::test_snapshot_nilai_final_tidak_berubah_saat_skala_diedit
+PASSED tests/test_ui_audit_fixes.py::test_dosen_scope_filtering
+PASSED tests/test_ui_audit_fixes.py::test_dosen_self_service_endpoints
+PASSED tests/test_ui_audit_fixes.py::test_single_ketua_atomic_demotion
+PASSED tests/test_ui_audit_fixes.py::test_duplicate_prevention
+PASSED tests/test_ui_audit_fixes.py::test_mahasiswa_angkatan_derivation
+PASSED tests/test_ui_audit_fixes.py::test_batch_import_mahasiswa_and_peserta
+PASSED tests/test_ui_audit_fixes.py::test_delete_protection_and_endpoints
+PASSED tests/test_ui_audit_fixes.py::test_seed_data_siap_dinilai_dan_kalkulasi_langsung
+PASSED tests/test_ui_audit_fixes.py::test_create_kurikulum_version_only
+PASSED tests/test_ui_audit_fixes.py::test_admin_prodi_forbidden_on_dashboard_and_trending
+PASSED tests/test_ui_audit_fixes.py::test_rapor_dosen_hanya_mata_kuliah_diampu
+PASSED tests/test_users.py::test_super_admin_can_create_fakultas_and_prodi
+PASSED tests/test_users.py::test_super_admin_can_create_admin_prodi_account
+PASSED tests/test_users.py::test_admin_prodi_creation_requires_program_studi_id
+PASSED tests/test_users.py::test_super_admin_cannot_access_academic_data
+PASSED tests/test_users.py::test_admin_prodi_can_only_create_dosen_or_kaprodi
+PASSED tests/test_users.py::test_admin_prodi_cannot_see_users_outside_own_prodi
+PASSED tests/test_users.py::test_dosen_cannot_create_prodi
+PASSED tests/test_validasi_obe.py::test_c3_total_bobot_ik_harus_sama_persis_dengan_cpmk
+PASSED tests/test_validasi_obe.py::test_c3_revalidasi_saat_bobot_cpmk_diubah
+PASSED tests/test_validasi_obe.py::test_c4_tolak_mapping_ik_dari_prodi_lain
+PASSED tests/test_validasi_obe.py::test_c12_tolak_ik_tanpa_cpl
+PASSED tests/test_validasi_obe.py::test_c13_cpmk_tanpa_mapping_ik_tidak_siap_dinilai
+PASSED tests/test_validasi_obe.py::test_syarat_siap_dinilai_dan_penolakan_input_nilai
+129 passed, 2 warnings in 100.29s (0:01:40)
+# selesai: 2026-11-10 11:19:00 WIB

@@ -29,7 +29,18 @@ const initialForm = {
   nama: '',
   semester_aktif: 1,
   status_masuk: 'Reguler',
+  status_akademik: 'Aktif',
 }
+
+// Status keaktifan mahasiswa (sesuai kode status PDDikti) beserta warna penandanya.
+const STATUS_AKADEMIK = [
+  { value: 'Aktif', dot: 'bg-emerald-500', text: 'text-emerald-700' },
+  { value: 'Cuti', dot: 'bg-amber-500', text: 'text-amber-700' },
+  { value: 'Non-Aktif', dot: 'bg-slate-400', text: 'text-slate-600' },
+  { value: 'Lulus', dot: 'bg-[#1A3A6B]', text: 'text-[#1A3A6B]' },
+  { value: 'Keluar', dot: 'bg-red-500', text: 'text-red-700' },
+]
+const getStatusAkademik = (value) => STATUS_AKADEMIK.find((s) => s.value === value) || STATUS_AKADEMIK[0]
 
 const MAX_CSV_SIZE_BYTES = 2 * 1024 * 1024 // 2 MB
 const MAX_CSV_ROWS = 500
@@ -47,6 +58,7 @@ export default function MahasiswaPage() {
   const [search, setSearch] = useState('')
   const [semesterFilter, setSemesterFilter] = useState('ALL')
   const [statusFilter, setStatusFilter] = useState('ALL')
+  const [keaktifanFilter, setKeaktifanFilter] = useState('ALL')
 
   // Form Modal States
   const [openFormModal, setOpenFormModal] = useState(false)
@@ -106,9 +118,10 @@ export default function MahasiswaPage() {
       const matchesSearch = !term || m.nama.toLowerCase().includes(term) || m.nim.toLowerCase().includes(term)
       const matchesSemester = semesterFilter === 'ALL' || String(m.semester_aktif) === semesterFilter
       const matchesStatus = statusFilter === 'ALL' || m.status_masuk === statusFilter
-      return matchesSearch && matchesSemester && matchesStatus
+      const matchesKeaktifan = keaktifanFilter === 'ALL' || (m.status_akademik || 'Aktif') === keaktifanFilter
+      return matchesSearch && matchesSemester && matchesStatus && matchesKeaktifan
     })
-  }, [list, search, semesterFilter, statusFilter])
+  }, [list, search, semesterFilter, statusFilter, keaktifanFilter])
 
   // Statistics
   const stats = useMemo(() => {
@@ -134,6 +147,7 @@ export default function MahasiswaPage() {
       nama: item.nama || '',
       semester_aktif: item.semester_aktif || 1,
       status_masuk: item.status_masuk || 'Reguler',
+      status_akademik: item.status_akademik || 'Aktif',
     })
     setFormError('')
     setOpenFormModal(true)
@@ -171,6 +185,7 @@ export default function MahasiswaPage() {
         nama: namaClean,
         semester_aktif: semesterNum,
         status_masuk: form.status_masuk,
+        status_akademik: form.status_akademik,
       }
 
       if (selectedMahasiswa) {
@@ -622,9 +637,22 @@ export default function MahasiswaPage() {
               data-testid="select-filter-status"
               className="rounded-[6px] border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-medium text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B]"
             >
-              <option value="ALL">Semua Status Masuk</option>
+              <option value="ALL">Semua Jalur Masuk</option>
               <option value="Reguler">Reguler</option>
               <option value="Transfer">Transfer</option>
+            </select>
+
+            <select
+              value={keaktifanFilter}
+              onChange={(e) => setKeaktifanFilter(e.target.value)}
+              data-testid="select-filter-keaktifan"
+              aria-label="Filter status keaktifan"
+              className="rounded-[6px] border border-[#CBD5E1] bg-white px-3 py-2 text-sm font-medium text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B]"
+            >
+              <option value="ALL">Semua Status</option>
+              {STATUS_AKADEMIK.map((s) => (
+                <option key={s.value} value={s.value}>{s.value}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -641,7 +669,7 @@ export default function MahasiswaPage() {
             <Users className="mx-auto h-10 w-10 text-[#94A3B8]" />
             <p className="mt-3 text-sm font-semibold text-[#142B4A]">Tidak Ada Data Mahasiswa</p>
             <p className="mt-1 text-xs text-[#64748B]">
-              {search || semesterFilter !== 'ALL' || statusFilter !== 'ALL'
+              {search || semesterFilter !== 'ALL' || statusFilter !== 'ALL' || keaktifanFilter !== 'ALL'
                 ? 'Tidak ditemukan data yang sesuai dengan filter pencarian.'
                 : 'Belum ada data mahasiswa di program studi ini. Silakan tambahkan mahasiswa atau gunakan fitur impor CSV.'}
             </p>
@@ -673,10 +701,15 @@ export default function MahasiswaPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700">
-                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                        Aktif
-                      </span>
+                      {(() => {
+                        const status = getStatusAkademik(item.status_akademik)
+                        return (
+                          <span className={`inline-flex items-center gap-1.5 text-xs ${status.text}`}>
+                            <span className={`h-2 w-2 rounded-full ${status.dot}`} />
+                            {status.value}
+                          </span>
+                        )
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -782,6 +815,22 @@ export default function MahasiswaPage() {
                 <option value="Transfer">Transfer</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-[#142B4A]">
+              Status Keaktifan <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={form.status_akademik}
+              onChange={(e) => setForm({ ...form, status_akademik: e.target.value })}
+              data-testid="select-form-status-akademik"
+              className="mt-1 w-full rounded-[6px] border border-[#CBD5E1] bg-white px-3 py-2 text-sm text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B]"
+            >
+              {STATUS_AKADEMIK.map((s) => (
+                <option key={s.value} value={s.value}>{s.value}</option>
+              ))}
+            </select>
           </div>
 
           <div className="rounded border border-[#E2E8F0] bg-[#F8FAFC] p-3 text-xs text-[#64748B]">

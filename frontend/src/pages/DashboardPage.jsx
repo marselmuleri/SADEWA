@@ -40,6 +40,7 @@ import { getApiErrorMessage } from './superAdminHelpers'
 import { exportToCsv } from '../utils/csvExport'
 import { useDekanScope } from '../context/DekanScopeContext'
 import ProdiSelector from '../components/ProdiSelector'
+import SearchableSelect from '../components/SearchableSelect'
 import AdminProdiDashboard from './AdminProdiDashboard'
 
 export default function DashboardPage() {
@@ -233,27 +234,30 @@ function AnalyticsDashboard({ currentRole }) {
         <SectionCard title="Pilih Mata Kuliah Diampu">
           <div className="flex flex-wrap items-center gap-4">
             <div className="w-full sm:w-80">
-              <select
+              <SearchableSelect
                 value={selectedMkId}
-                onChange={(e) => setSelectedMkId(e.target.value)}
+                onChange={(val) => setSelectedMkId(String(val))}
                 disabled={coursesLoading || courses.length === 0}
-                className="h-10 w-full rounded-md border border-[#CBD5E1] bg-white px-3 text-xs font-semibold text-[#142B4A] focus:border-[#1A3A6B] focus:outline-none"
+                buttonClassName="h-10 text-xs font-semibold"
                 data-testid="select-dosen-course"
-              >
-                {coursesLoading ? (
-                  <option value="">Memuat daftar mata kuliah...</option>
-                ) : coursesError ? (
-                  <option value="">Gagal memuat mata kuliah</option>
-                ) : courses.length === 0 ? (
-                  <option value="">Belum ada penugasan mata kuliah</option>
-                ) : (
-                  courses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.kode} - {c.nama} ({c.sks} SKS, Smt {c.semester})
-                    </option>
-                  ))
-                )}
-              </select>
+                aria-label="Pilih mata kuliah"
+                placeholder={
+                  coursesLoading
+                    ? 'Memuat daftar mata kuliah...'
+                    : coursesError
+                    ? 'Gagal memuat mata kuliah'
+                    : courses.length === 0
+                    ? 'Belum ada penugasan mata kuliah'
+                    : 'Pilih mata kuliah'
+                }
+                searchPlaceholder="Cari kode atau nama mata kuliah..."
+                options={courses.map((c) => ({
+                  value: c.id,
+                  label: `${c.kode} - ${c.nama}`,
+                  description: `${c.sks} SKS · Semester ${c.semester}`,
+                  searchText: c.nama,
+                }))}
+              />
             </div>
             {selectedCourseObj && (
               <Badge tone="default">

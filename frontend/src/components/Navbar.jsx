@@ -1,4 +1,4 @@
-import { Bell, LogOut, Search, SquareKanban, ChevronDown, ChevronRight, Layers } from 'lucide-react'
+import { LogOut, SquareKanban, ChevronDown, ChevronRight, Layers } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useMemo, useState, useEffect } from 'react'
 import useAuth from '../hooks/useAuth'
@@ -32,6 +32,8 @@ const pageTitles = {
   '/data-master/cpmk': 'DATA MASTER > CPMK',
   '/data-master/arsip': 'DATA MASTER > Arsip Kurikulum',
   '/data-master': 'DATA MASTER',
+  '/mata-kuliah-saya': 'Mata Kuliah Saya',
+  '/cpmk-saya': 'CPMK Saya',
   '/super-admin/prodi': 'Daftar Prodi',
   '/super-admin/fakultas': 'Daftar Fakultas',
   '/super-admin/users': 'Manajemen Pengguna Lintas Prodi',
@@ -168,6 +170,8 @@ export default function Navbar({ children }) {
     if (isDosen) {
       return [
         { label: 'Ikhtisar', path: '/dashboard' },
+        { label: 'Mata Kuliah Saya', path: '/mata-kuliah-saya' },
+        { label: 'CPMK Saya', path: '/cpmk-saya' },
         { label: 'Peserta Kuliah', path: '/peserta' },
         { label: 'Penilaian', path: '/penilaian' },
         { label: 'Analitik OBE', path: '/analisis' },
@@ -322,7 +326,8 @@ export default function Navbar({ children }) {
                     item={item}
                     active={
                       location.pathname === item.path ||
-                      (item.path === '/portofolio' && location.pathname.startsWith('/portofolio/'))
+                      (item.path === '/portofolio' && location.pathname.startsWith('/portofolio/')) ||
+                      (item.path === '/mata-kuliah-saya' && location.pathname.startsWith('/kurikulum/cpmk/mk/'))
                     }
                   />
                 )
@@ -384,28 +389,6 @@ export default function Navbar({ children }) {
 
           {/* Action Zone */}
           <div className="flex items-center gap-3">
-            {!isSuperAdmin && (
-              <label className="relative hidden lg:block" data-testid="topbar-search">
-                <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[#94A3B8]" />
-                <input
-                  type="search"
-                  placeholder="Cari di SADEWA..."
-                  className="h-9 w-64 rounded-[6px] border border-[#CBD5E1] bg-white pl-9 pr-3 text-xs text-[#142B4A] placeholder:text-[#94A3B8] focus:border-[#1A3A6B] focus:outline-none focus:ring-1 focus:ring-[#1A3A6B]"
-                />
-              </label>
-            )}
-
-            {/* Notification Bell */}
-            <button
-              type="button"
-              aria-label="Notifikasi"
-              data-testid="topbar-notification"
-              className="relative inline-flex h-9 w-9 items-center justify-center rounded-[6px] border border-[#CBD5E1] bg-white text-[#142B4A] transition-colors hover:border-[#1A3A6B] hover:text-[#1A3A6B]"
-            >
-              <Bell className="h-4 w-4" />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#F4A300]" />
-            </button>
-
             {/* Role Indicator Pill */}
             <div className="hidden items-center gap-2 rounded-[6px] border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1.5 text-xs lg:flex">
               <SquareKanban className="h-3.5 w-3.5 text-[#1A3A6B]" />

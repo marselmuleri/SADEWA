@@ -84,9 +84,8 @@ def update_cpmk(
         raise HTTPException(status_code=404, detail="CPMK tidak ditemukan")
     _check_write_access(db, user, data.mata_kuliah_id)
 
-    # Dosen pengampu dilarang mengubah bobot CPMK (C10)
-    if user.role == UserRole.dosen and payload.bobot is not None:
-        raise HTTPException(status_code=403, detail="Dosen pengampu dilarang mengubah bobot CPMK")
+    # Dosen pengampu boleh mengubah bobot CPMK pada mata kuliah yang diampu
+    # (keputusan tim November 2026, menggantikan aturan C10). Akses sudah dicek di atas.
 
     # Revalidasi C3: Jika bobot CPMK diubah dan mapping IK sudah ada
     if payload.bobot is not None:
@@ -118,9 +117,7 @@ def map_ik(
         raise HTTPException(status_code=404, detail="CPMK tidak ditemukan")
     _check_write_access(db, user, cpmk.mata_kuliah_id)
 
-    # Dosen pengampu dilarang mengubah mapping IK (C10)
-    if user.role == UserRole.dosen:
-        raise HTTPException(status_code=403, detail="Dosen pengampu dilarang mengubah mapping IK CPMK")
+    # Dosen pengampu boleh memetakan CPMK ke IK/CPL pada mata kuliah yang diampu.
 
     # Jalur pembaruan atomik: ubah bobot CPMK jika disediakan
     if payload.bobot_cpmk is not None:
@@ -186,7 +183,7 @@ def get_map_ik(
 def delete_cpmk(
     cpmk_id: int,
     db: Session = Depends(get_db),
-    user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.kaprodi)),
+    user: User = Depends(require_roles(UserRole.admin_prodi, UserRole.kaprodi, UserRole.dosen)),
 ):
     cpmk = db.query(CPMK).filter(CPMK.id == cpmk_id).first()
     if not cpmk:
@@ -226,4 +223,4 @@ def delete_cpmk(
     db.query(CPMKIKMap).filter(CPMKIKMap.cpmk_id == cpmk_id).delete()
     db.delete(cpmk)
     db.commit()
-    return {"message": "CPMK berhasil dihapus"}
+    return {"message": "CPMK berhasil dihapus"}
