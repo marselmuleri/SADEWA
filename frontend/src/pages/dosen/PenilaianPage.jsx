@@ -31,6 +31,7 @@ import useDosenCourses from '../../hooks/useDosenCourses'
 import Modal from '../../components/Modal'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import { PageHeader, ActionButton } from '../../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionButton } from '../../components/TableActions'
 import { getApiErrorMessage, getDeleteErrorMessage } from '../superAdminHelpers'
 
 export default function PenilaianPage() {
@@ -658,7 +659,7 @@ export default function PenilaianPage() {
                     <th className="py-3 px-4 w-36">Semester / TA</th>
                     <th className="py-3 px-4 w-24 text-center">Peserta</th>
                     <th className="py-3 px-4 w-28 text-center">Peran Anda</th>
-                    <th className="py-3 px-4 w-80 text-right">Aksi Penilaian</th>
+                    <TableActionHeader>Aksi Penilaian</TableActionHeader>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0]">
@@ -718,7 +719,7 @@ export default function PenilaianPage() {
                     </tr>
                   ) : (
                     filteredCourses.map((mk, idx) => (
-                      <tr key={mk.id} className="hover:bg-[#F8FAFC]/80 transition-colors">
+                      <tr key={mk.id} className="align-top hover:bg-[#F8FAFC]/80 transition-colors">
                         <td className="py-3 px-4 text-center font-medium text-[#64748B]">
                           {idx + 1}
                         </td>
@@ -750,37 +751,32 @@ export default function PenilaianPage() {
                             </span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="inline-flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleSelectCourseComponents(mk)}
-                              data-testid={`btn-bentuk-penilaian-${mk.id}`}
-                              className="inline-flex items-center gap-1 rounded border border-[#CBD5E1] bg-white px-2.5 py-1 text-xs font-semibold text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B] transition-colors"
-                            >
-                              <Layers className="h-3.5 w-3.5 text-[#1A3A6B]" />
-                              <span>Bentuk Penilaian</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleSelectCourseGrades(mk)}
-                              data-testid={`btn-input-nilai-${mk.id}`}
-                              className="inline-flex items-center gap-1 rounded border border-[#CBD5E1] bg-white px-2.5 py-1 text-xs font-semibold text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B] transition-colors"
-                            >
-                              <Calculator className="h-3.5 w-3.5 text-blue-600" />
-                              <span>Input Nilai</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleSelectCourseResults(mk)}
-                              data-testid={`btn-hasil-${mk.id}`}
-                              className="inline-flex items-center gap-1 rounded border border-[#CBD5E1] bg-white px-2.5 py-1 text-xs font-semibold text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B] transition-colors"
-                            >
-                              <Award className="h-3.5 w-3.5 text-amber-600" />
-                              <span>Hasil</span>
-                            </button>
-                          </div>
-                        </td>
+                        <TableActionCell>
+                          <TableActionButton
+                            variant="secondary"
+                            onClick={() => handleSelectCourseComponents(mk)}
+                            data-testid={`btn-bentuk-penilaian-${mk.id}`}
+                            icon={Layers}
+                            label="Bentuk Penilaian"
+                            title="Bentuk Penilaian"
+                          />
+                          <TableActionButton
+                            variant="secondary"
+                            onClick={() => handleSelectCourseGrades(mk)}
+                            data-testid={`btn-input-nilai-${mk.id}`}
+                            icon={Calculator}
+                            label="Input Nilai"
+                            title="Input Nilai"
+                          />
+                          <TableActionButton
+                            variant="secondary"
+                            onClick={() => handleSelectCourseResults(mk)}
+                            data-testid={`btn-hasil-${mk.id}`}
+                            icon={Award}
+                            label="Hasil"
+                            title="Hasil Evaluasi"
+                          />
+                        </TableActionCell>
                       </tr>
                     ))
                   )}
@@ -892,7 +888,7 @@ export default function PenilaianPage() {
                     <th className="py-3 px-4 w-44">Jenis Evaluasi</th>
                     <th className="py-3 px-4">Nama Bentuk Penilaian</th>
                     <th className="py-3 px-4 w-32 text-center">Bobot Penilaian</th>
-                    <th className="py-3 px-4 w-40 text-right">Aksi</th>
+                    <TableActionHeader />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0]">
@@ -927,7 +923,7 @@ export default function PenilaianPage() {
                         : null
 
                       return (
-                        <tr key={comp.id} className="hover:bg-[#F8FAFC]/80 transition-colors">
+                        <tr key={comp.id} className="align-top hover:bg-[#F8FAFC]/80 transition-colors">
                           <td className="py-3 px-4 text-center font-medium text-[#64748B]">
                             {idx + 1}
                           </td>
@@ -945,17 +941,16 @@ export default function PenilaianPage() {
                               {comp.bobot}%
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-right">
-                            <button
-                              type="button"
+                          <TableActionCell>
+                            <TableActionButton
+                              variant="primary"
                               onClick={() => handleOpenSettingBobot(comp)}
                               data-testid={`btn-setting-bobot-${comp.id}`}
-                              className="inline-flex items-center gap-1.5 rounded bg-[#1A3A6B] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#142B4A] transition-colors"
-                            >
-                              <Sliders className="h-3.5 w-3.5" />
-                              <span>Setting Bobot IK</span>
-                            </button>
-                          </td>
+                              icon={Sliders}
+                              label="Setting Bobot IK"
+                              title="Setting Bobot IK"
+                            />
+                          </TableActionCell>
                         </tr>
                       )
                     })
@@ -1333,7 +1328,7 @@ export default function PenilaianPage() {
                         </th>
                       )
                     })}
-                    <th className="py-3 px-4 text-right w-24">Aksi</th>
+                    <TableActionHeader />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0]">
@@ -1366,7 +1361,7 @@ export default function PenilaianPage() {
                       const nama = peserta.mahasiswa?.nama || peserta.nama || `Mahasiswa #${peserta.mahasiswa_id}`
 
                       return (
-                        <tr key={peserta.id} className="hover:bg-[#F8FAFC]/80 transition-colors">
+                        <tr key={peserta.id} className="align-top hover:bg-[#F8FAFC]/80 transition-colors">
                           <td className="py-3 px-3 text-center text-[#64748B]">{idx + 1}</td>
                           <td className="py-3 px-3 font-mono font-semibold text-[#1A3A6B]">{nim}</td>
                           <td className="py-3 px-4 font-semibold text-[#142B4A]">{nama}</td>
@@ -1384,17 +1379,16 @@ export default function PenilaianPage() {
                               </td>
                             )
                           })}
-                          <td className="py-3 px-4 text-right">
-                            <button
-                              type="button"
+                          <TableActionCell>
+                            <TableActionButton
+                              variant="primary"
                               onClick={() => handleOpenGradeModal(peserta)}
                               data-testid={`btn-nilai-peserta-${peserta.id}`}
-                              className="inline-flex items-center gap-1 rounded bg-[#1A3A6B] px-3 py-1 text-xs font-semibold text-white hover:bg-[#142B4A] transition-colors"
-                            >
-                              <Edit3 className="h-3 w-3" />
-                              <span>Nilai</span>
-                            </button>
-                          </td>
+                              icon={Edit3}
+                              label="Nilai"
+                              title="Nilai Peserta"
+                            />
+                          </TableActionCell>
                         </tr>
                       )
                     })

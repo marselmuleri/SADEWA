@@ -17,6 +17,7 @@ import useToast from '../../hooks/useToast'
 import Modal from '../../components/Modal'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import { PageHeader, ActionButton } from '../../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionButton } from '../../components/TableActions'
 import { getApiErrorMessage, getDeleteErrorMessage } from '../superAdminHelpers'
 
 export default function BentukPenilaianPage() {
@@ -305,7 +306,7 @@ export default function BentukPenilaianPage() {
                 <th className="py-3 px-4 w-16 text-center">No</th>
                 <th className="py-3 px-4 w-56">Jenis Evaluasi</th>
                 <th className="py-3 px-4">Nama Bentuk Penilaian</th>
-                <th className="py-3 px-4 w-32 text-right">Aksi</th>
+                <TableActionHeader />
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0]">
@@ -340,7 +341,7 @@ export default function BentukPenilaianPage() {
                 filteredBentukList.map((item, idx) => {
                   const parentJenis = jenisMap.get(Number(item.jenis_evaluasi_id))
                   return (
-                    <tr key={item.id} className="hover:bg-[#F8FAFC]/80 transition-colors">
+                    <tr key={item.id} className="align-top hover:bg-[#F8FAFC]/80 transition-colors">
                       <td className="py-3 px-4 text-center font-medium text-[#64748B]">
                         {idx + 1}
                       </td>
@@ -353,28 +354,24 @@ export default function BentukPenilaianPage() {
                       <td className="py-3 px-4 font-semibold text-[#142B4A]">
                         {item.nama}
                       </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="inline-flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEdit(item)}
-                            data-testid={`btn-edit-bentuk-${item.id}`}
-                            className="inline-flex items-center gap-1 rounded p-1 text-xs font-semibold text-[#1A3A6B] hover:bg-[#F1F5F9] transition-colors"
-                            title="Ubah nama"
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setBentukToDelete(item)}
-                            data-testid={`btn-delete-bentuk-${item.id}`}
-                            className="inline-flex items-center gap-1 rounded p-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors"
-                            title="Hapus bentuk penilaian"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </td>
+                      <TableActionCell>
+                        <TableActionButton
+                          variant="secondary"
+                          onClick={() => handleOpenEdit(item)}
+                          data-testid={`btn-edit-bentuk-${item.id}`}
+                          icon={Edit2}
+                          label="Ubah"
+                          title="Ubah nama"
+                        />
+                        <TableActionButton
+                          variant="danger"
+                          onClick={() => setBentukToDelete(item)}
+                          data-testid={`btn-delete-bentuk-${item.id}`}
+                          icon={Trash2}
+                          label="Hapus"
+                          title="Hapus bentuk penilaian"
+                        />
+                      </TableActionCell>
                     </tr>
                   )
                 })

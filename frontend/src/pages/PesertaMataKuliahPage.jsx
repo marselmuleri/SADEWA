@@ -15,6 +15,7 @@ import {
   StopCircle,
 } from 'lucide-react'
 import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionButton } from '../components/TableActions'
 import Modal from '../components/Modal'
 import SearchableSelect from '../components/SearchableSelect'
 import useAuth from '../hooks/useAuth'
@@ -675,7 +676,7 @@ export default function PesertaMataKuliahPage() {
                   <th className="pb-3">Nama Mahasiswa</th>
                   <th className="pb-3 w-28 text-center">Kelas</th>
                   <th className="pb-3 w-28 text-center">Status</th>
-                  {canManage && <th className="pb-3 w-24 text-right">Aksi</th>}
+                  {canManage && <TableActionHeader className="pb-3" />}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#EEF2F7]">
@@ -684,7 +685,7 @@ export default function PesertaMataKuliahPage() {
                   return (
                     <tr
                       key={row.id}
-                      className="transition-colors hover:bg-[#F8FAFC]"
+                      className="align-top transition-colors hover:bg-[#F8FAFC]"
                       data-testid={`row-peserta-${row.id}`}
                     >
                       <td className="py-3 text-center text-xs text-[#64748B]">{idx + 1}</td>
@@ -703,20 +704,19 @@ export default function PesertaMataKuliahPage() {
                         <Badge tone="success">Terdaftar</Badge>
                       </td>
                       {canManage && (
-                        <td className="py-3 text-right">
-                          <button
-                            type="button"
+                        <TableActionCell className="py-3">
+                          <TableActionButton
+                            variant="danger"
                             onClick={() => {
                               setDeleteTarget({ ...row, mhsNama: mhs?.nama || `ID #${row.mahasiswa_id}` })
                               setOpenDeleteModal(true)
                             }}
                             data-testid={`btn-delete-peserta-${row.id}`}
-                            className="rounded p-1.5 text-red-600 hover:bg-red-50 transition-colors"
+                            icon={Trash2}
+                            label="Hapus"
                             title="Hapus peserta"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
+                          />
+                        </TableActionCell>
                       )}
                     </tr>
                   )

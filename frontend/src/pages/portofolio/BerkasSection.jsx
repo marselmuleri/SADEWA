@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Download, Eye, FileUp, Loader2, Trash2 } from 'lucide-react'
 import { ActionButton, Badge, SectionCard } from '../../components/PageChrome'
+import { TableActions, TableActionButton } from '../../components/TableActions'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import api from '../../services/api'
 import { getApiErrorMessage } from '../superAdminHelpers'
@@ -168,24 +169,32 @@ export default function BerkasSection({ mkId, jenis, canWrite, pushToast, onChan
                   </div>
                   {b.keterangan ? <p className="mt-1 text-xs text-[#142B4A]">{b.keterangan}</p> : null}
                 </div>
-                <div className="flex shrink-0 gap-2">
-                  <ActionButton variant="secondary" className="px-3 py-1.5 text-xs" onClick={() => aksiBerkas(bukaBerkas, b)}>
-                    <Eye className="h-3.5 w-3.5" /> Lihat
-                  </ActionButton>
-                  <ActionButton variant="secondary" className="px-3 py-1.5 text-xs" onClick={() => aksiBerkas(unduhBerkas, b)}>
-                    <Download className="h-3.5 w-3.5" /> Unduh
-                  </ActionButton>
+                <TableActions className="shrink-0">
+                  <TableActionButton
+                    variant="secondary"
+                    onClick={() => aksiBerkas(bukaBerkas, b)}
+                    icon={Eye}
+                    label="Lihat"
+                    title={`Lihat ${b.judul}`}
+                  />
+                  <TableActionButton
+                    variant="secondary"
+                    onClick={() => aksiBerkas(unduhBerkas, b)}
+                    icon={Download}
+                    label="Unduh"
+                    title={`Unduh ${b.judul}`}
+                  />
                   {canWrite ? (
-                    <ActionButton
-                      variant="ghost"
-                      className="px-2 py-1.5 text-xs text-red-600 hover:bg-red-50"
+                    <TableActionButton
+                      variant="danger"
                       onClick={() => setHapus(b)}
+                      icon={Trash2}
+                      label="Hapus"
+                      title={`Hapus ${b.judul}`}
                       aria-label={`Hapus ${b.judul}`}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </ActionButton>
+                    />
                   ) : null}
-                </div>
+                </TableActions>
               </li>
             ))}
           </ul>

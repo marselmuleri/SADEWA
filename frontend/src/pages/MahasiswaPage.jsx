@@ -16,6 +16,7 @@ import {
   StopCircle,
 } from 'lucide-react'
 import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionButton } from '../components/TableActions'
 import Modal from '../components/Modal'
 import useAuth from '../hooks/useAuth'
 import useToast from '../hooks/useToast'
@@ -685,12 +686,12 @@ export default function MahasiswaPage() {
                   <th className="px-4 py-3">Semester</th>
                   <th className="px-4 py-3">Jalur Masuk</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3 text-right">Aksi</th>
+                  <TableActionHeader />
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E2E8F0]">
                 {filteredList.map((item, idx) => (
-                  <tr key={item.id} className="transition-colors hover:bg-[#F8FAFC]/80">
+                  <tr key={item.id} className="align-top transition-colors hover:bg-[#F8FAFC]/80">
                     <td className="px-4 py-3 text-xs text-[#64748B]">{idx + 1}</td>
                     <td className="px-4 py-3 font-mono font-medium text-[#142B4A]">{item.nim}</td>
                     <td className="px-4 py-3 font-semibold text-[#142B4A]">{item.nama}</td>
@@ -711,26 +712,24 @@ export default function MahasiswaPage() {
                         )
                       })()}
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleOpenEdit(item)}
-                          className="inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold text-[#1A3A6B] hover:bg-[#F2F4F7]"
-                          data-testid={`btn-edit-mahasiswa-${item.id}`}
-                        >
-                          <Edit2 className="h-3.5 w-3.5" />
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleOpenDelete(item)}
-                          className="inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
-                          data-testid={`btn-hapus-mahasiswa-${item.id}`}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Hapus
-                        </button>
-                      </div>
-                    </td>
+                    <TableActionCell>
+                      <TableActionButton
+                        variant="secondary"
+                        onClick={() => handleOpenEdit(item)}
+                        data-testid={`btn-edit-mahasiswa-${item.id}`}
+                        icon={Edit2}
+                        label="Edit"
+                        title="Edit data mahasiswa"
+                      />
+                      <TableActionButton
+                        variant="danger"
+                        onClick={() => handleOpenDelete(item)}
+                        data-testid={`btn-hapus-mahasiswa-${item.id}`}
+                        icon={Trash2}
+                        label="Hapus"
+                        title="Hapus data mahasiswa"
+                      />
+                    </TableActionCell>
                   </tr>
                 ))}
               </tbody>

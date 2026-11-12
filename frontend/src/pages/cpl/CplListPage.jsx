@@ -12,6 +12,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { PageHeader, SectionCard, Badge, ActionButton } from '../../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionButton, TableActionLink } from '../../components/TableActions'
 import Modal from '../../components/Modal'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import KurikulumVersionSelector from '../../components/KurikulumVersionSelector'
@@ -367,7 +368,7 @@ export default function CplListPage() {
                 <th className="py-3 px-4">Deskripsi CPL</th>
                 <th className="py-3 px-4 text-center w-36">Target Capaian</th>
                 <th className="py-3 px-4 text-center w-28">Jumlah IK</th>
-                <th className="py-3 px-4 text-right w-64">Aksi</th>
+                <TableActionHeader />
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0]">
@@ -394,7 +395,7 @@ export default function CplListPage() {
                   return (
                     <tr
                       key={cpl.id}
-                      className="transition-colors hover:bg-[#F8FAFC]"
+                      className="align-top transition-colors hover:bg-[#F8FAFC]"
                       data-testid={`cpl-row-${cpl.id}`}
                     >
                       <td className="py-3 px-4 font-mono font-bold text-[#1A3A6B]">{cpl.kode}</td>
@@ -409,57 +410,49 @@ export default function CplListPage() {
                           {ikCount}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Aksi Indikator */}
-                          <Link
-                            to={`/kurikulum/cpl/${cpl.id}/indikator`}
-                            data-testid={`cpl-indikator-button-${cpl.id}`}
-                            className="inline-flex items-center gap-1 rounded-[4px] border border-[#CBD5E1] bg-white px-2 py-1 text-xs font-semibold text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B] transition-colors"
-                            title="Kelola Indikator Kinerja"
-                          >
-                            <ListOrdered className="h-3 w-3 text-[#1A3A6B]" />
-                            <span>Indikator</span>
-                          </Link>
+                      <TableActionCell>
+                        {/* Aksi Indikator */}
+                        <TableActionLink
+                          to={`/kurikulum/cpl/${cpl.id}/indikator`}
+                          data-testid={`cpl-indikator-button-${cpl.id}`}
+                          icon={ListOrdered}
+                          label="Indikator"
+                          title="Kelola Indikator Kinerja"
+                        />
 
-                          {/* Aksi Pemetaan */}
-                          <Link
-                            to={`/kurikulum/pemetaan?cplId=${cpl.id}`}
-                            data-testid={`cpl-pemetaan-button-${cpl.id}`}
-                            className="inline-flex items-center gap-1 rounded-[4px] border border-[#CBD5E1] bg-white px-2 py-1 text-xs font-semibold text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B] transition-colors"
-                            title="Lihat Pemetaan Mata Kuliah"
-                          >
-                            <Network className="h-3 w-3 text-[#F4A300]" />
-                            <span>Pemetaan</span>
-                          </Link>
+                        {/* Aksi Pemetaan */}
+                        <TableActionLink
+                          to={`/kurikulum/pemetaan?cplId=${cpl.id}`}
+                          data-testid={`cpl-pemetaan-button-${cpl.id}`}
+                          icon={Network}
+                          label="Pemetaan"
+                          title="Lihat Pemetaan Mata Kuliah"
+                        />
 
-                          {/* Aksi Detail/Edit */}
-                          {isAdminProdi && (
-                            <button
-                              type="button"
-                              onClick={() => handleOpenEdit(cpl)}
-                              data-testid={`cpl-edit-button-${cpl.id}`}
-                              className="inline-flex items-center gap-1 rounded-[4px] border border-[#CBD5E1] bg-white p-1 text-xs text-[#64748B] hover:border-[#1A3A6B] hover:text-[#1A3A6B] transition-colors"
-                              title="Edit CPL"
-                            >
-                              <Edit2 className="h-3.5 w-3.5" />
-                            </button>
-                          )}
+                        {/* Aksi Detail/Edit */}
+                        {isAdminProdi && (
+                          <TableActionButton
+                            variant="secondary"
+                            onClick={() => handleOpenEdit(cpl)}
+                            data-testid={`cpl-edit-button-${cpl.id}`}
+                            icon={Edit2}
+                            label="Edit"
+                            title="Edit CPL"
+                          />
+                        )}
 
-                          {/* Aksi Hapus */}
-                          {isAdminProdi && (
-                            <button
-                              type="button"
-                              onClick={() => setCplToDelete(cpl)}
-                              data-testid={`cpl-delete-button-${cpl.id}`}
-                              className="inline-flex items-center gap-1 rounded-[4px] border border-red-200 bg-red-50 p-1 text-xs text-red-600 hover:bg-red-100 transition-colors"
-                              title="Hapus CPL"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
+                        {/* Aksi Hapus */}
+                        {isAdminProdi && (
+                          <TableActionButton
+                            variant="danger"
+                            onClick={() => setCplToDelete(cpl)}
+                            data-testid={`cpl-delete-button-${cpl.id}`}
+                            icon={Trash2}
+                            label="Hapus"
+                            title="Hapus CPL"
+                          />
+                        )}
+                      </TableActionCell>
                     </tr>
                   )
                 })

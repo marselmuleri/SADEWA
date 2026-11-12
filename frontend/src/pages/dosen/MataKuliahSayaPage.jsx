@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AlertCircle, BookOpen, ChevronRight, Layers, Loader2, Network, Search, Target } from 'lucide-react'
 import { PageHeader, SectionCard, StatCard } from '../../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionLink } from '../../components/TableActions'
 import useCpmkWorkspace from '../../components/cpmk/useCpmkWorkspace'
 import { deriveCplCodes, round2 } from '../../components/cpmk/cpmkData'
 
@@ -101,7 +102,7 @@ export default function MataKuliahSayaPage() {
                 <th className="w-28 px-4 py-3 text-center">CPMK</th>
                 <th className="w-44 px-4 py-3">CPL yang Diukur</th>
                 <th className="w-32 px-4 py-3 text-center">Total Bobot</th>
-                <th className="w-52 px-4 py-3 text-right">Aksi</th>
+                <TableActionHeader />
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0]">
@@ -122,7 +123,7 @@ export default function MataKuliahSayaPage() {
                 </tr>
               ) : (
                 filtered.map(({ mk, cpmkCount, cplCodes, totalBobot, unmapped }) => (
-                  <tr key={mk.id} className="transition-colors hover:bg-[#F8FAFC]" data-testid={`mk-saya-row-${mk.id}`}>
+                  <tr key={mk.id} className="align-top transition-colors hover:bg-[#F8FAFC]" data-testid={`mk-saya-row-${mk.id}`}>
                     <td className="px-4 py-3">
                       <span className="block font-mono font-bold text-[#1A3A6B]">{mk.kode}</span>
                       <span className="block font-semibold text-[#142B4A]">{mk.nama}</span>
@@ -149,16 +150,16 @@ export default function MataKuliahSayaPage() {
                         {totalBobot}%
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
+                    <TableActionCell>
+                      <TableActionLink
                         to={`/kurikulum/cpmk/mk/${mk.id}`}
                         data-testid={`kelola-mk-${mk.id}`}
-                        className="inline-flex items-center gap-1.5 rounded-[6px] bg-[#1A3A6B] px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#142B4A]"
-                      >
-                        Kelola CPL &amp; CPMK
-                        <ChevronRight className="h-4 w-4" />
-                      </Link>
-                    </td>
+                        variant="primary"
+                        icon={ChevronRight}
+                        label="Kelola CPL & CPMK"
+                        title="Kelola CPL & CPMK"
+                      />
+                    </TableActionCell>
                   </tr>
                 ))
               )}
