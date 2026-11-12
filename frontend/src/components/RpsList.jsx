@@ -216,28 +216,13 @@ export default function RpsList({ mataKuliahId, mataKuliah = null, refreshKey = 
                         variant="secondary"
                         onClick={() => { setOpenId(rps.id); setEditId(rps.id) }}
                         data-testid={`rps-edit-${rps.id}`}
-<<<<<<< HEAD
-                      >
-                        <Pencil className="h-3.5 w-3.5" /> Edit
-                      </ActionButton>
-                      <ActionButton variant="secondary" onClick={() => downloadRpsWord(rps, identitas)} data-testid={`rps-word-${rps.id}`}>
-                        <Download className="h-3.5 w-3.5" /> Word
-                      </ActionButton>
-                      <ActionButton variant="secondary" onClick={() => cetak(rps)} data-testid={`rps-pdf-${rps.id}`}>
-                        <Printer className="h-3.5 w-3.5" /> Cetak / PDF
-                      </ActionButton>
-                      <ActionButton variant="secondary" onClick={() => setHapusTarget(rps)} data-testid={`rps-hapus-${rps.id}`}>
-                        <Trash2 className="h-3.5 w-3.5 text-[#EF4444]" /> Hapus
-                      </ActionButton>
-                    </div>
-=======
                         icon={Pencil}
                         label="Edit"
                         title="Edit Draf RPS"
                       />
                       <TableActionButton
                         variant="secondary"
-                        onClick={() => downloadRpsWord(rps, mataKuliah)}
+                        onClick={() => downloadRpsWord(rps, identitas)}
                         data-testid={`rps-word-${rps.id}`}
                         icon={Download}
                         label="Word"
@@ -260,7 +245,6 @@ export default function RpsList({ mataKuliahId, mataKuliah = null, refreshKey = 
                         title="Hapus Draf RPS"
                       />
                     </TableActions>
->>>>>>> 3c9876ccfd08fbf37e89548563c1f282ab5fd208
                   )}
                 </div>
                 {isOpen && (
