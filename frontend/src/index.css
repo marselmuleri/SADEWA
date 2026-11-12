@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Public+Sans:wght@500;600;700&display=swap');
+/* Font Inter & Public Sans dimuat di index.html (preconnect + non-blocking), bukan @import di sini:
+   @import di CSS membuat rantai unduhan berurutan yang memblokir render. */
 
 @tailwind base;
 @tailwind components;

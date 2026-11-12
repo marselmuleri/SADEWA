@@ -10,6 +10,7 @@ import {
   Sliders,
   AlertCircle,
   Network,
+  BarChart3,
 } from 'lucide-react'
 import { PageHeader, SectionCard, StatCard, Badge } from '../components/PageChrome'
 import Modal from '../components/Modal'
@@ -68,7 +69,8 @@ export default function KurikulumPage() {
       }
       setVersions(list)
       if (list.length > 0) {
-        setSelectedVersionId(list[0].id)
+        // Default: kurikulum aktif (yang dipakai Analitik OBE)
+        setSelectedVersionId((list.find((v) => v.is_aktif) || list[0]).id)
       } else {
         setSelectedVersionId(null)
       }
@@ -152,6 +154,9 @@ export default function KurikulumPage() {
   const currentVersion = useMemo(() => {
     return versions.find((v) => v.id === selectedVersionId) || versions[0] || null
   }, [versions, selectedVersionId])
+
+  // Kurikulum yang dipakai Analitik OBE prodi
+  const activeVersion = useMemo(() => versions.find((v) => v.is_aktif) || null, [versions])
 
   // Accordion toggle
   const toggleCplAccordion = (id) => {
@@ -239,7 +244,7 @@ export default function KurikulumPage() {
                   >
                     {versions.map((v) => (
                       <option key={v.id} value={v.id}>
-                        {v.version_label} ({v.semester}) {v.status === 'published' ? '✓' : '(Draft)'}
+                        {v.version_label} {v.status === 'published' ? '✓' : '(Draft)'}{v.is_aktif ? ' · Aktif' : ''}
                       </option>
                     ))}
                   </select>
@@ -254,8 +259,43 @@ export default function KurikulumPage() {
                   {currentVersion.status === 'published' ? 'Published' : 'Draft'}
                 </Badge>
               )}
+              {currentVersion?.is_aktif && <Badge tone="default">Kurikulum Aktif</Badge>}
             </div>
           </div>
+
+          {/* Kurikulum yang sedang dipakai Analitik OBE */}
+          {!loadingVersions && (
+            <div
+              data-testid="info-kurikulum-aktif"
+              className={`flex flex-wrap items-center gap-2 rounded-[8px] border p-3.5 text-xs ${
+                activeVersion?.aktif_ditetapkan
+                  ? 'border-[#CBD5E1] bg-[#F8FAFC] text-[#142B4A]'
+                  : 'border-amber-200 bg-amber-50 text-amber-900'
+              }`}
+            >
+              <BarChart3 className="h-4 w-4 shrink-0" />
+              {activeVersion ? (
+                <span>
+                  Kurikulum yang digunakan untuk Analitik OBE: <strong>{activeVersion.version_label}</strong>
+                  {activeVersion.tahun ? ` (${activeVersion.tahun})` : ''}
+                  {activeVersion.aktif_ditetapkan
+                    ? ', ditetapkan oleh Admin Prodi.'
+                    : '. Belum ditetapkan Admin Prodi, jadi sementara memakai versi terbaru yang sudah dipublikasikan.'}
+                </span>
+              ) : (
+                <span>Belum ada kurikulum yang dipublikasikan, sehingga Analitik OBE belum dapat ditampilkan.</span>
+              )}
+              {activeVersion && currentVersion && currentVersion.id !== activeVersion.id && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedVersionId(activeVersion.id)}
+                  className="ml-auto font-semibold text-[#1A3A6B] underline-offset-2 hover:underline"
+                >
+                  Lihat kurikulum aktif
+                </button>
+              )}
+            </div>
+          )}
 
           {errorData && (
             <div className="flex items-center gap-3 rounded-[8px] border border-red-200 bg-red-50 p-4 text-xs text-red-800">

@@ -1,4 +1,5 @@
 from tests.test_users import _auth_headers, _bootstrap_super_admin, _login, _setup_fakultas_dan_prodi
+from tests.test_ui_audit_fixes import audit_data, auth_header, db_session  # noqa: F401,E402 (fixtures)
 
 
 def _admin_prodi_token(client):
@@ -54,3 +55,19 @@ def test_filter_daftar_berdasarkan_status_akademik(client):
     resp = client.get("/api/v1/mahasiswa", params={"status_akademik": "Lulus"}, headers=headers)
     assert resp.status_code == 200
     assert [m["nim"] for m in resp.json()] == ["24060121120002"]
+
+
+def test_impor_siakad_tambah_dan_perbarui(client, audit_data):
+    """Payload yang dikirim impor ekspor SIAKAD: tambah dengan angkatan & status, lalu perbarui status/semester."""
+    h = auth_header(audit_data["admin_a"])
+    res = client.post("/api/v1/mahasiswa", json={
+        "nim": "21120123120099", "nama": "MAHASISWA UJI", "semester_aktif": 6,
+        "status_masuk": "Reguler", "status_akademik": "Keluar", "angkatan": 2023,
+    }, headers=h)
+    assert res.status_code == 200, res.text
+    m = res.json()
+    assert (m["angkatan"], m["status_akademik"], m["semester_aktif"]) == (2023, "Keluar", 6)
+
+    res = client.put(f"/api/v1/mahasiswa/{m['id']}", json={"status_akademik": "Cuti", "semester_aktif": 7, "angkatan": 2023}, headers=h)
+    assert res.status_code == 200, res.text
+    assert (res.json()["status_akademik"], res.json()["semester_aktif"]) == ("Cuti", 7)

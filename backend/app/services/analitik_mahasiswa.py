@@ -40,8 +40,14 @@ def _mean(values) -> Decimal | None:
     return sum(values) / len(values) if values else None
 
 
-def _cpl_rows(db: Session, mk_ids: list[int], mahasiswa_ids, *, prodi_id: int | None, include_legacy: bool):
-    """Baris CPLAchievement dalam cakupan. Baris lama tanpa MK hanya untuk cakupan seluruh prodi."""
+def _cpl_rows(
+    db: Session, mk_ids: list[int], mahasiswa_ids, *, prodi_id: int | None, include_legacy: bool,
+    kurikulum_id: int | None = None,
+):
+    """
+    Baris CPLAchievement dalam cakupan. Baris lama tanpa MK hanya untuk cakupan seluruh prodi.
+    kurikulum_id: bila diisi, hanya CPL dari versi kurikulum tersebut (kurikulum aktif prodi).
+    """
     if not mahasiswa_ids:
         return []
     q = db.query(CPLAchievement).filter(CPLAchievement.mahasiswa_id.in_(list(mahasiswa_ids)))
@@ -50,8 +56,12 @@ def _cpl_rows(db: Session, mk_ids: list[int], mahasiswa_ids, *, prodi_id: int | 
             CPL.program_studi_id == prodi_id,
             or_(CPLAchievement.mata_kuliah_id.in_(mk_ids or [-1]), CPLAchievement.mata_kuliah_id.is_(None)),
         )
+        if kurikulum_id:
+            q = q.filter(CPL.kurikulum_version_id == kurikulum_id)
     else:
         q = q.filter(CPLAchievement.mata_kuliah_id.in_(mk_ids or [-1]))
+        if kurikulum_id:
+            q = q.join(CPL, CPL.id == CPLAchievement.cpl_id).filter(CPL.kurikulum_version_id == kurikulum_id)
     return q.all()
 
 
@@ -65,6 +75,7 @@ def daftar_mahasiswa(
     mk_ids: list[int],
     prodi_id: int | None,
     prodi_penuh: bool,
+    kurikulum_id: int | None = None,
     angkatan: int | None = None,
     search: str | None = None,
 ) -> dict:
@@ -101,7 +112,7 @@ def daftar_mahasiswa(
             peserta_mhs[p.id] = p.mahasiswa_id
 
     # CPL gabungan (lintas MK dalam cakupan)
-    rows = _cpl_rows(db, mk_ids, ids, prodi_id=prodi_id, include_legacy=prodi_penuh)
+    rows = _cpl_rows(db, mk_ids, ids, prodi_id=prodi_id, include_legacy=prodi_penuh, kurikulum_id=kurikulum_id)
     cpl_map = _threshold_cpl(db, {r.cpl_id for r in rows})
     cpl_per_mhs: dict[int, list[tuple[Decimal, Decimal]]] = defaultdict(list)
     for g in gabung_capaian_cpl(rows).values():
@@ -156,6 +167,7 @@ def analitik_mahasiswa(
     mk_ids: list[int],
     prodi_id: int | None,
     prodi_penuh: bool,
+    kurikulum_id: int | None = None,
 ) -> dict:
     """
     Detail capaian satu mahasiswa dalam cakupan, beserta pembanding:
@@ -192,7 +204,7 @@ def analitik_mahasiswa(
         })
 
     # --- CPL: nilai mahasiswa vs rata-rata seangkatan ---------------------------------
-    rows_mhs = _cpl_rows(db, mk_diikuti, [mhs.id], prodi_id=prodi_id, include_legacy=prodi_penuh)
+    rows_mhs = _cpl_rows(db, mk_diikuti, [mhs.id], prodi_id=prodi_id, include_legacy=prodi_penuh, kurikulum_id=kurikulum_id)
     gab_mhs = gabung_capaian_cpl(rows_mhs)
     cpl_ids = {g.cpl_id for g in gab_mhs.values()}
     cpl_map = _threshold_cpl(db, cpl_ids)
@@ -210,7 +222,7 @@ def analitik_mahasiswa(
             ).distinct()
         kohort_ids = [r[0] for r in kohort_q.all()]
         rows_kohort = [
-            r for r in _cpl_rows(db, mk_ids, kohort_ids, prodi_id=prodi_id, include_legacy=prodi_penuh)
+            r for r in _cpl_rows(db, mk_ids, kohort_ids, prodi_id=prodi_id, include_legacy=prodi_penuh, kurikulum_id=kurikulum_id)
             if r.cpl_id in cpl_ids
         ]
         for g in gabung_capaian_cpl(rows_kohort).values():

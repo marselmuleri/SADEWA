@@ -1,51 +1,63 @@
+import { Suspense, lazy } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import PageErrorBoundary from './components/PageErrorBoundary'
 import AiJobDock from './components/AiJobDock'
 import Navbar from './components/Navbar'
 import ProtectedRoute from './components/ProtectedRoute'
+// Halaman login dimuat langsung (halaman pertama); halaman lain dipecah per rute (code splitting)
+// sehingga kode & library berat (mis. recharts) hanya diunduh saat halamannya dibuka.
 import LoginPage from './pages/LoginPage'
-import DashboardPage from './pages/DashboardPage'
-import PesertaMataKuliahPage from './pages/PesertaMataKuliahPage'
-import MahasiswaPage from './pages/MahasiswaPage'
-import NilaiPage from './pages/NilaiPage'
-import AnalisisPage from './pages/AnalisisPage'
-import PengaturanPage from './pages/PengaturanPage'
-import KurikulumPage from './pages/KurikulumPage'
-import DokumenPage from './pages/DokumenPage'
-import FakultasPage from './pages/FakultasPage'
-import ProdiPage from './pages/ProdiPage'
-import UserManagementSAPage from './pages/UserManagementSAPage'
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const PesertaMataKuliahPage = lazy(() => import('./pages/PesertaMataKuliahPage'))
+const MahasiswaPage = lazy(() => import('./pages/MahasiswaPage'))
+const NilaiPage = lazy(() => import('./pages/NilaiPage'))
+const AnalisisPage = lazy(() => import('./pages/AnalisisPage'))
+const PengaturanPage = lazy(() => import('./pages/PengaturanPage'))
+const KurikulumPage = lazy(() => import('./pages/KurikulumPage'))
+const DokumenPage = lazy(() => import('./pages/DokumenPage'))
+const FakultasPage = lazy(() => import('./pages/FakultasPage'))
+const ProdiPage = lazy(() => import('./pages/ProdiPage'))
+const UserManagementSAPage = lazy(() => import('./pages/UserManagementSAPage'))
 
 // Phase A OBE Kurikulum Pages
-import CplListPage from './pages/cpl/CplListPage'
-import CplIndikatorPage from './pages/cpl/CplIndikatorPage'
-import PemetaanIkPage from './pages/cpl/PemetaanIkPage'
-import CpmkMkListPage from './pages/cpmk/CpmkMkListPage'
-import CpmkDetailPage from './pages/cpmk/CpmkDetailPage'
-import MataKuliahListPage from './pages/mk/MataKuliahListPage'
-import JenisEvaluasiPage from './pages/evaluasi/JenisEvaluasiPage'
-import BentukPenilaianPage from './pages/evaluasi/BentukPenilaianPage'
-import PenilaianPage from './pages/dosen/PenilaianPage'
-import MataKuliahSayaPage from './pages/dosen/MataKuliahSayaPage'
-import CpmkSayaPage from './pages/dosen/CpmkSayaPage'
-import DataMasterLayout from './pages/datamaster/DataMasterLayout'
-import DataMasterKurikulumPage from './pages/datamaster/DataMasterKurikulumPage'
-import DataMasterCplPage from './pages/datamaster/DataMasterCplPage'
-import DataMasterIkPage from './pages/datamaster/DataMasterIkPage'
-import DataMasterCpmkPage from './pages/datamaster/DataMasterCpmkPage'
-import DataMasterArsipPage from './pages/datamaster/DataMasterArsipPage'
-import PortofolioPage from './pages/portofolio/PortofolioPage'
-import PortofolioDetailPage from './pages/portofolio/PortofolioDetailPage'
-import AturanPenilaianPage from './pages/AturanPenilaianPage'
+const CplListPage = lazy(() => import('./pages/cpl/CplListPage'))
+const CplIndikatorPage = lazy(() => import('./pages/cpl/CplIndikatorPage'))
+const PemetaanIkPage = lazy(() => import('./pages/cpl/PemetaanIkPage'))
+const CpmkMkListPage = lazy(() => import('./pages/cpmk/CpmkMkListPage'))
+const CpmkDetailPage = lazy(() => import('./pages/cpmk/CpmkDetailPage'))
+const MataKuliahListPage = lazy(() => import('./pages/mk/MataKuliahListPage'))
+const JenisEvaluasiPage = lazy(() => import('./pages/evaluasi/JenisEvaluasiPage'))
+const BentukPenilaianPage = lazy(() => import('./pages/evaluasi/BentukPenilaianPage'))
+const PenilaianPage = lazy(() => import('./pages/dosen/PenilaianPage'))
+const MataKuliahSayaPage = lazy(() => import('./pages/dosen/MataKuliahSayaPage'))
+const CpmkSayaPage = lazy(() => import('./pages/dosen/CpmkSayaPage'))
+const DataMasterLayout = lazy(() => import('./pages/datamaster/DataMasterLayout'))
+const DataMasterKurikulumPage = lazy(() => import('./pages/datamaster/DataMasterKurikulumPage'))
+const DataMasterCplPage = lazy(() => import('./pages/datamaster/DataMasterCplPage'))
+const DataMasterIkPage = lazy(() => import('./pages/datamaster/DataMasterIkPage'))
+const DataMasterCpmkPage = lazy(() => import('./pages/datamaster/DataMasterCpmkPage'))
+const DataMasterArsipPage = lazy(() => import('./pages/datamaster/DataMasterArsipPage'))
+const PortofolioPage = lazy(() => import('./pages/portofolio/PortofolioPage'))
+const PortofolioDetailPage = lazy(() => import('./pages/portofolio/PortofolioDetailPage'))
+const AturanPenilaianPage = lazy(() => import('./pages/AturanPenilaianPage'))
 
 import useAuth from './hooks/useAuth'
+
+function MemuatHalaman() {
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center" role="status" aria-live="polite">
+      <span className="h-6 w-6 animate-spin rounded-full border-2 border-[#CBD5E1] border-t-[#1A3A6B]" aria-hidden="true" />
+      <span className="sr-only">Memuat halaman...</span>
+    </div>
+  )
+}
 
 function AppLayout({ children }) {
   const location = useLocation()
   return (
     <Navbar>
       <PageErrorBoundary key={location.pathname}>
-        {children}
+        <Suspense fallback={<MemuatHalaman />}>{children}</Suspense>
       </PageErrorBoundary>
     </Navbar>
   )
@@ -76,6 +88,7 @@ function DataMasterIndexRedirect() {
 export default function App() {
   return (
     <BrowserRouter>
+      <Suspense fallback={<MemuatHalaman />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 
@@ -396,6 +409,7 @@ export default function App() {
           }
         />
       </Routes>
+      </Suspense>
       {/* Proses AI (Generate RPS / Narasi) yang berjalan di latar belakang */}
       <AiJobDock />
     </BrowserRouter>

@@ -208,7 +208,7 @@ export default function AnalitikMahasiswa({ isDosen = false, programStudiId = nu
     )
 
   const mkOptions = [
-    { value: '', label: isDosen ? `Semua mata kuliah yang diampu (${courses.length})` : `Seluruh mahasiswa prodi` },
+    { value: '', label: isDosen ? `Semua mata kuliah yang diampu (${courses.length})` : `Semua Mata Kuliah (${courses.length})` },
     ...courses.map((c) => ({
       value: c.id,
       label: `${c.kode} - ${c.nama}`,

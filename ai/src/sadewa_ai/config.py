@@ -84,7 +84,7 @@ class Settings(BaseSettings):
     llm_max_retries: int = 2
 
     # Parameter generasi
-    rps_max_tokens: int = 3000
+    rps_max_tokens: int = 12000  # Kontrak Kuliah + RPS format baru (16 pertemuan, kolom lengkap)
     rps_temperature: float = 0.4
     narasi_max_tokens: int = 2500
     narasi_temperature: float = 0.5

@@ -17,14 +17,22 @@ from sadewa_ai import api, rag_chain  # noqa: E402
 RPS_VALID = {
     "kode_mk": "TKK1234",
     "deskripsi_mk": "Deskripsi.",
-    "cpl": [{"kode": "CPL 1", "deskripsi": "x"}],
-    "cpmk": [{"kode": "CPMK 1-1", "deskripsi": "y"}],
+    "cpl": [{"kode": "CPL 1", "deskripsi": "x", "label": "ENGINEERING DESIGN"}],
+    "cpmk": [{"kode": "CPMK 1.1", "deskripsi": "y"}],
+    "penilaian": [
+        {"poin": "Tugas", "komponen": "Tugas", "rincian": ["Tugas harian"], "bobot": 70, "cpmk": ["CPMK 1.1"]},
+        {"poin": "Kognitif / Pengetahuan", "komponen": "UTS", "bobot": 15, "cpmk": ["CPMK 1.1"]},
+        {"poin": "Kognitif / Pengetahuan", "komponen": "UAS", "bobot": 15, "cpmk": ["CPMK 1.1"]},
+    ],
     "pertemuan": [
-        {"minggu": i, "cpmk": "-" if i in (8, 16) else "CPMK 1-1", "sub_cpmk": "s",
-         "materi": "UTS" if i == 8 else "UAS" if i == 16 else f"Materi {i}", "metode": "Ceramah",
-         "bobot": 20 if i == 8 else 30 if i == 16 else (4 if i <= 8 else 3)}
+        {"minggu": i, "jenis": "UTS"} if i == 8 else {"minggu": i, "jenis": "UAS"} if i == 16 else {
+            "minggu": i, "kemampuan_akhir": "Mahasiswa mampu (C3)", "bahan_kajian_judul": f"Materi {i}",
+            "bahan_kajian": "rincian", "metode": "Ceramah", "pengalaman_belajar": ["belajar"],
+            "target_cpmk": ["CPMK 1.1"], "kriteria_indikator": ["indikator"],
+        }
         for i in range(1, 17)
     ],
+    "referensi": ["Buku teks"],
 }
 
 

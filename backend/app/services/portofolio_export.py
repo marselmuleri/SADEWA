@@ -44,6 +44,7 @@ from app.models.rps import RPS
 from app.services.skala_nilai import KelompokSkala, muat_kelompok, pilih_kelompok
 from app.models.user import User
 from app.services.portofolio import capaian_mata_kuliah, evaluasi_cpmk
+from app.services.rps_format import daftar_pertemuan
 from app.services.portofolio_aturan import AturanPortofolio, aturan_prodi
 
 # --- Gaya ---------------------------------------------------------------------
@@ -540,7 +541,7 @@ def _sheet_rps(wb: Workbook, d: DataPortofolio):
     _set(ws, "E3", d.mk.sks)
 
     konten = d.rps_konten or {}
-    pertemuan = {int(p.get("minggu") or 0): p for p in konten.get("pertemuan") or [] if isinstance(p, dict)}
+    pertemuan = {int(p.get("minggu") or 0): p for p in daftar_pertemuan(konten)}
     rpp = {p.pertemuan_ke: p for p in d.rpp}
     minggu = sorted(set(pertemuan) | set(rpp))
     r = BARIS_HEADER
@@ -560,12 +561,12 @@ def _sheet_rps(wb: Workbook, d: DataPortofolio):
         q = rpp.get(m)
         _sel(ws, row, 1, m, align=TENGAH)
         _sel(ws, row, 2, p.get("cpmk") or (q.cpmk if q else "") or "", align=TENGAH)
-        _sel(ws, row, 3, p.get("sub_cpmk") or "", align=WRAP)
+        _sel(ws, row, 3, p.get("kemampuan_akhir") or "", align=WRAP)
         _sel(ws, row, 4, p.get("materi") or (q.materi if q else "") or "", align=WRAP)
         _sel(ws, row, 5, p.get("metode") or (q.metode if q else "") or "", align=WRAP)
-        _sel(ws, row, 6, (q.waktu if q else "") or "", align=TENGAH)
-        _sel(ws, row, 7, (q.pengalaman_belajar if q else "") or "", align=WRAP)
-        _sel(ws, row, 8, (q.indikator_kriteria if q else "") or "", align=WRAP)
+        _sel(ws, row, 6, (q.waktu if q else "") or p.get("waktu") or "", align=TENGAH)
+        _sel(ws, row, 7, (q.pengalaman_belajar if q else "") or p.get("pengalaman_belajar") or "", align=WRAP)
+        _sel(ws, row, 8, (q.indikator_kriteria if q else "") or p.get("kriteria_indikator") or "", align=WRAP)
         _sel(ws, row, 9, _f(p.get("bobot")) if p.get("bobot") is not None else None, FMT_NILAI)
         _sel(ws, row, 10, q.tanggal if q and q.tanggal else None, "dd/mm/yyyy")
         _sel(ws, row, 11, (q.realisasi if q else "") or "", align=WRAP)
@@ -695,8 +696,7 @@ def _sheet_kontrak(wb: Workbook, d: DataPortofolio):
     _header(ws, r, 2, "Pokok Bahasan")
     ws.merge_cells(start_row=r, start_column=2, end_row=r, end_column=8)
     pertemuan = sorted(
-        ((int(p.get("minggu") or 0), p.get("materi") or "") for p in (d.rps_konten or {}).get("pertemuan") or []
-         if isinstance(p, dict)),
+        ((int(p.get("minggu") or 0), p.get("materi") or "") for p in daftar_pertemuan(d.rps_konten)),
         key=lambda x: x[0],
     ) or [(p.pertemuan_ke, p.materi or "") for p in d.rpp]
     for i, (m, materi) in enumerate(pertemuan, start=1):
@@ -985,6 +985,20 @@ def _sheet_capaian(
     return alamat
 
 
+def _daftar_remidi(d: DataPortofolio) -> list[tuple[dict, list[str]]]:
+    """Mahasiswa lulus nilai akhir tetapi ada CPMK di bawah ambang: (baris mahasiswa, kode CPMK kurang)."""
+    ambang = d.aturan.ambang_cpmk
+    kode = {str(c.id): c.kode for c in d.cpmk}
+    hasil = []
+    for m in d.capaian["mahasiswa"]:
+        if m["nilai_akhir"] is None or m["nilai_akhir"] < ambang:
+            continue
+        kurang = [kode[cid] for cid, v in m["cpmk"].items() if v is not None and v < ambang and cid in kode]
+        if kurang:
+            hasil.append((m, kurang))
+    return hasil
+
+
 def _sheet_remidi(wb: Workbook, d: DataPortofolio):
     ws = wb.create_sheet("REMIDI")
     _identitas(ws, d, "DAFTAR MAHASISWA REMIDI CPMK")
@@ -994,14 +1008,8 @@ def _sheet_remidi(wb: Workbook, d: DataPortofolio):
              ("CPMK yang harus diremidi", 40)]
     for i, (h, w) in enumerate(heads, start=1):
         _header(ws, BARIS_HEADER, i, h, w)
-    kode = {str(c.id): c.kode for c in d.cpmk}
     row = BARIS_HEADER
-    for m in d.capaian["mahasiswa"]:
-        if m["nilai_akhir"] is None or m["nilai_akhir"] < ambang:
-            continue
-        kurang = [kode[cid] for cid, v in m["cpmk"].items() if v is not None and v < ambang and cid in kode]
-        if not kurang:
-            continue
+    for m, kurang in _daftar_remidi(d):
         row += 1
         _sel(ws, row, 1, row - BARIS_HEADER, align=TENGAH)
         _sel(ws, row, 2, m["nim"])
@@ -1049,7 +1057,11 @@ def _sheet_evaluasi(wb: Workbook, d: DataPortofolio, alamat_cpmk: dict[int, tupl
 # --- Entry point ------------------------------------------------------------------
 
 def buat_workbook(db: Session, mk: MataKuliah) -> Workbook:
-    d = kumpulkan_data(db, mk)
+    return _bangun_workbook(kumpulkan_data(db, mk))[0]
+
+
+def _bangun_workbook(d: DataPortofolio) -> tuple[Workbook, dict[str, JenisBlok]]:
+    """Workbook + peta nama sheet NILAI <jenis> -> blok jenis evaluasinya."""
     wb = Workbook()
     _sheet_cover(wb, d)
     _sheet_cpmk_cpl(wb, d)
@@ -1097,12 +1109,148 @@ def buat_workbook(db: Session, mk: MataKuliah) -> Workbook:
         ws.page_setup.fitToHeight = 0
     wb.calculation.fullCalcOnLoad = True
     wb.active = 0
-    return wb
+    return wb, {sheet: je for je, sheet, _ in ref_jenis}
+
+
+def _nama_file(mk: MataKuliah) -> str:
+    nama = re.sub(r'[\\/:*?"<>|]+', " ", f"Portofolio {mk.kode} {mk.nama} {mk.tahun_ajaran or ''} {_semester(mk)}")
+    return re.sub(r"\s+", " ", nama).strip() + ".xlsx"
 
 
 def export_portofolio(db: Session, mk: MataKuliah) -> tuple[bytes, str]:
     wb = buat_workbook(db, mk)
     buf = io.BytesIO()
     wb.save(buf)
-    nama = re.sub(r'[\\/:*?"<>|]+', " ", f"Portofolio {mk.kode} {mk.nama} {mk.tahun_ajaran or ''} {_semester(mk)}")
-    return buf.getvalue(), re.sub(r"\s+", " ", nama).strip() + ".xlsx"
+    return buf.getvalue(), _nama_file(mk)
+
+
+# --- Ringkasan sebelum unduh (preview) ----------------------------------------------
+
+def _terisi(teks) -> bool:
+    return teks is not None and bool(str(teks).strip())
+
+
+def _item(nama: str, isi: str, catatan: list | None = None, kosong: bool = False) -> dict:
+    catatan = [c for c in (catatan or []) if c]
+    status = "kosong" if kosong else ("perlu_dilengkapi" if catatan else "lengkap")
+    return {"nama": nama, "isi": isi, "status": status, "catatan": catatan}
+
+
+def ringkasan_export(db: Session, mk: MataKuliah) -> dict:
+    """
+    Ringkasan isi file Excel portofolio per sheet beserta kelengkapannya, untuk
+    ditinjau sebelum diunduh. Urutan & nama sheet sama persis dengan file export.
+    Angka (nilai akhir, CPMK memenuhi) dihitung di server, karena di file berupa rumus.
+    """
+    d = kumpulkan_data(db, mk)
+    wb, jenis_per_sheet = _bangun_workbook(d)
+    mhs = d.capaian["mahasiswa"]
+    n_mhs = len(mhs)
+    akhir = [m["nilai_akhir"] for m in mhs if m["nilai_akhir"] is not None]
+    sebaran: dict[str, int] = defaultdict(int)
+    for m in mhs:
+        if m.get("nilai_huruf"):
+            sebaran[m["nilai_huruf"]] += 1
+    remidi = _daftar_remidi(d)
+    eval_items = d.evaluasi["items"]
+    memenuhi = sum(1 for e in eval_items if e["memenuhi"])
+
+    cpmk_tanpa_ik = [c.kode for c in d.cpmk if not d.cpmk_ik.get(c.id)]
+    konten = d.rps_konten or {}
+    minggu_rps = {int(p.get("minggu") or 0) for p in daftar_pertemuan(konten)}
+    minggu = minggu_rps | {p.pertemuan_ke for p in d.rpp}
+    info = d.info
+    kontrak = [
+        ("manfaat", info.manfaat if info else None), ("deskripsi", d.deskripsi_mk),
+        ("strategi", info.strategi if info else None), ("tata tertib", info.tata_tertib if info else None),
+        ("waktu & tempat", info.waktu_tempat if info else None), ("referensi", info.referensi if info else None),
+    ]
+    kontrak_kosong = [label for label, v in kontrak if not _terisi(v)]
+    analisis_kosong = [
+        e["kode"] for e in eval_items if not _terisi(e["analisis"]) or not _terisi(e["rencana_perbaikan"])
+    ]
+    belum_dinilai = n_mhs - len(akhir)
+
+    tetap = {
+        "COVER": _item(
+            "COVER", "Identitas mata kuliah, dosen pengampu, dan lembar pengesahan",
+            ["Belum ada dosen pengampu" if not d.pengampu else None,
+             "Kaprodi belum terdaftar" if not d.kaprodi else None,
+             "Dekan belum terdaftar" if not d.dekan else None],
+        ),
+        "CPMK-CPL": _item(
+            "CPMK-CPL", f"{len(d.cpmk)} CPMK, {len(d.ik)} indikator kinerja, {len(d.cpl)} CPL",
+            [f"CPMK belum dipetakan ke IK: {', '.join(cpmk_tanpa_ik)}" if cpmk_tanpa_ik else None],
+            kosong=not d.cpmk,
+        ),
+        "RPS": _item(
+            "RPS", f"{len(minggu)} pertemuan" + (f" ({len(d.rpp)} dengan realisasi RPP)" if d.rpp else ""),
+            ["Isi RPS belum tersedia" if not minggu_rps else None,
+             "Realisasi RPP belum diisi" if not d.rpp else None],
+            kosong=not minggu,
+        ),
+        "KONTRAK": _item(
+            "KONTRAK", f"{len(kontrak) - len(kontrak_kosong)} dari {len(kontrak)} isian kontrak perkuliahan terisi, "
+                       "beserta matriks bobot CPMK per jenis evaluasi",
+            [f"Belum diisi: {', '.join(kontrak_kosong)}" if kontrak_kosong else None],
+        ),
+        "FORM NILAI": _item(
+            "FORM NILAI", f"{n_mhs} mahasiswa ({len(akhir)} sudah punya nilai akhir) dan rekap sebaran nilai huruf",
+            [f"{belum_dinilai} mahasiswa belum punya nilai akhir" if belum_dinilai else None],
+            kosong=not n_mhs,
+        ),
+        "CPMK": _item(
+            "CPMK", f"Capaian {len(d.cpmk)} CPMK untuk {n_mhs} mahasiswa, rerata, dan skor rubrik",
+            kosong=not (d.cpmk and n_mhs),
+        ),
+        "PI-CPL": _item(
+            "PI-CPL", f"Capaian {len(d.ik)} indikator kinerja untuk {n_mhs} mahasiswa",
+            kosong=not (d.ik and n_mhs),
+        ),
+        "CPL": _item(
+            "CPL", f"Capaian {len(d.cpl)} CPL (kontribusi mata kuliah ini) untuk {n_mhs} mahasiswa",
+            kosong=not (d.cpl and n_mhs),
+        ),
+        "REMIDI": _item(
+            "REMIDI",
+            f"{len(remidi)} mahasiswa perlu remidi CPMK" if remidi else "Tidak ada mahasiswa yang perlu remidi CPMK",
+        ),
+        "EVALUASI": _item(
+            "EVALUASI", f"{memenuhi} dari {len(eval_items)} CPMK memenuhi target, analisis, dan rencana perbaikan",
+            [f"Analisis/rencana perbaikan belum lengkap: {', '.join(analisis_kosong)}" if analisis_kosong else None],
+            kosong=not eval_items,
+        ),
+        P_SHEET: _item(P_SHEET, "Parameter perhitungan: ambang CPMK, target capaian, rubrik, dan skala nilai huruf"),
+    }
+
+    sheets = []
+    for nama in wb.sheetnames:
+        je = jenis_per_sheet.get(nama)
+        if je:
+            bentuk = {s.mbp_id for s in je.sel}
+            sheets.append(_item(
+                nama, f"Nilai {je.nama}: {len(bentuk)} bentuk penilaian, {len(je.sel)} kolom IK, bobot {je.bobot_total:g}",
+                kosong=not n_mhs,
+            ))
+        else:
+            sheets.append(tetap.get(nama) or _item(nama, ""))
+
+    return {
+        "nama_file": _nama_file(mk),
+        "mata_kuliah": {
+            "id": mk.id, "kode": mk.kode, "nama": mk.nama, "sks": mk.sks,
+            "semester": _semester(mk), "tahun_ajaran": mk.tahun_ajaran,
+            "pengampu": [u.nama for u in d.pengampu],
+        },
+        "ringkasan": {
+            "jumlah_mahasiswa": n_mhs,
+            "jumlah_dinilai": len(akhir),
+            "rata_rata_nilai_akhir": round(sum(akhir) / len(akhir), 2) if akhir else None,
+            "sebaran_huruf": dict(sorted(sebaran.items())),
+            "jumlah_cpmk": len(eval_items),
+            "cpmk_memenuhi": memenuhi,
+            "jumlah_remidi": len(remidi),
+        },
+        "sheets": sheets,
+        "jumlah_perlu_dilengkapi": sum(1 for x in sheets if x["status"] != "lengkap"),
+    }

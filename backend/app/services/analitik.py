@@ -19,6 +19,7 @@ from app.models.cpmk_ik_map import CPMKIKMap
 from app.models.ik import IK
 from app.models.ik_achievement import IKAchievement
 from app.models.kurikulum_version import KurikulumVersion
+from app.services.kurikulum_aktif import kurikulum_aktif_id, ringkas_kurikulum_aktif
 from app.models.mahasiswa import Mahasiswa
 from app.models.mata_kuliah import MataKuliah
 from app.models.mk_bentuk_penilaian import MKBentukPenilaian
@@ -230,21 +231,24 @@ def _bangun_payload(
 def analitik_prodi(db: Session, prodi_id: int, semester: str | None = None) -> dict:
     """
     Seluruh prodi. Capaian CPL = gabungan berbobot lintas mata kuliah.
-    Hanya CPL dari versi kurikulum yang dipakai mata kuliah (bukan versi lama tanpa MK
-    atau draf revisi), supaya tidak muncul sebagai "CPL tanpa mata kuliah pendukung".
+    Hanya kurikulum aktif prodi (ditetapkan Admin Prodi): CPL dan mata kuliah dari
+    versi lain (versi lama, draf revisi) tidak ikut dianalisis.
     """
-    mk_query = db.query(MataKuliah).filter(MataKuliah.program_studi_id == prodi_id)
-    if semester:
-        mk_query = mk_query.filter(MataKuliah.semester == semester)
-    mks = mk_query.order_by(MataKuliah.kode).all()
-    versi_dipakai = {m.kurikulum_version_id for m in mks}
-    cpls = (
-        db.query(CPL)
-        .filter(CPL.program_studi_id == prodi_id, CPL.kurikulum_version_id.in_(versi_dipakai))
-        .order_by(CPL.kode)
-        .all()
-        if versi_dipakai else []
-    )
+    aktif_id = kurikulum_aktif_id(db, prodi_id)
+    mks, cpls = [], []
+    if aktif_id:
+        mk_query = db.query(MataKuliah).filter(
+            MataKuliah.program_studi_id == prodi_id, MataKuliah.kurikulum_version_id == aktif_id,
+        )
+        if semester:
+            mk_query = mk_query.filter(MataKuliah.semester == semester)
+        mks = mk_query.order_by(MataKuliah.kode).all()
+        cpls = (
+            db.query(CPL)
+            .filter(CPL.program_studi_id == prodi_id, CPL.kurikulum_version_id == aktif_id)
+            .order_by(CPL.kode)
+            .all()
+        )
 
     cpl_rows = []
     if cpls:
@@ -252,10 +256,12 @@ def analitik_prodi(db: Session, prodi_id: int, semester: str | None = None) -> d
         if semester:
             q = q.filter(CPLAchievement.semester == semester)
         cpl_rows = q.all()
-    return _bangun_payload(
+    payload = _bangun_payload(
         db, scope="prodi", prodi_id=prodi_id, cpls=cpls, mks=mks, cpl_rows=cpl_rows,
         semester=semester, hanya_ik_terpetakan=False,
     )
+    payload["kurikulum_aktif"] = ringkas_kurikulum_aktif(db, prodi_id)
+    return payload
 
 
 def analitik_mata_kuliah(db: Session, mk: MataKuliah) -> dict:

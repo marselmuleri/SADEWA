@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, CheckCircle, Clock, ChevronDown, Loader2 } from 'lucide-react'
+import { Plus, CheckCircle, Clock, ChevronDown, Loader2, BarChart3 } from 'lucide-react'
 import Modal from './Modal'
 import { Badge } from './PageChrome'
 import api from '../services/api'
@@ -18,6 +18,7 @@ export default function KurikulumVersionSelector({
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [publishing, setPublishing] = useState(false)
+  const [activating, setActivating] = useState(false)
   const [form, setForm] = useState({ version_label: '', semester: 'Ganjil' })
 
   const currentVersion = versions.find((v) => v.id === selectedVersionId) || versions[0]
@@ -57,6 +58,22 @@ export default function KurikulumVersionSelector({
     }
   }
 
+  const handleAktifkan = async () => {
+    if (!currentVersion || currentVersion.status !== 'published') return
+    setActivating(true)
+    try {
+      await api.post(`/kurikulum/versions/${currentVersion.id}/aktifkan`)
+      pushToast(`Kurikulum ${currentVersion.version_label} kini dipakai untuk Analitik OBE`)
+      if (onRefreshVersions) await onRefreshVersions(currentVersion.id)
+    } catch (err) {
+      pushToast(getApiErrorMessage(err, 'Gagal menetapkan kurikulum aktif'), 'error')
+    } finally {
+      setActivating(false)
+    }
+  }
+
+  const sudahAktif = currentVersion?.is_aktif && currentVersion?.aktif_ditetapkan
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-[8px] border border-[#E2E8F0] bg-white p-3.5 shadow-sm">
       <div className="flex flex-wrap items-center gap-2.5">
@@ -78,7 +95,7 @@ export default function KurikulumVersionSelector({
             >
               {versions.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.version_label} ({v.semester}) {v.status === 'published' ? '✓' : '(Draft)'}
+                  {v.version_label} {v.status === 'published' ? '✓' : '(Draft)'}{v.is_aktif ? ' · Aktif' : ''}
                 </option>
               ))}
             </select>
@@ -101,6 +118,20 @@ export default function KurikulumVersionSelector({
             )}
           </Badge>
         )}
+
+        {currentVersion?.is_aktif && (
+          <Badge tone={currentVersion.aktif_ditetapkan ? 'default' : 'warning'}>
+            <span
+              className="inline-flex items-center gap-1"
+              title={currentVersion.aktif_ditetapkan
+                ? 'Kurikulum ini dipakai untuk seluruh Analitik OBE prodi'
+                : 'Belum ditetapkan Admin Prodi; sementara memakai versi published terbaru'}
+            >
+              <BarChart3 className="h-3 w-3" />
+              {currentVersion.aktif_ditetapkan ? 'Kurikulum Aktif' : 'Aktif (otomatis)'}
+            </span>
+          </Badge>
+        )}
       </div>
 
       {canManage && (
@@ -115,6 +146,20 @@ export default function KurikulumVersionSelector({
             >
               {publishing ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
               <span>Publikasikan Versi Ini</span>
+            </button>
+          )}
+
+          {currentVersion && currentVersion.status === 'published' && !sudahAktif && (
+            <button
+              type="button"
+              onClick={handleAktifkan}
+              disabled={activating}
+              data-testid="aktifkan-version-button"
+              title="Analitik OBE prodi hanya akan memakai CPL dan mata kuliah dari kurikulum ini"
+              className="inline-flex items-center gap-1.5 rounded-[6px] border border-[#1A3A6B] bg-[#EEF2F8] px-2.5 py-1 text-xs font-semibold text-[#1A3A6B] hover:bg-[#E2E8F0] transition-colors disabled:opacity-50"
+            >
+              {activating ? <Loader2 className="h-3 w-3 animate-spin" /> : <BarChart3 className="h-3 w-3" />}
+              <span>Jadikan Kurikulum Aktif</span>
             </button>
           )}
 

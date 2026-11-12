@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { FileDown, ListPlus, Loader2, Plus, Save, Trash2 } from 'lucide-react'
 import { ActionButton, SectionCard } from '../../components/PageChrome'
 import api from '../../services/api'
-import { parseRpsKonten } from '../../utils/rpsExport'
+import { UJIAN, normalisasiRps, parseRpsKonten, targetCpmkTeks } from '../../utils/rpsExport'
 import { getApiErrorMessage } from '../superAdminHelpers'
 import { formatTanggal } from './portofolioShared'
 
@@ -92,7 +92,7 @@ export default function RppSection({ mkId, canWrite, pushToast, onChanged }) {
     try {
       const res = await api.get(`/rps/${mkId}`)
       const terbaru = Array.isArray(res.data) ? res.data[0] : null
-      const pertemuan = parseRpsKonten(terbaru?.konten)?.pertemuan
+      const pertemuan = parseRpsKonten(terbaru?.konten) ? normalisasiRps(terbaru.konten).pertemuan : null
       if (!Array.isArray(pertemuan) || pertemuan.length === 0) {
         pushToast('Belum ada draf RPS (hasil generate AI) untuk mata kuliah ini', 'error')
         return
@@ -101,9 +101,16 @@ export default function RppSection({ mkId, canWrite, pushToast, onChanged }) {
       setRows(
         pertemuan.map((p, i) => ({
           ...barisKosong(Number(p.minggu) || i + 1),
-          cpmk: p.cpmk || '',
-          materi: [p.sub_cpmk, p.materi].filter(Boolean).join(' — '),
-          metode: p.metode || '',
+          ...(p.jenis === 'kuliah'
+            ? {
+                cpmk: targetCpmkTeks(p.target_cpmk),
+                materi: [p.bahan_kajian_judul, p.bahan_kajian].filter(Boolean).join(': '),
+                metode: p.metode,
+                waktu: p.waktu,
+                pengalaman_belajar: p.pengalaman_belajar.join('\n'),
+                indikator_kriteria: p.kriteria_indikator.join('\n'),
+              }
+            : { materi: UJIAN[p.jenis] }),
         })),
       )
       setDirty(true)

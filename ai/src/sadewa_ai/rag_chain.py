@@ -2,7 +2,7 @@
 Pipeline RAG SADEWA.
 
 Dua keluaran AI sesuai C300 Tabel 25:
-1. generate_rps()             -> Draf RPS 16 pertemuan
+1. generate_rps()             -> Draf Kontrak Kuliah + RPS 16 pertemuan
 2. generate_narasi_evaluasi() -> Laporan narasi evaluasi kurikulum
 
 Catatan perubahan: fungsi pencarian tren industri dihapus mengikuti revisi
@@ -28,7 +28,7 @@ from . import prompts
 from .config import settings
 from .llm_client import chat, extract_json
 from .retriever import retrieve_context_with_metadata
-from .validators import validate_evaluasi_cpmk, validate_narasi, validate_rps
+from .validators import rapikan_rps, validate_evaluasi_cpmk, validate_narasi, validate_rps
 from .web_retriever import fetch_web_context
 
 logger = logging.getLogger(__name__)
@@ -60,69 +60,6 @@ def _token_callback(on_event: OnEvent) -> Optional[Callable[[str], None]]:
     if on_event is None:
         return None
     return lambda teks: _emit(on_event, "token", teks=teks)
-
-
-def _fix_bobot(data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Auto-koreksi bobot pertemuan agar totalnya tepat 100.
-
-    LLM kadang menghasilkan total bobot > atau < 100 (paling umum: 14×4=56
-    ditambah UTS 20 + UAS 30 = 106). Fungsi ini memeriksa selisih dan
-    mendistribusikan koreksi ke pertemuan reguler (bukan UTS/UAS) secara merata,
-    satu per satu dari pertemuan terakhir ke pertama (agar perubahan tidak
-    terpusat di satu pertemuan saja).
-
-    Dipanggil SETELAH setiap percobaan generasi, sebelum validasi,
-    sehingga retry loop tidak membuang percobaan hanya karena bobot meleset.
-    """
-    pertemuan = data.get("pertemuan")
-    if not isinstance(pertemuan, list) or not pertemuan:
-        return data
-
-    target = settings.bobot_total
-    uts_minggu = settings.minggu_uts
-    uas_minggu = settings.minggu_uas
-
-    total_saat_ini = sum(
-        float(p.get("bobot", 0)) for p in pertemuan if isinstance(p, dict)
-    )
-    selisih = round(total_saat_ini - target)  # positif = kelebihan, negatif = kurang
-
-    if selisih == 0:
-        return data  # sudah benar, tidak perlu apa-apa
-
-    # Kumpulkan indeks pertemuan reguler (bukan UTS/UAS) dalam urutan terbalik
-    reguler_idx = [
-        i for i, p in enumerate(pertemuan)
-        if isinstance(p, dict) and p.get("minggu") not in (uts_minggu, uas_minggu)
-    ][::-1]  # dari belakang agar pertemuan awal tidak terganggu
-
-    for i in reguler_idx:
-        if selisih == 0:
-            break
-        bobot_lama = float(pertemuan[i].get("bobot", 0))
-        if selisih > 0:
-            # Kurangi bobot satu per satu
-            koreksi = min(selisih, bobot_lama - 1)  # minimal bobot = 1
-            if koreksi > 0:
-                pertemuan[i]["bobot"] = int(bobot_lama - koreksi)
-                selisih -= koreksi
-        else:
-            # Tambah bobot satu per satu
-            pertemuan[i]["bobot"] = int(bobot_lama + 1)
-            selisih += 1
-
-    if selisih != 0:
-        logger.warning(
-            "[rag_chain] _fix_bobot: masih ada selisih %d setelah koreksi "
-            "(pertemuan reguler tidak cukup untuk mengakomodasi selisih).",
-            selisih,
-        )
-    else:
-        logger.info("[rag_chain] _fix_bobot: bobot dikoreksi otomatis → total 100.")
-
-    data["pertemuan"] = pertemuan
-    return data
 
 
 def generate_rps(
@@ -220,9 +157,9 @@ def generate_rps(
 
         _emit(on_event, "tahap", id="validasi", status="mulai", percobaan=attempt + 1)
         data = extract_json(raw)
-        # Auto-koreksi bobot sebelum validasi agar tidak membuang retry
-        # hanya karena LLM salah menghitung distribusi bobot.
-        data = _fix_bobot(data)
+        # Rapikan bagian yang bisa dipastikan tanpa LLM (kode CPMK, waktu dari SKS,
+        # bobot UTS/UAS dari tabel penilaian) agar tidak membuang retry.
+        data = rapikan_rps(data, sks)
         valid, errors = validate_rps(data)
         _emit(
             on_event, "tahap", id="validasi", status="selesai", percobaan=attempt + 1,

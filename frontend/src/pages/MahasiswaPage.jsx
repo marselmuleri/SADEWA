@@ -21,7 +21,7 @@ import useAuth from '../hooks/useAuth'
 import useToast from '../hooks/useToast'
 import api from '../services/api'
 import { getApiErrorMessage } from './superAdminHelpers'
-import { parseCsv, downloadCsvTemplate } from '../utils/csvParser'
+import { bacaFileMahasiswa, prodiSama, unduhTemplateSiakad } from '../utils/mahasiswaImport'
 import { fetchAllMahasiswa } from '../utils/mahasiswaApi'
 
 const initialForm = {
@@ -233,23 +233,10 @@ export default function MahasiswaPage() {
     }
   }
 
-  // CSV Import Handlers
+  // Impor dari file ekspor SIAKAD (lihat utils/mahasiswaImport.js)
   const handleDownloadTemplate = () => {
-    downloadCsvTemplate(
-      'template_impor_mahasiswa.csv',
-      [
-        { label: 'nim', key: 'nim' },
-        { label: 'nama', key: 'nama' },
-        { label: 'semester_aktif', key: 'semester_aktif' },
-        { label: 'status_masuk', key: 'status_masuk' },
-      ],
-      [
-        { nim: '24060121120001', nama: 'Andi Santoso', semester_aktif: '3', status_masuk: 'Reguler' },
-        { nim: '24060121120002', nama: 'Budi Kurniawan', semester_aktif: '3', status_masuk: 'Reguler' },
-        { nim: '24060121120003', nama: 'Citra Kirana', semester_aktif: '1', status_masuk: 'Transfer' },
-      ]
-    )
-    pushToast('Template CSV berhasil diunduh')
+    unduhTemplateSiakad(user?.program_studi_nama || undefined)
+    pushToast('Template format ekspor SIAKAD berhasil diunduh')
   }
 
   const handleOpenImport = () => {
@@ -273,8 +260,8 @@ export default function MahasiswaPage() {
       return
     }
 
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      setImportError('File harus berupa file berformat .csv')
+    if (!/\.(xls|tsv|txt|csv)$/i.test(file.name)) {
+      setImportError('File harus berupa ekspor SIAKAD (.xls) atau CSV (.csv)')
       setImportFile(null)
       return
     }
@@ -289,12 +276,10 @@ export default function MahasiswaPage() {
     const reader = new FileReader()
     reader.onload = async (event) => {
       try {
-        const text = event.target?.result
-        const parsed = parseCsv(text)
-        const rows = parsed.rows || []
+        const { rows } = bacaFileMahasiswa(event.target?.result)
 
         if (rows.length === 0) {
-          setImportError('File CSV tidak memiliki baris data yang valid')
+          setImportError('File tidak memiliki baris data mahasiswa')
           return
         }
 
@@ -303,66 +288,41 @@ export default function MahasiswaPage() {
           return
         }
 
-        // Ambil data mahasiswa terkini dari backend untuk deteksi duplikat NIM sistem
+        // Ambil data mahasiswa terkini dari backend untuk deteksi NIM yang sudah ada
         let existingList = list
         try {
           existingList = await fetchAllMahasiswa()
         } catch {
           // fallback ke list state saat offline
         }
-        const existingNims = new Set(existingList.map((m) => String(m.nim || '').trim()))
+        const existingByNim = new Map(existingList.map((m) => [String(m.nim || '').trim(), m]))
+        const prodiAkun = user?.program_studi_nama || ''
 
-        // Validasi per baris di frontend SEBELUM kirim
         const seenNims = new Set()
-        const validatedRows = rows.map((row, index) => {
-          const rawNim = String(row.nim || '').trim()
-          const rawNama = String(row.nama || '').trim()
-          const rawSemester = String(row.semester_aktif || '').trim()
-          const rawStatus = String(row.status_masuk || '').trim()
-
-          const errors = []
-          let isAlreadyExists = false
-
-          if (!rawNim) {
-            errors.push('NIM wajib diisi')
-          } else if (seenNims.has(rawNim)) {
-            errors.push('Duplikat NIM di dalam file')
-          } else {
-            seenNims.add(rawNim)
-            if (existingNims.has(rawNim)) {
-              isAlreadyExists = true
-            }
+        const validatedRows = rows.map((row) => {
+          const errors = [...row.errors]
+          if (row.nim && seenNims.has(row.nim)) errors.push('Duplikat NIM di dalam file')
+          if (row.nim) seenNims.add(row.nim)
+          if (row.prodi && prodiAkun && !prodiSama(row.prodi, prodiAkun)) {
+            errors.push(`Prodi "${row.prodi}" bukan prodi Anda (${prodiAkun})`)
           }
 
-          if (!rawNama) {
-            errors.push('Nama wajib diisi')
+          const lama = existingByNim.get(row.nim)
+          // NIM sudah ada: perbarui bila status/semester/angkatan di SIAKAD berbeda
+          const perubahan = []
+          if (lama && errors.length === 0) {
+            if (row.status_akademik && row.status_akademik !== lama.status_akademik) perubahan.push(`status ${lama.status_akademik} → ${row.status_akademik}`)
+            if (row.semester_aktif && row.semester_aktif !== lama.semester_aktif) perubahan.push(`semester ${lama.semester_aktif} → ${row.semester_aktif}`)
+            if (row.angkatan && row.angkatan !== lama.angkatan) perubahan.push(`angkatan ${lama.angkatan ?? '-'} → ${row.angkatan}`)
           }
-
-          const semNumber = Number(rawSemester)
-          if (!rawSemester || isNaN(semNumber) || !Number.isInteger(semNumber) || semNumber < 1 || semNumber > 14) {
-            errors.push(`Semester aktif harus angka bulat 1-14 (terbaca: "${rawSemester || 'kosong'}")`)
-          }
-
-          let normalizedStatus = null
-          const statusLower = rawStatus.toLowerCase()
-          if (statusLower === 'reguler') {
-            normalizedStatus = 'Reguler'
-          } else if (statusLower === 'transfer') {
-            normalizedStatus = 'Transfer'
-          } else {
-            errors.push(`Status masuk tidak valid: "${rawStatus || 'kosong'}". Hanya menerima 'Reguler' atau 'Transfer'`)
-          }
-
           const hasFormatError = errors.length > 0
-
           return {
-            rowNumber: index + 2, // Header adalah baris 1
-            nim: rawNim,
-            nama: rawNama,
-            semester_aktif: semNumber || 1,
-            status_masuk: normalizedStatus || rawStatus || 'Reguler',
-            isValid: !hasFormatError && !isAlreadyExists,
-            isAlreadyExists,
+            ...row,
+            existingId: lama?.id ?? null,
+            perubahan,
+            isAlreadyExists: Boolean(lama) && !hasFormatError && perubahan.length === 0,
+            isUpdate: Boolean(lama) && !hasFormatError && perubahan.length > 0,
+            isValid: !hasFormatError && !lama,
             hasFormatError,
             errorMessage: errors.join('; '),
           }
@@ -370,10 +330,10 @@ export default function MahasiswaPage() {
 
         setImportRows(validatedRows)
       } catch (err) {
-        setImportError(`Gagal membaca file CSV: ${err.message}`)
+        setImportError(`Gagal membaca file: ${err.message}`)
       }
     }
-    reader.readAsText(file)
+    reader.readAsArrayBuffer(file)
   }
 
   const handleStopImport = () => {
@@ -382,32 +342,12 @@ export default function MahasiswaPage() {
   }
 
   const handleStartImport = async () => {
-    // Hanya baris yang valid dan BELUM ada di sistem yang akan dikirim
-    const toSendRows = importRows.filter((r) => r.isValid && !r.isAlreadyExists)
+    // Baris baru dan baris yang perlu diperbarui dikirim; baris sama persis dilewati
+    const toSendRows = importRows.filter((r) => r.isValid || r.isUpdate)
     const alreadyExistsRows = importRows.filter((r) => r.isAlreadyExists)
 
     if (toSendRows.length === 0 && alreadyExistsRows.length === 0) {
-      setImportError('Tidak ada baris yang valid untuk diproses. Perbaiki format CSV sesuai panduan.')
-      return
-    }
-
-    if (toSendRows.length === 0 && alreadyExistsRows.length > 0) {
-      // Seluruh baris yang valid ternyata sudah ada di sistem, tidak perlu kirim ke backend
-      setImportSummary({
-        totalProcessed: alreadyExistsRows.length,
-        successCount: 0,
-        duplicateCount: alreadyExistsRows.length,
-        failedCount: 0,
-        abortedCount: 0,
-        wasStopped: false,
-        details: alreadyExistsRows.map((r) => ({
-          rowNumber: r.rowNumber,
-          nim: r.nim,
-          nama: r.nama,
-          status: 'duplicate',
-          message: 'Sudah ada di sistem (dilewati sebelum kirim)',
-        })),
-      })
+      setImportError('Tidak ada baris yang valid untuk diproses. Perbaiki isi file sesuai panduan.')
       return
     }
 
@@ -415,105 +355,65 @@ export default function MahasiswaPage() {
     setImportError('')
     stopImportRef.current = false
 
-    const results = []
+    const results = alreadyExistsRows.map((r) => ({
+      rowNumber: r.rowNumber, nim: r.nim, nama: r.nama, status: 'duplicate',
+      message: 'Sudah ada dan datanya sama (dilewati)',
+    }))
     let successCount = 0
+    let updatedCount = 0
     let duplicateCount = alreadyExistsRows.length
     let failedCount = 0
     let abortedCount = 0
 
-    // Catat baris yang sudah ada di sistem ke dalam rekapitulasi akhir
-    alreadyExistsRows.forEach((r) => {
-      results.push({
-        rowNumber: r.rowNumber,
-        nim: r.nim,
-        nama: r.nama,
-        status: 'duplicate',
-        message: 'Sudah ada di sistem (dilewati sebelum kirim)',
-      })
-    })
-
     const total = toSendRows.length
     for (let i = 0; i < total; i++) {
+      const row = toSendRows[i]
       if (stopImportRef.current) {
-        // Hentikan pengiriman baris berikutnya
         for (let j = i; j < total; j++) {
           abortedCount++
           results.push({
-            rowNumber: toSendRows[j].rowNumber,
-            nim: toSendRows[j].nim,
-            nama: toSendRows[j].nama,
-            status: 'aborted',
-            message: 'Dibatalkan oleh pengguna (impor dihentikan)',
+            rowNumber: toSendRows[j].rowNumber, nim: toSendRows[j].nim, nama: toSendRows[j].nama,
+            status: 'aborted', message: 'Dibatalkan oleh pengguna (impor dihentikan)',
           })
         }
         break
       }
 
-      const row = toSendRows[i]
-      setImportProgress({
-        current: i + 1,
-        total,
-        percent: Math.round(((i + 1) / total) * 100),
-      })
+      setImportProgress({ current: i + 1, total, percent: Math.round(((i + 1) / total) * 100) })
 
       try {
-        await api.post('/mahasiswa', {
-          nim: row.nim,
-          nama: row.nama,
-          semester_aktif: row.semester_aktif,
-          status_masuk: row.status_masuk,
-        })
-        successCount++
-        results.push({
-          rowNumber: row.rowNumber,
-          nim: row.nim,
-          nama: row.nama,
-          status: 'success',
-          message: 'Berhasil ditambahkan',
-        })
-      } catch (err) {
-        const statusCode = err?.response?.status
-        const errorDetail = err?.response?.data?.detail
-
-        if (statusCode && statusCode >= 500) {
-          failedCount++
-          results.push({
-            rowNumber: row.rowNumber,
+        if (row.isUpdate) {
+          await api.put(`/mahasiswa/${row.existingId}`, {
+            status_akademik: row.status_akademik,
+            semester_aktif: row.semester_aktif,
+            ...(row.angkatan ? { angkatan: row.angkatan } : {}),
+          })
+          updatedCount++
+          results.push({ rowNumber: row.rowNumber, nim: row.nim, nama: row.nama, status: 'updated', message: `Diperbarui: ${row.perubahan.join(', ')}` })
+        } else {
+          await api.post('/mahasiswa', {
             nim: row.nim,
             nama: row.nama,
-            status: 'failed',
-            message: 'Server error, kemungkinan NIM sudah terpakai',
+            semester_aktif: row.semester_aktif,
+            status_masuk: row.status_masuk,
+            status_akademik: row.status_akademik || 'Aktif',
+            ...(row.angkatan ? { angkatan: row.angkatan } : {}),
           })
+          successCount++
+          results.push({ rowNumber: row.rowNumber, nim: row.nim, nama: row.nama, status: 'success', message: 'Berhasil ditambahkan' })
+        }
+      } catch (err) {
+        const statusCode = err?.response?.status
+        const detail = String(err?.response?.data?.detail || '').toLowerCase()
+        if (statusCode === 400 && ['sudah', 'terdaftar', 'duplikat'].some((k) => detail.includes(k))) {
+          duplicateCount++
+          results.push({ rowNumber: row.rowNumber, nim: row.nim, nama: row.nama, status: 'duplicate', message: 'Sudah terdaftar sebelumnya (dilewati)' })
         } else {
-          const isDuplicate =
-            statusCode === 400 &&
-            (typeof errorDetail === 'string' &&
-              (errorDetail.toLowerCase().includes('sudah') ||
-                errorDetail.toLowerCase().includes('terdaftar') ||
-                errorDetail.toLowerCase().includes('duplikat') ||
-                errorDetail.toLowerCase().includes('duplicate') ||
-                errorDetail.toLowerCase().includes('exists')))
-
-          if (isDuplicate) {
-            duplicateCount++
-            results.push({
-              rowNumber: row.rowNumber,
-              nim: row.nim,
-              nama: row.nama,
-              status: 'duplicate',
-              message: 'Sudah terdaftar sebelumnya (dilewati)',
-            })
-          } else {
-            failedCount++
-            const reason = getApiErrorMessage(err, 'Gagal diproses oleh server')
-            results.push({
-              rowNumber: row.rowNumber,
-              nim: row.nim,
-              nama: row.nama,
-              status: 'failed',
-              message: reason,
-            })
-          }
+          failedCount++
+          results.push({
+            rowNumber: row.rowNumber, nim: row.nim, nama: row.nama, status: 'failed',
+            message: getApiErrorMessage(err, 'Gagal diproses oleh server'),
+          })
         }
       }
     }
@@ -521,6 +421,7 @@ export default function MahasiswaPage() {
     setImportSummary({
       totalProcessed: total + alreadyExistsRows.length,
       successCount,
+      updatedCount,
       duplicateCount,
       failedCount,
       abortedCount,
@@ -541,7 +442,7 @@ export default function MahasiswaPage() {
       <PageHeader
         eyebrow="Data Akademik & Kemahasiswaan"
         title="Data Mahasiswa"
-        description="Kelola data induk mahasiswa program studi, pendaftaran baru, pembaruan status, serta impor data massal via CSV."
+        description="Kelola data induk mahasiswa program studi, pendaftaran baru, pembaruan status, serta impor data massal dari file ekspor SIAKAD."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <ActionButton
@@ -550,7 +451,7 @@ export default function MahasiswaPage() {
               data-testid="btn-unduh-template-mahasiswa"
             >
               <Download className="h-4 w-4" />
-              Unduh Template CSV
+              Unduh Template
             </ActionButton>
             <ActionButton
               variant="secondary"
@@ -558,7 +459,7 @@ export default function MahasiswaPage() {
               data-testid="btn-impor-mahasiswa"
             >
               <Upload className="h-4 w-4" />
-              Impor CSV
+              Impor Data SIAKAD
             </ActionButton>
             <ActionButton
               onClick={handleOpenAdd}
@@ -924,12 +825,12 @@ export default function MahasiswaPage() {
         </div>
       </Modal>
 
-      {/* Modal Impor CSV */}
+      {/* Modal Impor dari ekspor SIAKAD */}
       <Modal
         open={openImportModal}
-        title="Impor Data Mahasiswa via CSV"
+        title="Impor Data Mahasiswa dari SIAKAD"
         onClose={() => !importing && setOpenImportModal(false)}
-        size="max-w-2xl"
+        size="max-w-4xl"
       >
         <div className="space-y-5">
           {!importSummary ? (
@@ -944,28 +845,29 @@ export default function MahasiswaPage() {
                     className="inline-flex items-center gap-1 font-semibold text-[#1A3A6B] hover:underline"
                   >
                     <Download className="h-3.5 w-3.5" />
-                    Unduh Template CSV
+                    Unduh Template
                   </button>
                 </div>
                 <p className="text-[#64748B]">
-                  File CSV wajib memiliki header kolom: <code>nim</code>, <code>nama</code>, <code>semester_aktif</code>, <code>status_masuk</code> (Reguler/Transfer).
+                  Unggah langsung file ekspor data mahasiswa dari SIAKAD (mis. <code>export-2026-11-12_11_39_21.xls</code>) tanpa diubah.
+                  Kolom: <code>Nim</code>, <code>Nama</code>, <code>Jenis kelamin</code>, <code>Agama</code>, <code>Prodi</code>, <code>Tahun masuk</code>, <code>Jalur masuk</code>, <code>Kode status terakhir</code>.
                 </p>
-                <p className="text-[#64748B]">
-                  Contoh valid: <code>24060121120001,Andi Santoso,3,Reguler</code>. Nilai enum status masuk yang salah akan langsung ditandai pada pratinjau sebelum pengiriman.
-                </p>
-                <p className="text-[#64748B]">
-                  Batas maksimum: 500 baris per file, ukuran file maksimal 2 MB. Duplikat NIM di dalam file akan dideteksi sebelum proses unggah.
-                </p>
+                <ul className="list-disc space-y-0.5 pl-4 text-[#64748B]">
+                  <li><b>Tahun masuk</b> menjadi angkatan. <b>Kode status terakhir</b> seperti <code>[2026-1] Aktif</code> menjadi status akademik, dan semester dihitung otomatis (masuk 2023, periode 2026-1 = semester 7).</li>
+                  <li>Status <i>Undur Diri</i>, <i>Drop Out</i>, dan sejenisnya menjadi <b>Keluar</b>. Jalur SNBP/SNBT/UM/SBUB menjadi <b>Reguler</b>; jalur pindahan/alih jenjang menjadi <b>Transfer</b>.</li>
+                  <li>NIM yang sudah terdaftar tidak ditambah ulang; bila status, semester, atau angkatannya berubah di SIAKAD, datanya <b>diperbarui</b>.</li>
+                  <li>Jenis kelamin dan agama tidak disimpan di SADEWA. Maksimal 500 baris dan 2 MB per file. File CSV lama (<code>nim, nama, semester_aktif, status_masuk</code>) tetap diterima.</li>
+                </ul>
               </div>
 
               {/* Upload Input */}
               <div>
                 <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                  Pilih File CSV:
+                  Pilih File Ekspor SIAKAD (.xls) atau CSV:
                 </label>
                 <input
                   type="file"
-                  accept=".csv"
+                  accept=".xls,.csv,.tsv,.txt"
                   disabled={importing}
                   onChange={handleFileChange}
                   data-testid="input-file-csv-mahasiswa"
@@ -987,10 +889,13 @@ export default function MahasiswaPage() {
                     <span>Pratinjau Data ({importRows.length} baris terbaca):</span>
                     <span className="text-[#64748B]">
                       <span className="text-emerald-700 font-bold">
-                        {importRows.filter((r) => r.isValid && !r.isAlreadyExists).length} Baru
+                        {importRows.filter((r) => r.isValid).length} Baru
+                      </span> ·{' '}
+                      <span className="text-[#1A3A6B] font-bold">
+                        {importRows.filter((r) => r.isUpdate).length} Diperbarui
                       </span> ·{' '}
                       <span className="text-amber-700 font-bold">
-                        {importRows.filter((r) => r.isAlreadyExists).length} Sudah Ada
+                        {importRows.filter((r) => r.isAlreadyExists).length} Sama
                       </span> ·{' '}
                       <span className="text-red-600 font-bold">
                         {importRows.filter((r) => r.hasFormatError).length} Format Bermasalah
@@ -1005,7 +910,9 @@ export default function MahasiswaPage() {
                           <th className="px-3 py-2">Baris</th>
                           <th className="px-3 py-2">NIM</th>
                           <th className="px-3 py-2">Nama</th>
+                          <th className="px-3 py-2">Angkatan</th>
                           <th className="px-3 py-2">Semester</th>
+                          <th className="px-3 py-2">Status Akademik</th>
                           <th className="px-3 py-2">Status Masuk</th>
                           <th className="px-3 py-2">Validasi</th>
                         </tr>
@@ -1025,18 +932,31 @@ export default function MahasiswaPage() {
                             <td className="px-3 py-2 text-[#64748B]">#{r.rowNumber}</td>
                             <td className="px-3 py-2 font-mono">{r.nim || '-'}</td>
                             <td className="px-3 py-2">{r.nama || '-'}</td>
-                            <td className="px-3 py-2">Sem. {r.semester_aktif}</td>
-                            <td className="px-3 py-2">{r.status_masuk}</td>
+                            <td className="px-3 py-2">{r.angkatan || '-'}</td>
+                            <td className="px-3 py-2">{r.semester_aktif ? `Sem. ${r.semester_aktif}` : '-'}</td>
+                            <td className="px-3 py-2">
+                              {r.status_akademik || '-'}
+                              {r.statusAsli && <span className="block text-[10px] text-[#94A3B8]">{r.statusAsli}</span>}
+                            </td>
+                            <td className="px-3 py-2">
+                              {r.status_masuk}
+                              {r.jalur && <span className="block text-[10px] text-[#94A3B8]">{r.jalur}</span>}
+                            </td>
                             <td className="px-3 py-2">
                               {r.hasFormatError ? (
                                 <span className="inline-flex items-center gap-1 text-red-600 font-semibold" title={r.errorMessage}>
                                   <AlertCircle className="h-3 w-3" />
                                   {r.errorMessage}
                                 </span>
+                              ) : r.isUpdate ? (
+                                <span className="inline-flex items-center gap-1 font-semibold text-[#1A3A6B]">
+                                  <CheckCircle2 className="h-3 w-3 shrink-0" />
+                                  Diperbarui: {r.perubahan.join(', ')}
+                                </span>
                               ) : r.isAlreadyExists ? (
                                 <span className="inline-flex items-center gap-1 text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
                                   <AlertCircle className="h-3 w-3" />
-                                  Sudah ada (dilewati)
+                                  Sudah ada, data sama (dilewati)
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-emerald-700">
@@ -1093,11 +1013,7 @@ export default function MahasiswaPage() {
                 </ActionButton>
                 <ActionButton
                   onClick={handleStartImport}
-                  disabled={
-                    importing ||
-                    (importRows.filter((r) => r.isValid && !r.isAlreadyExists).length === 0 &&
-                      importRows.filter((r) => r.isAlreadyExists).length === 0)
-                  }
+                  disabled={importing || importRows.filter((r) => r.isValid || r.isUpdate || r.isAlreadyExists).length === 0}
                   data-testid="btn-mulai-impor-mahasiswa"
                 >
                   {importing ? (
@@ -1105,8 +1021,8 @@ export default function MahasiswaPage() {
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Memproses...
                     </>
-                  ) : importRows.filter((r) => r.isValid && !r.isAlreadyExists).length > 0 ? (
-                    `Mulai Impor (${importRows.filter((r) => r.isValid && !r.isAlreadyExists).length} Baris Baru)`
+                  ) : importRows.filter((r) => r.isValid || r.isUpdate).length > 0 ? (
+                    `Mulai Impor (${importRows.filter((r) => r.isValid).length} baru, ${importRows.filter((r) => r.isUpdate).length} diperbarui)`
                   ) : (
                     `Simpan Rekap (${importRows.filter((r) => r.isAlreadyExists).length} Sudah Ada)`
                   )}
@@ -1123,10 +1039,14 @@ export default function MahasiswaPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-5">
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2.5">
-                  <p className="text-[11px] font-semibold text-emerald-800">Berhasil</p>
+                  <p className="text-[11px] font-semibold text-emerald-800">Ditambahkan</p>
                   <p className="mt-1 text-lg font-bold text-emerald-700">{importSummary.successCount}</p>
+                </div>
+                <div className="rounded-lg border border-[#CBD5E1] bg-[#F8FAFC] p-2.5">
+                  <p className="text-[11px] font-semibold text-[#1A3A6B]">Diperbarui</p>
+                  <p className="mt-1 text-lg font-bold text-[#1A3A6B]">{importSummary.updatedCount || 0}</p>
                 </div>
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5">
                   <p className="text-[11px] font-semibold text-amber-800">Dilewati (Terdaftar)</p>
@@ -1163,7 +1083,10 @@ export default function MahasiswaPage() {
                           <td className="px-3 py-2">{d.nama}</td>
                           <td className="px-3 py-2">
                             {d.status === 'success' && (
-                              <span className="font-semibold text-emerald-700">Berhasil</span>
+                              <span className="font-semibold text-emerald-700">Ditambahkan</span>
+                            )}
+                            {d.status === 'updated' && (
+                              <span className="font-semibold text-[#1A3A6B]">Diperbarui</span>
                             )}
                             {d.status === 'duplicate' && (
                               <span className="font-semibold text-amber-700">Dilewati</span>

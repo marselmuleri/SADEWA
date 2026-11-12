@@ -228,3 +228,39 @@ def test_saran_ai_butuh_nilai(client: TestClient, audit_data, db_session: Sessio
     db_session.commit()
     res = client.post(f"/api/v1/portofolio/{mk.id}/evaluasi/saran", headers=auth_header(audit_data["dosen_a"]))
     assert res.status_code == 422
+
+
+def test_preview_export_sama_dengan_file(client: TestClient, obe):
+    """Ringkasan sebelum unduh: sheet sama persis dengan file, angka & kelengkapan dihitung server."""
+    url = f"/api/v1/portofolio/{obe['mk'].id}/export/preview"
+    res = client.get(url, headers=auth_header(obe["dosen_a"]))
+    assert res.status_code == 200, res.text
+    data = res.json()
+
+    wb = _unduh(client, obe)
+    assert [s["nama"] for s in data["sheets"]] == wb.sheetnames
+    assert data["nama_file"].startswith("Portofolio IF101 Algoritma")
+
+    r = data["ringkasan"]
+    assert r["jumlah_mahasiswa"] == 3 and r["jumlah_dinilai"] == 3
+    assert r["jumlah_cpmk"] == 2 and r["jumlah_remidi"] >= 1  # Budi remidi CPMK1
+    assert sum(r["sebaran_huruf"].values()) == 3
+
+    sheet = {s["nama"]: s for s in data["sheets"]}
+    assert sheet["CPMK-CPL"]["status"] == "lengkap"
+    assert sheet["KONTRAK"]["status"] == "perlu_dilengkapi"   # info portofolio belum diisi
+    assert sheet["EVALUASI"]["status"] == "perlu_dilengkapi"  # analisis belum diisi
+    assert sheet["NILAI UTS"]["isi"].startswith("Nilai UTS: 1 bentuk penilaian, 2 kolom IK")
+    assert data["jumlah_perlu_dilengkapi"] == sum(1 for s in data["sheets"] if s["status"] != "lengkap")
+
+    # Hak akses sama dengan unduh
+    assert client.get(url, headers=auth_header(obe["kaprodi_a"])).status_code == 200
+    assert client.get(url, headers=auth_header(obe["dosen_b"])).status_code == 403
+    assert client.get(url, headers=auth_header(obe["admin_a"])).status_code == 403
+
+
+def test_preview_export_mata_kuliah_kosong(client: TestClient, audit_data):
+    res = client.get(f"/api/v1/portofolio/{audit_data['mk_a'].id}/export/preview", headers=auth_header(audit_data["dosen_a"]))
+    assert res.status_code == 200, res.text
+    sheet = {s["nama"]: s for s in res.json()["sheets"]}
+    assert sheet["CPMK-CPL"]["status"] == "kosong"

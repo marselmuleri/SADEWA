@@ -9,6 +9,7 @@ from app.models.cpl_achievement import CPLAchievement
 from app.services.calculation.cpl_aggregate import gabung_capaian_cpl
 from app.services.calculation.obe_formula import persen_ik
 from app.services.analitik import bobot_ik_per_mk
+from app.services.kurikulum_aktif import kurikulum_aktif_id
 from app.models.cpmk import CPMK
 from app.models.cpmk_achievement import CPMKAchievement
 from app.models.enums import UserRole
@@ -59,7 +60,12 @@ def cpl_overview(
     scope: AcademicScope = Depends(get_academic_scope),
 ):
     prodi_id = _resolve_prodi_id(db, scope, program_studi_id)
-    cpl_list = db.query(CPL).filter(CPL.program_studi_id == prodi_id).all()
+    # Hanya CPL kurikulum aktif prodi (ditetapkan Admin Prodi).
+    aktif_id = kurikulum_aktif_id(db, prodi_id)
+    cpl_list = (
+        db.query(CPL).filter(CPL.program_studi_id == prodi_id, CPL.kurikulum_version_id == aktif_id).order_by(CPL.kode).all()
+        if aktif_id else []
+    )
     results = []
     for cpl in cpl_list:
         query = db.query(CPLAchievement).filter(CPLAchievement.cpl_id == cpl.id)

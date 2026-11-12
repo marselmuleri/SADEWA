@@ -4,43 +4,76 @@ import copy
 import pytest
 
 from sadewa_ai.config import settings
-from sadewa_ai.validators import validate_narasi, validate_rps
+from sadewa_ai.validators import rapikan_rps, validate_narasi, validate_rps
+
+
+def buat_rps_mentah() -> dict:
+    """RPS format 2 (Kontrak Kuliah + RPS) seperti keluaran LLM, sebelum dirapikan."""
+    pertemuan = []
+    for minggu in range(1, settings.jumlah_pertemuan + 1):
+        if minggu in (settings.minggu_uts, settings.minggu_uas):
+            pertemuan.append({"minggu": minggu, "jenis": "UTS" if minggu == settings.minggu_uts else "UAS"})
+            continue
+        pertemuan.append({
+            "minggu": minggu,
+            "kemampuan_akhir": "Mahasiswa mampu menerapkan (C3) konfigurasi dasar",
+            "bahan_kajian_judul": f"Pokok bahasan {minggu}",
+            "bahan_kajian": "sub-pokok A, sub-pokok B",
+            "metode": "Case Method, Praktikum, SDL",
+            "pengalaman_belajar": ["Mahasiswa mengkonfigurasi perangkat dan menguji konektivitas."],
+            "target_cpmk": "CPMK 2.1, 5.1",
+            "kriteria_indikator": ["Konfigurasi benar; konektivitas terverifikasi."],
+        })
+    return {
+        "kode_mk": "TSK1624307",
+        "deskripsi_mk": "Mata kuliah pengantar switching dan routing.",
+        "cpl": [
+            {"kode": "CPL 2", "deskripsi": "Mampu merancang sistem", "label": "(engineering design)"},
+            {"kode": "CPL5", "deskripsi": "Menguasai peralatan modern", "label": "MASTERING MODERN TOOLS"},
+        ],
+        "cpmk": [
+            {"kode": "CPMK 2.1", "deskripsi": "Mendesain arsitektur jaringan"},
+            {"kode": "cpmk5.1", "deskripsi": "Menggunakan Packet Tracer"},
+        ],
+        "penilaian": [
+            {"poin": "Tugas", "komponen": "Tugas", "rincian": "1. Tugas harian\n2. Modul netacad", "bobot": 70, "cpmk": ["CPMK 2.1", "5.1"]},
+            {"poin": "Kognitif / Pengetahuan", "komponen": "UTS", "rincian": [], "bobot": 15, "cpmk": ["CPMK 2.1"]},
+            {"poin": "Kognitif / Pengetahuan", "komponen": "UAS", "rincian": [], "bobot": 15, "cpmk": ["CPMK 5.1"]},
+        ],
+        "pertemuan": pertemuan,
+        "referensi": ["Cisco Networking Academy, Switching, Routing and Wireless Essentials"],
+    }
 
 
 def buat_rps_valid() -> dict:
-    """RPS contoh yang memenuhi seluruh aturan OBE."""
-    pertemuan = []
-    # 14 pertemuan materi, bobot 50 dibagi rata + UTS 20 + UAS 30 = 100
-    bobot_materi = [4, 4, 4, 4, 3, 3, 3, 4, 4, 4, 3, 3, 3, 4]
-    minggu_materi = [1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15]
+    return rapikan_rps(buat_rps_mentah(), sks=2)
 
-    for minggu, bobot in zip(minggu_materi, bobot_materi):
-        pertemuan.append({
-            "minggu": minggu,
-            "cpmk": "CPMK 1-1",
-            "sub_cpmk": "Mampu menjelaskan konsep dasar",
-            "materi": f"Materi minggu {minggu}",
-            "metode": "Ceramah dan Diskusi",
-            "bobot": bobot,
-        })
 
-    pertemuan.append({
-        "minggu": 8, "cpmk": "-", "sub_cpmk": "-",
-        "materi": "UTS", "metode": "Ujian Tertulis", "bobot": 20,
-    })
-    pertemuan.append({
-        "minggu": 16, "cpmk": "-", "sub_cpmk": "-",
-        "materi": "UAS", "metode": "Ujian Tertulis", "bobot": 30,
-    })
-    pertemuan.sort(key=lambda x: x["minggu"])
+def test_rapikan_menyeragamkan_format():
+    data = buat_rps_valid()
+    assert data["format"] == 2
+    assert [c["kode"] for c in data["cpl"]] == ["CPL 2", "CPL 5"]
+    assert data["cpl"][0]["label"] == "ENGINEERING DESIGN"
+    assert [c["kode"] for c in data["cpmk"]] == ["CPMK 2.1", "CPMK 5.1"]
+    assert data["penilaian"][0]["rincian"] == ["Tugas harian", "Modul netacad"]
+    assert data["penilaian"][0]["cpmk"] == ["CPMK 2.1", "CPMK 5.1"]
 
-    return {
-        "kode_mk": "TKK1234",
-        "deskripsi_mk": "Mata kuliah tentang jaringan syaraf tiruan.",
-        "cpl": [{"kode": "CPL 3", "deskripsi": "Mampu merancang sistem"}],
-        "cpmk": [{"kode": "CPMK 1-1", "deskripsi": "Memahami konsep dasar"}],
-        "pertemuan": pertemuan,
-    }
+    m1 = data["pertemuan"][0]
+    assert m1["target_cpmk"] == ["CPMK 2.1", "CPMK 5.1"]
+    assert m1["waktu"] == "2 x 50 menit"
+    assert m1["bobot"] is None
+    uts = data["pertemuan"][settings.minggu_uts - 1]
+    uas = data["pertemuan"][settings.minggu_uas - 1]
+    assert (uts["jenis"], uts["bobot"]) == ("UTS", 15)
+    assert (uas["jenis"], uas["bobot"]) == ("UAS", 15)
+
+
+def test_rapikan_memaksa_minggu_ujian():
+    """LLM menulis materi biasa di minggu UTS: tetap dijadikan baris UTS."""
+    mentah = buat_rps_mentah()
+    mentah["pertemuan"][settings.minggu_uts - 1] = {"minggu": settings.minggu_uts, "bahan_kajian_judul": "Materi biasa"}
+    data = rapikan_rps(mentah, sks=3)
+    assert data["pertemuan"][settings.minggu_uts - 1]["jenis"] == "UTS"
 
 
 def test_rps_valid_lolos():
@@ -49,12 +82,28 @@ def test_rps_valid_lolos():
     assert errors == []
 
 
-def test_total_bobot_salah_terdeteksi():
+def test_total_bobot_penilaian_salah_terdeteksi():
     data = buat_rps_valid()
-    data["pertemuan"][0]["bobot"] = 99
+    data["penilaian"][0]["bobot"] = 60
     valid, errors = validate_rps(data)
     assert not valid
-    assert any("Total bobot" in e for e in errors)
+    assert any("Total bobot penilaian" in e for e in errors)
+
+
+def test_bobot_bukan_angka_terdeteksi():
+    data = buat_rps_valid()
+    data["penilaian"][0]["bobot"] = "tujuh puluh"
+    valid, errors = validate_rps(data)
+    assert not valid
+    assert any("bukan angka" in e for e in errors)
+
+
+def test_penilaian_tanpa_uas_terdeteksi():
+    data = buat_rps_valid()
+    data["penilaian"] = data["penilaian"][:2]
+    valid, errors = validate_rps(data)
+    assert not valid
+    assert any("'UAS'" in e for e in errors)
 
 
 def test_jumlah_pertemuan_kurang_terdeteksi():
@@ -65,26 +114,6 @@ def test_jumlah_pertemuan_kurang_terdeteksi():
     assert any("Jumlah pertemuan" in e for e in errors)
 
 
-def test_uts_bukan_di_minggu_8_terdeteksi():
-    data = buat_rps_valid()
-    for item in data["pertemuan"]:
-        if item["minggu"] == settings.minggu_uts:
-            item["materi"] = "Materi biasa"
-    valid, errors = validate_rps(data)
-    assert not valid
-    assert any("UTS" in e for e in errors)
-
-
-def test_uas_bukan_di_minggu_16_terdeteksi():
-    data = buat_rps_valid()
-    for item in data["pertemuan"]:
-        if item["minggu"] == settings.minggu_uas:
-            item["materi"] = "Materi biasa"
-    valid, errors = validate_rps(data)
-    assert not valid
-    assert any("UAS" in e for e in errors)
-
-
 def test_minggu_duplikat_terdeteksi():
     data = buat_rps_valid()
     data["pertemuan"][1]["minggu"] = 1
@@ -93,12 +122,28 @@ def test_minggu_duplikat_terdeteksi():
     assert any("duplikat" in e for e in errors)
 
 
+def test_kolom_pertemuan_kosong_terdeteksi():
+    data = buat_rps_valid()
+    data["pertemuan"][0]["pengalaman_belajar"] = []
+    valid, errors = validate_rps(data)
+    assert not valid
+    assert any("pengalaman_belajar" in e for e in errors)
+
+
 def test_cpmk_tidak_terdaftar_terdeteksi():
     data = buat_rps_valid()
-    data["pertemuan"][0]["cpmk"] = "CPMK 9-9"
+    data["pertemuan"][0]["target_cpmk"] = ["CPMK 9.9"]
     valid, errors = validate_rps(data)
     assert not valid
     assert any("tidak ada di daftar cpmk" in e for e in errors)
+
+
+def test_cpl_tanpa_label_terdeteksi():
+    data = buat_rps_valid()
+    data["cpl"][0]["label"] = ""
+    valid, errors = validate_rps(data)
+    assert not valid
+    assert any("label" in e for e in errors)
 
 
 def test_field_wajib_hilang_terdeteksi():
@@ -107,13 +152,6 @@ def test_field_wajib_hilang_terdeteksi():
     valid, errors = validate_rps(data)
     assert not valid
     assert any("kode_mk" in e for e in errors)
-
-
-def test_bobot_bukan_angka_terdeteksi():
-    data = buat_rps_valid()
-    data["pertemuan"][0]["bobot"] = "lima"
-    valid, errors = validate_rps(data)
-    assert not valid
 
 
 def test_pertemuan_bukan_list_terdeteksi():

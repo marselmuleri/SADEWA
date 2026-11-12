@@ -5,12 +5,13 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import AcademicScope, get_academic_scope, require_roles
-from app.models.enums import UserRole
+from app.models.enums import StatusKurikulum, UserRole
 from app.models.kurikulum_version import KurikulumVersion
 from app.models.program_studi import ProgramStudi
 from app.models.skala_nilai import SkalaNilai
 from app.models.user import User
-from app.schemas.kurikulum_version import KurikulumVersionCreate, KurikulumVersionResponse
+from app.schemas.kurikulum_version import KurikulumAktifResponse, KurikulumVersionCreate, KurikulumVersionResponse
+from app.services.kurikulum_aktif import kurikulum_aktif
 from app.schemas.skala_nilai import KelompokSkalaResponse, SkalaItem, SkalaNilaiRequest, SkalaNilaiResponse
 from app.services.skala_nilai import KelompokSkala, muat_kelompok, validasi_kelompok
 from app.services.arsip import arsipkan_publish
@@ -35,6 +36,32 @@ def list_versions(
     elif scope.fakultas_id:
         query = query.join(ProgramStudi).filter(ProgramStudi.fakultas_id == scope.fakultas_id)
     return query.order_by(KurikulumVersion.id.desc()).all()
+
+
+@router.get("/aktif", response_model=KurikulumAktifResponse)
+def get_kurikulum_aktif(
+    program_studi_id: int | None = None,
+    db: Session = Depends(get_db),
+    scope: AcademicScope = Depends(get_academic_scope),
+):
+    """Kurikulum yang dipakai Analitik OBE. Dekan wajib memilih prodi di fakultasnya."""
+    if scope.program_studi_id:
+        prodi_id = scope.program_studi_id
+    elif scope.fakultas_id:
+        if not program_studi_id:
+            raise HTTPException(status_code=400, detail="program_studi_id wajib diisi (pilih salah satu prodi di fakultas Anda)")
+        prodi = db.query(ProgramStudi).filter(ProgramStudi.id == program_studi_id).first()
+        if not prodi or prodi.fakultas_id != scope.fakultas_id:
+            raise HTTPException(status_code=403, detail="Program Studi ini di luar fakultas Anda")
+        prodi_id = program_studi_id
+    else:
+        raise HTTPException(status_code=403, detail="Akun ini belum terhubung ke Program Studi manapun")
+    versi, ditetapkan = kurikulum_aktif(db, prodi_id)
+    return KurikulumAktifResponse(
+        program_studi_id=prodi_id,
+        kurikulum=KurikulumVersionResponse.model_validate(versi) if versi else None,
+        ditetapkan=ditetapkan,
+    )
 
 
 @router.post("", response_model=KurikulumVersionResponse)
@@ -81,6 +108,30 @@ def publish_version(
     arsipkan_publish(db, data, user.id)
     db.commit()
     db.refresh(data)
+    return data
+
+
+@router.post("/{version_id}/aktifkan", response_model=KurikulumVersionResponse)
+def aktifkan_version(
+    version_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin_prodi)),
+):
+    """Tetapkan versi ini sebagai kurikulum yang dipakai Analitik OBE prodi."""
+    prodi_id = _require_prodi_scope(user)
+    data = db.query(KurikulumVersion).filter(KurikulumVersion.id == version_id).first()
+    if not data:
+        raise HTTPException(status_code=404, detail="Versi kurikulum tidak ditemukan")
+    if data.program_studi_id != prodi_id:
+        raise HTTPException(status_code=403, detail="Tidak boleh mengatur kurikulum di luar prodi Anda")
+    status_val = data.status.value if hasattr(data.status, "value") else str(data.status)
+    if status_val != StatusKurikulum.published.value:
+        raise HTTPException(status_code=400, detail="Publikasikan versi kurikulum ini terlebih dahulu sebelum dijadikan kurikulum aktif")
+    prodi = db.query(ProgramStudi).filter(ProgramStudi.id == prodi_id).first()
+    prodi.kurikulum_aktif_id = data.id
+    db.commit()
+    db.refresh(data)
+    db.refresh(prodi)
     return data
 
 

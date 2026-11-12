@@ -13,6 +13,7 @@ from app.models.peserta_mata_kuliah import PesertaMataKuliah
 from app.models.program_studi import ProgramStudi
 from app.services.analitik import analitik_mata_kuliah, analitik_prodi
 from app.services.analitik_mahasiswa import analitik_mahasiswa, daftar_mahasiswa
+from app.services.kurikulum_aktif import kurikulum_aktif_id
 
 router = APIRouter()
 
@@ -93,7 +94,7 @@ def _cakupan_mahasiswa(
             if mata_kuliah_id not in diampu:
                 raise HTTPException(status_code=403, detail="Anda bukan dosen pengampu mata kuliah ini")
             diampu = [mata_kuliah_id]
-        return {"mk_ids": diampu, "prodi_id": scope.program_studi_id, "prodi_penuh": False}
+        return {"mk_ids": diampu, "prodi_id": scope.program_studi_id, "prodi_penuh": False, "kurikulum_id": None}
 
     if role == UserRole.kaprodi:
         prodi_id = scope.program_studi_id
@@ -107,12 +108,18 @@ def _cakupan_mahasiswa(
     else:
         raise HTTPException(status_code=403, detail="Role ini tidak memiliki akses analitik OBE")
 
-    mk_ids = [m.id for m in db.query(MataKuliah.id).filter(MataKuliah.program_studi_id == prodi_id).all()]
+    # Kaprodi/Dekan: hanya mata kuliah kurikulum aktif prodi (ditetapkan Admin Prodi).
+    aktif_id = kurikulum_aktif_id(db, prodi_id)
+    mk_ids = [
+        m.id for m in db.query(MataKuliah.id).filter(
+            MataKuliah.program_studi_id == prodi_id, MataKuliah.kurikulum_version_id == aktif_id,
+        ).all()
+    ] if aktif_id else []
     if mata_kuliah_id:
         if mata_kuliah_id not in mk_ids:
-            raise HTTPException(status_code=403, detail="Mata kuliah ini di luar prodi Anda")
-        return {"mk_ids": [mata_kuliah_id], "prodi_id": prodi_id, "prodi_penuh": False}
-    return {"mk_ids": mk_ids, "prodi_id": prodi_id, "prodi_penuh": True}
+            raise HTTPException(status_code=403, detail="Mata kuliah ini di luar kurikulum aktif prodi Anda")
+        return {"mk_ids": [mata_kuliah_id], "prodi_id": prodi_id, "prodi_penuh": False, "kurikulum_id": aktif_id}
+    return {"mk_ids": mk_ids, "prodi_id": prodi_id, "prodi_penuh": True, "kurikulum_id": aktif_id}
 
 
 @router.get("/mahasiswa", response_model=dict[str, Any])

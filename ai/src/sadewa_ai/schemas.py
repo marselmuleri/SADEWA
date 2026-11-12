@@ -49,12 +49,22 @@ class RPSRequest(BaseModel):
 
 
 class Pertemuan(BaseModel):
+    """
+    Satu baris tabel rencana mingguan (format RPS + Kontrak Kuliah).
+    Minggu UTS/UAS memakai jenis "UTS"/"UAS" dan hanya kolom bobot yang terisi.
+    """
+
     minggu: int
-    cpmk: str
-    sub_cpmk: str
-    materi: str
-    metode: str
-    bobot: float
+    jenis: Literal["kuliah", "UTS", "UAS"] = "kuliah"
+    kemampuan_akhir: str = ""
+    bahan_kajian_judul: str = ""
+    bahan_kajian: str = ""
+    metode: str = ""
+    waktu: str = ""
+    pengalaman_belajar: List[str] = Field(default_factory=list)
+    target_cpmk: List[str] = Field(default_factory=list)
+    kriteria_indikator: List[str] = Field(default_factory=list)
+    bobot: Optional[float] = None
 
 
 class CapaianPembelajaran(BaseModel):
@@ -62,14 +72,31 @@ class CapaianPembelajaran(BaseModel):
     deskripsi: str
 
 
-class RPSData(BaseModel):
-    """Bentuk JSON RPS hasil generasi LLM, setelah lolos parsing."""
+class CPL(CapaianPembelajaran):
+    label: str = ""  # mis. "ENGINEERING DESIGN", dicetak tebal setelah deskripsi
 
+
+class KomponenPenilaian(BaseModel):
+    """Satu baris Tabel Penilaian Mata Kuliah pada Kontrak Kuliah."""
+
+    poin: str          # Poin Evaluasi, mis. "Kognitif / Pengetahuan"
+    komponen: str      # mis. "Tugas" atau "UTS"
+    rincian: List[str] = Field(default_factory=list)  # daftar bernomor di bawah komponen
+    bobot: float
+    cpmk: List[str] = Field(default_factory=list)
+
+
+class RPSData(BaseModel):
+    """Bentuk JSON RPS hasil generasi LLM, setelah lolos parsing & perapian."""
+
+    format: int = 2
     kode_mk: str
     deskripsi_mk: str
-    cpl: List[CapaianPembelajaran]
+    cpl: List[CPL]
     cpmk: List[CapaianPembelajaran]
+    penilaian: List[KomponenPenilaian]
     pertemuan: List[Pertemuan]
+    referensi: List[str] = Field(default_factory=list)
 
 
 # --- Narasi evaluasi kurikulum -------------------------------------------------

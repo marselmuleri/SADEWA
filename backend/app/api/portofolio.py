@@ -36,7 +36,7 @@ from app.schemas.portofolio import (
 from app.services import ai_client
 from app.services.portofolio import capaian_mata_kuliah, evaluasi_cpmk
 from app.services.portofolio_aturan import aturan_prodi
-from app.services.portofolio_export import export_portofolio
+from app.services.portofolio_export import export_portofolio, ringkasan_export
 
 router = APIRouter()
 
@@ -487,6 +487,17 @@ async def saran_evaluasi(
 # ---------------------------------------------------------------------------
 # Export Excel portofolio lengkap
 # ---------------------------------------------------------------------------
+
+@router.get("/{mata_kuliah_id}/export/preview")
+def preview_export_excel(
+    mata_kuliah_id: int,
+    db: Session = Depends(get_db),
+    scope: AcademicScope = Depends(get_academic_scope),
+):
+    """Ringkasan isi & kelengkapan file Excel portofolio, ditinjau sebelum diunduh."""
+    mk = _mk_baca(db, scope, mata_kuliah_id)
+    return ringkasan_export(db, mk)
+
 
 @router.get("/{mata_kuliah_id}/export")
 def export_excel(

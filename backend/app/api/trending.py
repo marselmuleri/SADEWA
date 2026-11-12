@@ -8,6 +8,7 @@ from app.models.cpl_achievement import CPLAchievement
 from app.models.enums import UserRole
 from app.models.program_studi import ProgramStudi
 from app.services.calculation.cpl_aggregate import gabung_capaian_cpl
+from app.services.kurikulum_aktif import kurikulum_aktif_id
 from app.schemas.dashboard import TrendingItem
 
 router = APIRouter()
@@ -41,7 +42,13 @@ def trending_cpl_by_angkatan(
     else:
         raise HTTPException(status_code=403, detail="Role ini tidak memiliki akses trending")
 
-    query = db.query(CPLAchievement).join(CPL).filter(CPL.program_studi_id == prodi_id)
+    # Hanya CPL kurikulum aktif prodi (ditetapkan Admin Prodi).
+    aktif_id = kurikulum_aktif_id(db, prodi_id)
+    if not aktif_id:
+        return []
+    query = db.query(CPLAchievement).join(CPL).filter(
+        CPL.program_studi_id == prodi_id, CPL.kurikulum_version_id == aktif_id,
+    )
     if cpl_ids:
         query = query.filter(CPLAchievement.cpl_id.in_(cpl_ids))
     if year_start:

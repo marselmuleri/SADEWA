@@ -156,6 +156,8 @@ export default function AnalisisPage() {
 
   // --- State Level 3: Mata Kuliah & CPMK Detail ---
   const [courses, setCourses] = useState([])
+  // Kurikulum aktif prodi (ditetapkan Admin Prodi); seluruh analitik prodi memakai versi ini
+  const [kurikulumAktif, setKurikulumAktif] = useState(null)
   const [selectedMkId, setSelectedMkId] = useState('')
   const [mkDashboard, setMkDashboard] = useState(null)
   const [loadingMk, setLoadingMk] = useState(false)
@@ -176,6 +178,7 @@ export default function AnalisisPage() {
       setCplList([])
       setSelectedCpl(null)
       setCourses([])
+      setKurikulumAktif(null)
       setLoadingCpl(false)
       setErrorCpl(null)
       return
@@ -188,19 +191,25 @@ export default function AnalisisPage() {
       if (selectedSemester) params.semester = selectedSemester
       if (isDekan && selectedProdiId) params.program_studi_id = Number(selectedProdiId)
 
-      const [cplRes, mkRes] = await Promise.all([
+      const aktifParams = isDekan && selectedProdiId ? { program_studi_id: Number(selectedProdiId) } : {}
+      const [cplRes, mkRes, aktifRes] = await Promise.all([
         api.get('/dashboard/cpl-overview', { params }),
         api.get('/mata-kuliah'),
+        api.get('/kurikulum/versions/aktif', { params: aktifParams }),
       ])
       const list = Array.isArray(cplRes.data) ? cplRes.data : []
       setCplList(list)
-      
+
+      const aktif = aktifRes.data || null
+      setKurikulumAktif(aktif)
+      const aktifId = aktif?.kurikulum?.id
       const allCourses = Array.isArray(mkRes.data) ? mkRes.data : []
-      if (isDekan && selectedProdiId) {
-        setCourses(allCourses.filter((c) => String(c.program_studi_id) === String(selectedProdiId)))
-      } else {
-        setCourses(allCourses)
-      }
+      setCourses(
+        allCourses.filter((c) =>
+          (!isDekan || String(c.program_studi_id) === String(selectedProdiId))
+          && aktifId != null && String(c.kurikulum_version_id) === String(aktifId)
+        )
+      )
 
       if (list.length > 0) {
         if (selectedCpl) {
@@ -814,6 +823,29 @@ export default function AnalisisPage() {
         </div>
       ) : (
         <>
+          {kurikulumAktif && (
+            <div
+              data-testid="info-kurikulum-analitik"
+              className={`flex flex-wrap items-center gap-2 rounded-[6px] border px-3.5 py-2.5 text-xs ${
+                kurikulumAktif.kurikulum && kurikulumAktif.ditetapkan
+                  ? 'border-[#CBD5E1] bg-white text-[#142B4A]'
+                  : 'border-amber-200 bg-amber-50 text-amber-900'
+              }`}
+            >
+              <BookOpen className="h-4 w-4 shrink-0" />
+              {kurikulumAktif.kurikulum ? (
+                <span>
+                  Kurikulum yang dianalisis: <strong>{kurikulumAktif.kurikulum.version_label}</strong>
+                  {kurikulumAktif.ditetapkan
+                    ? ' (ditetapkan Admin Prodi)'
+                    : ' (belum ditetapkan Admin Prodi, sementara memakai versi published terbaru)'}
+                </span>
+              ) : (
+                <span>Belum ada kurikulum yang dipublikasikan untuk prodi ini.</span>
+              )}
+            </div>
+          )}
+
           <ModeAnalisisSwitch value={analisisMode} onChange={setAnalisisMode} />
 
           {analisisMode === 'mahasiswa' ? (
@@ -842,7 +874,7 @@ export default function AnalisisPage() {
                 aria-label="Cakupan analitik"
                 searchPlaceholder="Cari kode atau nama mata kuliah..."
                 options={[
-                  { value: '', label: `Seluruh Program Studi (${courses.length} mata kuliah)` },
+                  { value: '', label: `Semua Mata Kuliah (${courses.length})` },
                   ...courses.map((c) => ({
                     value: c.id,
                     label: `${c.kode} - ${c.nama}`,

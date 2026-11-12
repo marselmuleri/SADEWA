@@ -17,7 +17,7 @@ class KurikulumVersion(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
-    program_studi = relationship("ProgramStudi", back_populates="kurikulum_versions")
+    program_studi = relationship("ProgramStudi", back_populates="kurikulum_versions", foreign_keys=[program_studi_id])
     created_by_user = relationship("User")
     cpl = relationship("CPL", back_populates="kurikulum_version")
     mata_kuliah = relationship("MataKuliah", back_populates="kurikulum_version")

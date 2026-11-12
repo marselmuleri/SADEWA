@@ -35,11 +35,18 @@ class KurikulumVersionResponse(ORMBaseModel):
     status: str
     published_at: datetime | None = None
     created_at: datetime
+    # True bila versi ini kurikulum yang dipakai Analitik OBE prodinya.
+    is_aktif: bool = False
+    # True bila kurikulum aktif ditetapkan Admin Prodi (bukan otomatis versi published terbaru).
+    aktif_ditetapkan: bool = False
 
     @model_validator(mode="before")
     @classmethod
     def populate_fields(cls, obj):
         if hasattr(obj, "version_label"):
+            from app.services.kurikulum_aktif import pilih_kurikulum_aktif
+
+            aktif, ditetapkan = pilih_kurikulum_aktif(getattr(obj, "program_studi", None))
             status_val = obj.status.value if hasattr(obj.status, "value") else str(obj.status)
             return {
                 "id": obj.id,
@@ -51,5 +58,13 @@ class KurikulumVersionResponse(ORMBaseModel):
                 "status": status_val,
                 "published_at": getattr(obj, "published_at", None),
                 "created_at": getattr(obj, "created_at", None),
+                "is_aktif": aktif is not None and aktif.id == obj.id,
+                "aktif_ditetapkan": ditetapkan,
             }
         return obj
+
+
+class KurikulumAktifResponse(BaseModel):
+    program_studi_id: int
+    kurikulum: KurikulumVersionResponse | None = None
+    ditetapkan: bool = False

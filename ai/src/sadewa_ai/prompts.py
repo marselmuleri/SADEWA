@@ -31,7 +31,7 @@ def build_rps_prompt(
     context_kurikulum: str,
     context_web: str = "",
 ) -> str:
-    """Prompt untuk pembangkitan draf RPS 16 pertemuan."""
+    """Prompt untuk pembangkitan Kontrak Kuliah + RPS 16 pertemuan (format RPS baru)."""
     topik = (deskripsi or "").strip()
     if topik:
         blok_topik = (
@@ -39,13 +39,13 @@ def build_rps_prompt(
             f"{topik}\n"
             "Topik ini adalah permintaan eksplisit dosen. Integrasikan ke dalam materi "
             f"mata kuliah {mk_name}: minimal 5 pertemuan (di luar UTS dan UAS) harus "
-            "membahas topik ini secara langsung pada kolom \"materi\" dan \"sub_cpmk\". "
-            "Jika topik tidak berkaitan langsung dengan mata kuliah, jadikan studi kasus "
-            "atau penerapan dalam mata kuliah tersebut. Sisa pertemuan boleh memuat "
-            "materi inti mata kuliah."
+            "membahas topik ini secara langsung pada kolom \"bahan_kajian\" dan "
+            "\"kemampuan_akhir\". Jika topik tidak berkaitan langsung dengan mata kuliah, "
+            "jadikan studi kasus atau penerapan dalam mata kuliah tersebut. Sisa pertemuan "
+            "boleh memuat materi inti mata kuliah."
         )
         aturan_topik = (
-            f'- Topik/fokus dosen ("{topik}") HARUS tercermin jelas pada materi pertemuan, '
+            f'- Topik/fokus dosen ("{topik}") HARUS tercermin jelas pada bahan kajian pertemuan, '
             "bukan hanya disebut sekilas"
         )
     else:
@@ -55,10 +55,11 @@ def build_rps_prompt(
         )
         aturan_topik = "- Susun materi dari silabus standar mata kuliah"
 
+    uts, uas, n = settings.minggu_uts, settings.minggu_uas, settings.jumlah_pertemuan
     return f"""Kamu adalah sistem generator RPS (Rencana Pembelajaran Semester) resmi
 untuk universitas berbasis OBE (Outcome-Based Education).
 
-Tugasmu: generate RPS yang VALID, PRESISI, dan bebas halusinasi.
+Tugasmu: generate Kontrak Kuliah dan RPS yang VALID, PRESISI, dan bebas halusinasi.
 Kamu WAJIB mengikuti format dan standar dari dokumen kurikulum resmi berikut.
 Jika konteks di bawah tidak memuat informasi yang kamu butuhkan, gunakan
 struktur standar OBE nasional dan JANGAN mengarang nama dokumen, nomor
@@ -74,55 +75,74 @@ peraturan, atau kode yang tidak ada di konteks.
 ## Parameter Mata Kuliah yang Harus Digenerate
 - Nama Mata Kuliah : {mk_name}
 - Kode MK          : [generate kode yang sesuai format institusi]
-- SKS              : {sks} SKS Teori
+- SKS              : {sks} SKS
 - Semester         : {semester}
 - Program Studi    : {prodi}
 
 {blok_topik}
 
 ## Instruksi Output
-Kembalikan RPS dalam format JSON yang valid.
+Kembalikan dalam format JSON yang valid.
 JANGAN tambahkan teks lain di luar JSON.
 JANGAN gunakan markdown code block.
 Langsung mulai dengan karakter {{ dan akhiri dengan }}.
 
-Struktur JSON:
+Struktur JSON (contoh isi hanya ilustrasi format, sesuaikan dengan mata kuliah):
 {{
   "kode_mk": "string",
-  "deskripsi_mk": "string (2-3 kalimat)",
+  "deskripsi_mk": "string (2-3 kalimat, deskripsi singkat mata kuliah)",
   "cpl": [
-    {{"kode": "CPL X", "deskripsi": "string"}}
+    {{"kode": "CPL 2", "deskripsi": "Mampu melakukan perancangan komponen, sistem, dan proses ...", "label": "ENGINEERING DESIGN"}}
   ],
   "cpmk": [
-    {{"kode": "CPMK X-Y", "deskripsi": "string"}}
+    {{"kode": "CPMK 2.1", "deskripsi": "Mahasiswa mampu mendesain dan mengimplementasikan ..."}}
+  ],
+  "penilaian": [
+    {{"poin": "Aktivitas Partisipatif", "komponen": "Aktivitas", "rincian": ["Kontribusi dalam kelompok"], "bobot": 10, "cpmk": ["CPMK 2.1"]}},
+    {{"poin": "Hasil Proyek", "komponen": "Hasil Proyek", "rincian": ["Tugas besar"], "bobot": 40, "cpmk": ["CPMK 2.1"]}},
+    {{"poin": "Tugas", "komponen": "Tugas", "rincian": ["Tugas harian", "Kuis"], "bobot": 20, "cpmk": ["CPMK 2.1"]}},
+    {{"poin": "Kognitif / Pengetahuan", "komponen": "UTS", "rincian": [], "bobot": 15, "cpmk": ["CPMK 2.1"]}},
+    {{"poin": "Kognitif / Pengetahuan", "komponen": "UAS", "rincian": [], "bobot": 15, "cpmk": ["CPMK 2.1"]}}
   ],
   "pertemuan": [
     {{
       "minggu": 1,
-      "cpmk": "CPMK X-Y",
-      "sub_cpmk": "Kemampuan akhir yang diharapkan",
-      "materi": "Topik materi spesifik",
-      "metode": "Ceramah dan Diskusi",
-      "bobot": 5
-    }}
-  ]
+      "kemampuan_akhir": "Mahasiswa mampu menerapkan (C3) ...",
+      "bahan_kajian_judul": "Judul Pokok Bahasan",
+      "bahan_kajian": "rincian sub-pokok bahasan, dipisah koma",
+      "metode": "Case Method, Praktikum, SDL",
+      "pengalaman_belajar": ["Mahasiswa mempelajari ..., melakukan ..., dan mendokumentasikan ..."],
+      "target_cpmk": ["CPMK 2.1", "CPMK 5.1"],
+      "kriteria_indikator": ["Mampu ...; mampu ...; hasil ... dapat diverifikasi."]
+    }},
+    {{"minggu": {uts}, "jenis": "UTS"}},
+    {{"minggu": {uas}, "jenis": "UAS"}}
+  ],
+  "referensi": ["Penulis, Judul Buku, Penerbit, Tahun"]
 }}
 
 ATURAN WAJIB:
-- Buat tepat {settings.jumlah_pertemuan} pertemuan (minggu 1-{settings.jumlah_pertemuan})
-- Minggu {settings.minggu_uts} = UTS (cpmk: "-", materi: "UTS", bobot: 20)
-- Minggu {settings.minggu_uas} = UAS (cpmk: "-", materi: "UAS", bobot: 30)
-- PERHITUNGAN BOBOT (WAJIB IKUTI):
-  * Total bobot = {settings.bobot_total}
-  * UTS (minggu {settings.minggu_uts}) = 20, UAS (minggu {settings.minggu_uas}) = 30
-  * Sisa untuk pertemuan reguler = {settings.bobot_total} - 20 - 30 = 50
-  * Jumlah pertemuan reguler = {settings.jumlah_pertemuan - 2} (semua kecuali UTS dan UAS)
-  * Distribusi bobot reguler: gunakan kombinasi bobot 3 dan 4 yang totalnya tepat 50
-    Contoh: 8 pertemuan bobot 4 dan 6 pertemuan bobot 3 → (8×4)+(6×3) = 32+18 = 50 ✓
-  * JANGAN gunakan bobot 4 untuk semua pertemuan reguler (14×4=56, bukan 50)
-- Setiap nilai "cpmk" pada pertemuan HARUS salah satu kode yang kamu daftarkan
-  di array "cpmk", kecuali untuk UTS dan UAS yang memakai "-"
-- Semua konten dalam Bahasa Indonesia
+- "pertemuan" berisi tepat {n} objek, minggu 1-{n} tanpa duplikat.
+- Minggu {uts} = UTS dan minggu {uas} = UAS: cukup {{"minggu": {uts}, "jenis": "UTS"}} dan
+  {{"minggu": {uas}, "jenis": "UAS"}} tanpa field lain.
+- Setiap pertemuan kuliah WAJIB mengisi kemampuan_akhir, bahan_kajian_judul, bahan_kajian,
+  metode, pengalaman_belajar (minimal 1 butir), target_cpmk (minimal 1), dan
+  kriteria_indikator (minimal 1 butir). JANGAN mengisi bobot pada pertemuan kuliah.
+- "kemampuan_akhir" diawali "Mahasiswa mampu" dan mencantumkan level taksonomi Bloom
+  dalam kurung, mis. "(C3)" atau "(C4)".
+- "metode" berupa daftar metode dipisah koma (mis. Case Method, Praktikum,
+  Problem Based Learning, Project Based Learning, Diskusi, Simulasi, SDL).
+- Kode CPL berformat "CPL <nomor>" dan "label" adalah nama singkat CPL dalam huruf kapital
+  tanpa tanda kurung.
+- Kode CPMK berformat "CPMK <nomor CPL>.<urutan>", mis. "CPMK 2.1" untuk CPMK pertama
+  yang mendukung CPL 2. Setiap CPL minimal punya satu CPMK.
+- Setiap kode pada "target_cpmk" dan pada "cpmk" di "penilaian" HARUS ada di array "cpmk".
+- "penilaian": 3-6 baris. Total bobot seluruh baris = {settings.bobot_total}. WAJIB ada satu
+  baris dengan komponen "UTS" dan satu baris dengan komponen "UAS" (poin evaluasi
+  "Kognitif / Pengetahuan"). Baris dengan poin evaluasi yang sama ditulis berurutan.
+- "referensi": 3-6 buku teks atau sumber resmi yang benar-benar ada. JANGAN mengarang
+  judul, penulis, atau tahun; bila ragu, gunakan buku teks standar yang umum dipakai.
+- Semua konten dalam Bahasa Indonesia (istilah teknis boleh bahasa Inggris).
 - Konten harus spesifik untuk mata kuliah {mk_name}
 {aturan_topik}
 """

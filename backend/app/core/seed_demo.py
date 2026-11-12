@@ -569,29 +569,42 @@ def _buat_laporan_dan_rps(db: Session, prodi, mks, kaprodi) -> tuple[int, int]:
     for info in mks:
         mk = info["mk"]
         cpmks = info["cpmk"]
+        # Format 2: Kontrak Kuliah + RPS (sama dengan keluaran Generate RPS)
+        kode_cpmk = [c.kode for c in cpmks]
         pertemuan = []
         for minggu in range(1, 17):
-            if minggu == 8:
-                pertemuan.append({"minggu": 8, "cpmk": ", ".join(c.kode for c in cpmks), "sub_cpmk": "Evaluasi tengah semester",
-                                  "materi": "Ujian Tengah Semester", "metode": "Ujian tertulis", "bobot": 30})
-                continue
-            if minggu == 16:
-                pertemuan.append({"minggu": 16, "cpmk": ", ".join(c.kode for c in cpmks), "sub_cpmk": "Evaluasi akhir semester",
-                                  "materi": "Ujian Akhir Semester", "metode": "Ujian tertulis", "bobot": 40})
+            if minggu in (8, 16):
+                pertemuan.append({"minggu": minggu, "jenis": "UTS" if minggu == 8 else "UAS", "bobot": 15})
                 continue
             c = cpmks[(minggu - 1) * len(cpmks) // 16]
             pertemuan.append({
-                "minggu": minggu, "cpmk": c.kode, "sub_cpmk": f"Sub-CPMK {minggu}: {c.deskripsi.split(' dalam ')[0]}",
-                "materi": f"{mk.nama} - pokok bahasan {minggu}", "metode": "Ceramah interaktif dan diskusi" if minggu % 3 else "Studi kasus dan presentasi",
-                "bobot": 10 if minggu in (4, 12, 14) else 0,
+                "minggu": minggu, "jenis": "kuliah",
+                "kemampuan_akhir": f"Mahasiswa mampu menerapkan (C3) {c.deskripsi.split(' dalam ')[0].lower()}.",
+                "bahan_kajian_judul": f"Pokok Bahasan {minggu}",
+                "bahan_kajian": f"konsep, penerapan, dan studi kasus {mk.nama.lower()} bagian {minggu}.",
+                "metode": "Case Method, Diskusi, SDL" if minggu % 3 else "Project Based Learning, Praktikum, SDL",
+                "waktu": f"{mk.sks} x 50 menit",
+                "pengalaman_belajar": [f"Mahasiswa mempelajari pokok bahasan {minggu}, mengerjakan latihan, dan mendiskusikan hasilnya."],
+                "target_cpmk": [c.kode],
+                "kriteria_indikator": ["Ketepatan konsep; kelengkapan langkah penyelesaian; kemampuan menjelaskan hasil."],
+                "bobot": None,
             })
         cpl_ids = {ik.cpl_id for ik in db.query(IK).filter(IK.id.in_(info["ik_ids"])).all()}
         konten = {
+            "format": 2,
             "kode_mk": mk.kode,
             "deskripsi_mk": f"Mata kuliah {mk.nama} membekali mahasiswa dengan konsep dan keterampilan inti yang mendukung capaian pembelajaran program studi {prodi.nama}.",
-            "cpl": [{"kode": c.kode, "deskripsi": c.deskripsi} for c in db.query(CPL).filter(CPL.id.in_(cpl_ids)).order_by(CPL.kode).all()],
+            "cpl": [{"kode": c.kode, "deskripsi": c.deskripsi, "label": ""} for c in db.query(CPL).filter(CPL.id.in_(cpl_ids)).order_by(CPL.kode).all()],
             "cpmk": [{"kode": c.kode, "deskripsi": c.deskripsi} for c in cpmks],
+            "penilaian": [
+                {"poin": "Aktivitas Partisipatif", "komponen": "Aktivitas", "rincian": ["Keaktifan dan kontribusi diskusi"], "bobot": 10, "cpmk": kode_cpmk[:2]},
+                {"poin": "Hasil Proyek", "komponen": "Hasil Proyek", "rincian": ["Proyek akhir"], "bobot": 40, "cpmk": kode_cpmk},
+                {"poin": "Tugas", "komponen": "Tugas", "rincian": ["Tugas harian", "Kuis"], "bobot": 20, "cpmk": kode_cpmk},
+                {"poin": "Kognitif / Pengetahuan", "komponen": "UTS", "rincian": [], "bobot": 15, "cpmk": kode_cpmk[: max(1, len(kode_cpmk) // 2)]},
+                {"poin": "Kognitif / Pengetahuan", "komponen": "UAS", "rincian": [], "bobot": 15, "cpmk": kode_cpmk},
+            ],
             "pertemuan": pertemuan,
+            "referensi": [f"Bahan ajar {mk.nama}, Program Studi {prodi.nama}."],
         }
         db.add(RPS(mata_kuliah_id=mk.id, tahun_ajaran=TAHUN_AJARAN_LALU, semester=mk.semester, status="draft",
                    konten=konten, created_by=info["koor"].id))
@@ -651,6 +664,7 @@ def seed_demo(db: Session, log=print) -> dict:
             db.flush()
 
             kur = _buat_kurikulum(db, prodi, pdef, admin)
+            prodi.kurikulum_aktif_id = kur["v2024"].id  # kurikulum yang dipakai Analitik OBE
             mks = _buat_struktur_mk(db, prodi, pdef, kur, dosen, admin, bentuk_by_nama)
 
             # Arsip publish kurikulum 2024 (setelah struktur MK lengkap)

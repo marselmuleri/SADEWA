@@ -9,7 +9,8 @@ import useAuth from '../../hooks/useAuth'
 import useToast from '../../hooks/useToast'
 import api from '../../services/api'
 import { getApiErrorMessage } from '../superAdminHelpers'
-import { PORTOFOLIO_SECTIONS, blobErrorMessage, sectionLabel, unduhExcelPortofolio } from './portofolioShared'
+import { PORTOFOLIO_SECTIONS, sectionLabel } from './portofolioShared'
+import PreviewExcelModal from './PreviewExcelModal'
 
 function Kelengkapan({ mk }) {
   const items = [
@@ -42,19 +43,9 @@ export default function PortofolioPage() {
   const [error, setError] = useState(null)
   const [cari, setCari] = useState('')
   const [semester, setSemester] = useState('')
-  const [exportingId, setExportingId] = useState(null)
+  // Mata kuliah yang sedang ditinjau sebelum unduh Excel
+  const [previewMk, setPreviewMk] = useState(null)
   const { toasts, pushToast } = useToast()
-
-  const exportExcel = async (mk) => {
-    setExportingId(mk.id)
-    try {
-      await unduhExcelPortofolio(mk)
-    } catch (err) {
-      pushToast(await blobErrorMessage(err, 'Gagal membuat file Excel'), 'error')
-    } finally {
-      setExportingId(null)
-    }
-  }
 
   const muat = useCallback(async () => {
     if (isDekan && !selectedProdiId) {
@@ -217,15 +208,10 @@ export default function PortofolioPage() {
                           <li className="pt-1">
                             <button
                               type="button"
-                              onClick={() => exportExcel(mk)}
-                              disabled={exportingId === mk.id}
-                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:underline disabled:opacity-50"
+                              onClick={() => setPreviewMk(mk)}
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:underline"
                             >
-                              {exportingId === mk.id ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <FileSpreadsheet className="h-3.5 w-3.5" />
-                              )}
+                              <FileSpreadsheet className="h-3.5 w-3.5" />
                               Unduh Excel
                             </button>
                           </li>
@@ -240,6 +226,7 @@ export default function PortofolioPage() {
         )}
       </SectionCard>
 
+      <PreviewExcelModal mk={previewMk} onClose={() => setPreviewMk(null)} pushToast={pushToast} />
       <ToastContainer toasts={toasts} />
     </div>
   )

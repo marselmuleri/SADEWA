@@ -64,9 +64,18 @@ function PratinjauRps({ data, detik, mode, selesai }) {
                   <span className="shrink-0 rounded-[4px] bg-[#1A3A6B] px-1.5 py-0.5 font-semibold tabular-nums text-white">
                     Minggu {p.minggu}
                   </span>
-                  {p.cpmk && p.cpmk !== '-' ? <span className="truncate text-[#64748B]">{p.cpmk}</span> : null}
+                  {p.jenis === 'UTS' || p.jenis === 'UAS' ? (
+                    <span className="truncate text-[#64748B]">{p.jenis}</span>
+                  ) : Array.isArray(p.target_cpmk) && p.target_cpmk.length ? (
+                    <span className="truncate text-[#64748B]">{p.target_cpmk.join(', ')}</span>
+                  ) : p.cpmk && p.cpmk !== '-' ? (
+                    <span className="truncate text-[#64748B]">{p.cpmk}</span>
+                  ) : null}
                 </div>
-                <p className="mt-1 line-clamp-2 text-xs leading-snug text-[#142B4A]">{p.materi || '…'}</p>
+                <p className="mt-1 line-clamp-2 text-xs leading-snug text-[#142B4A]">
+                  {p.jenis === 'UTS' ? 'Ujian Tengah Semester' : p.jenis === 'UAS' ? 'Ujian Akhir Semester'
+                    : p.bahan_kajian_judul || p.materi || '…'}
+                </p>
               </li>
             ))}
           </ul>

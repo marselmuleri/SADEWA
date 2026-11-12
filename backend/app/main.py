@@ -51,6 +51,18 @@ def auto_sync_schema(db_engine):
             "ALTER TABLE skala_nilai DROP CONSTRAINT IF EXISTS uq_skala_nilai_kurikulum_batas;",
             "ALTER TABLE skala_nilai ADD COLUMN IF NOT EXISTS angkatan_min INTEGER;",
             "ALTER TABLE skala_nilai ADD COLUMN IF NOT EXISTS angkatan_max INTEGER;",
+            # Kurikulum aktif prodi (dipakai Analitik OBE, ditetapkan Admin Prodi)
+            "ALTER TABLE program_studi ADD COLUMN IF NOT EXISTS kurikulum_aktif_id BIGINT "
+            "REFERENCES kurikulum_versions(id) ON DELETE SET NULL;",
+            # Isi awal bila belum ditetapkan: versi published yang paling banyak dipakai MK, lalu terbaru.
+            """UPDATE program_studi ps SET kurikulum_aktif_id = (
+                SELECT kv.id FROM kurikulum_versions kv
+                LEFT JOIN mata_kuliah mk ON mk.kurikulum_version_id = kv.id
+                WHERE kv.program_studi_id = ps.id AND kv.status = 'published'
+                GROUP BY kv.id, kv.published_at
+                ORDER BY COUNT(mk.id) DESC, kv.published_at DESC NULLS LAST, kv.id DESC
+                LIMIT 1
+            ) WHERE ps.kurikulum_aktif_id IS NULL;""",
         ]
         # Satu transaksi per perintah: di PostgreSQL satu perintah yang gagal
         # membatalkan seluruh transaksi, jadi perintah lain tidak boleh ikut batal.
@@ -81,6 +93,9 @@ app = FastAPI(
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    # vite preview (build produksi lokal, mis. untuk uji Lighthouse)
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]

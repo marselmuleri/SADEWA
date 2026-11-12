@@ -12,7 +12,8 @@ import RppSection from './RppSection'
 import EvaluasiSection from './EvaluasiSection'
 import InfoSection from './InfoSection'
 import { GrafikCapaianSection, NilaiCpSection, SebaranNilaiSection } from './CapaianSections'
-import { PORTOFOLIO_SECTIONS, blobErrorMessage, sectionLabel, unduhExcelPortofolio } from './portofolioShared'
+import { PORTOFOLIO_SECTIONS, sectionLabel } from './portofolioShared'
+import PreviewExcelModal from './PreviewExcelModal'
 
 const SECTION_CAPAIAN = ['nilai-cp', 'grafik', 'sebaran']
 
@@ -27,19 +28,8 @@ export default function PortofolioDetailPage() {
   const [capaian, setCapaian] = useState(null)
   const [capaianError, setCapaianError] = useState(null)
   const [loadingCapaian, setLoadingCapaian] = useState(false)
-  const [exporting, setExporting] = useState(false)
-
-  const exportExcel = async () => {
-    setExporting(true)
-    try {
-      await unduhExcelPortofolio(mk)
-      pushToast('File Excel portofolio diunduh')
-    } catch (err) {
-      pushToast(await blobErrorMessage(err, 'Gagal membuat file Excel'), 'error')
-    } finally {
-      setExporting(false)
-    }
-  }
+  // Tinjau ringkasan isi file sebelum unduh Excel
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   const muatMk = useCallback(async () => {
     try {
@@ -138,9 +128,9 @@ export default function PortofolioDetailPage() {
             description={`${mk.sks} SKS · ${mk.semester} ${mk.tahun_ajaran} · ${mk.jumlah_peserta} peserta · Pengampu: ${mk.pengampu?.join(', ') || '-'}`}
             badge={canWrite ? undefined : 'Mode Lihat'}
             actions={
-              <ActionButton onClick={exportExcel} disabled={exporting} data-testid="portofolio-export-excel">
-                {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
-                {exporting ? 'Menyiapkan Excel...' : 'Export Excel'}
+              <ActionButton onClick={() => setPreviewOpen(true)} data-testid="portofolio-export-excel">
+                <FileSpreadsheet className="h-4 w-4" />
+                Export Excel
               </ActionButton>
             }
           />
@@ -172,6 +162,7 @@ export default function PortofolioDetailPage() {
         </>
       )}
 
+      <PreviewExcelModal mk={previewOpen ? mk : null} onClose={() => setPreviewOpen(false)} pushToast={pushToast} />
       <ToastContainer toasts={toasts} />
     </div>
   )

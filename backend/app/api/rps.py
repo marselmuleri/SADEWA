@@ -162,6 +162,49 @@ async def generate_rps_legacy_alias(
     return await _execute_generate_rps(matkul_id, payload, db, user)
 
 
+@router.get("/identitas/{mata_kuliah_id}")
+def identitas_dokumen_rps(
+    mata_kuliah_id: int, db: Session = Depends(get_db), scope: AcademicScope = Depends(get_academic_scope),
+):
+    """
+    Data identitas untuk kepala dokumen Kontrak Kuliah & RPS (fakultas, prodi, dosen pengampu).
+    Isi RPS sendiri ada di `konten`; bagian ini diambil dari data SADEWA terbaru saat diunduh.
+    """
+    mk = (
+        db.query(MataKuliah)
+        .options(joinedload(MataKuliah.program_studi).joinedload(ProgramStudi.fakultas))
+        .filter(MataKuliah.id == mata_kuliah_id)
+        .first()
+    )
+    if not mk:
+        raise HTTPException(status_code=404, detail="Mata kuliah tidak ditemukan")
+    prodi = mk.program_studi
+    if scope.program_studi_id and mk.program_studi_id != scope.program_studi_id:
+        raise HTTPException(status_code=403, detail="Mata kuliah ini di luar prodi Anda")
+    if scope.fakultas_id and (not prodi or prodi.fakultas_id != scope.fakultas_id):
+        raise HTTPException(status_code=403, detail="Mata kuliah ini di luar fakultas Anda")
+
+    pengampu = (
+        db.query(PengampuMataKuliah, User)
+        .join(User, User.id == PengampuMataKuliah.user_id)
+        .filter(PengampuMataKuliah.mata_kuliah_id == mk.id)
+        .all()
+    )
+    # Koordinator lebih dulu, lalu urut nama
+    pengampu.sort(key=lambda pu: (str(pu[0].is_koordinator).strip().lower() not in ("1", "true"), pu[1].nama or ""))
+    return {
+        "mata_kuliah_id": mk.id,
+        "kode": mk.kode,
+        "nama": mk.nama,
+        "sks": mk.sks,
+        "semester": _semester_label(mk),
+        "tahun_ajaran": mk.tahun_ajaran,
+        "program_studi": prodi.nama if prodi else "",
+        "fakultas": prodi.fakultas.nama if prodi and prodi.fakultas else "",
+        "dosen": [u.nama for _, u in pengampu if u.nama],
+    }
+
+
 @router.get("/{mata_kuliah_id}", response_model=list[RPSResponse])
 def list_rps(mata_kuliah_id: int, db: Session = Depends(get_db), scope: AcademicScope = Depends(get_academic_scope)):
     query = db.query(RPS).join(MataKuliah).filter(RPS.mata_kuliah_id == mata_kuliah_id)
