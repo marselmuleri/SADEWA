@@ -1,0 +1,414 @@
+{
+  "kode_mk": "TK-304",
+  "deskripsi_mk": "Mata kuliah ini membekali mahasiswa dengan kemampuan merancang, mengembangkan, dan mengimplementasikan aplikasi web dinamis menggunakan teknologi front-end dan back-end. Pembelajaran menekankan pada prinsip rekayasa perangkat lunak, keamanan siber dasar, serta integrasi basis data untuk menghasilkan solusi sistem informasi yang fungsional dan aman.",
+  "cpl": [
+    {
+      "kode": "CPL 2",
+      "deskripsi": "Memiliki kompetensi keilmuan dan keahlian di bidang teknik komputer dan bidang terkait lainnya yang menunjang profesionalitas kerja, baik secara individu maupun tim, serta kemampuan beradaptasi dan pengembangan diri di lingkungan kerja.",
+      "label": "KOMPETENSI KEILMUAN"
+    },
+    {
+      "kode": "CPL 3",
+      "deskripsi": "Memiliki pemahaman keilmuan dan penguasaan keterampilan di bidang teknik komputer, meliputi sistem tertanam dan robotika, jaringan dan keamanan komputer, rekayasa perangkat lunak, multimedia, game, dan kecerdasan buatan.",
+      "label": "PENGUASAAN KETERAMPILAN"
+    },
+    {
+      "kode": "CPL 5",
+      "deskripsi": "Mampu menerapkan pemikiran logis, kritis, sistematis, dan inovatif dalam konteks pengembangan atau implementasi ilmu pengetahuan dan teknologi yang memperhatikan dan menerapkan nilai humaniora yang sesuai dengan bidang keahliannya.",
+      "label": "PEMIKIRAN LOGIS DAN SISTEMATIS"
+    },
+    {
+      "kode": "CPL 7",
+      "deskripsi": "Mampu menyajikan dan memaparkan hasil pengembangan solusi produk dan sistem dalam naskah akademik, tulisan non-akademik, dan/atau di forum ilmiah dengan baik, efektif, dan runtut sesuai dengan kaidah yang berlaku.",
+      "label": "KOMUNIKASI ILMIAH"
+    }
+  ],
+  "cpmk": [
+    {
+      "kode": "CPMK 2.1",
+      "deskripsi": "Mahasiswa mampu bekerja secara mandiri dan kolaboratif dalam tim untuk mengembangkan proyek pemrograman web."
+    },
+    {
+      "kode": "CPMK 3.1",
+      "deskripsi": "Mahasiswa mampu mendesain arsitektur aplikasi web yang mencakup sisi klien (front-end) dan sisi server (back-end)."
+    },
+    {
+      "kode": "CPMK 3.2",
+      "deskripsi": "Mahasiswa mampu mengimplementasikan kode program web menggunakan bahasa pemrograman standar (HTML, CSS, JavaScript, PHP/Node.js) dan framework modern."
+    },
+    {
+      "kode": "CPMK 3.3",
+      "deskripsi": "Mahasiswa mampu mengelola basis data relasional dan melakukan operasi CRUD (Create, Read, Update, Delete) melalui aplikasi web."
+    },
+    {
+      "kode": "CPMK 5.1",
+      "deskripsi": "Mahasiswa mampu menganalisis kebutuhan pengguna dan menerapkannya menjadi spesifikasi teknis aplikasi web."
+    },
+    {
+      "kode": "CPMK 7.1",
+      "deskripsi": "Mahasiswa mampu mempresentasikan hasil pengembangan aplikasi web beserta dokumentasi teknis secara efektif."
+    }
+  ],
+  "penilaian": [
+    {
+      "poin": "Aktivitas Partisipatif",
+      "komponen": "Aktivitas",
+      "rincian": [
+        "Keaktifan diskusi kelas",
+        "Kontribusi dalam kelompok praktikum"
+      ],
+      "bobot": 10,
+      "cpmk": [
+        "CPMK 2.1",
+        "CPMK 7.1"
+      ]
+    },
+    {
+      "poin": "Hasil Proyek",
+      "komponen": "Hasil Proyek",
+      "rincian": [
+        "Tugas Besar Aplikasi Web",
+        "Dokumentasi Proyek"
+      ],
+      "bobot": 40,
+      "cpmk": [
+        "CPMK 3.1",
+        "CPMK 3.2",
+        "CPMK 3.3",
+        "CPMK 5.1",
+        "CPMK 7.1"
+      ]
+    },
+    {
+      "poin": "Tugas",
+      "komponen": "Tugas",
+      "rincian": [
+        "Tugas Harian Coding",
+        "Kuis Mingguan"
+      ],
+      "bobot": 20,
+      "cpmk": [
+        "CPMK 3.2",
+        "CPMK 3.3"
+      ]
+    },
+    {
+      "poin": "Kognitif / Pengetahuan",
+      "komponen": "UTS",
+      "rincian": [],
+      "bobot": 15,
+      "cpmk": [
+        "CPMK 3.1",
+        "CPMK 5.1"
+      ]
+    },
+    {
+      "poin": "Kognitif / Pengetahuan",
+      "komponen": "UAS",
+      "rincian": [],
+      "bobot": 15,
+      "cpmk": [
+        "CPMK 3.2",
+        "CPMK 3.3",
+        "CPMK 7.1"
+      ]
+    }
+  ],
+  "pertemuan": [
+    {
+      "minggu": 1,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menjelaskan (C2) konsep dasar World Wide Web, protokol HTTP/HTTPS, dan arsitektur client-server.",
+      "bahan_kajian_judul": "Pengantar Pemrograman Web",
+      "bahan_kajian": "Sejarah Web, Protokol HTTP, Arsitektur Client-Server, Peran Frontend dan Backend",
+      "metode": "Kuliah Interaktif, Diskusi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mempelajari materi pengantar web, berdiskusi tentang evolusi teknologi web, dan membuat peta konsep arsitektur web sederhana."
+      ],
+      "target_cpmk": [
+        "CPMK 3.1",
+        "CPMK 5.1"
+      ],
+      "kriteria_indikator": [
+        "Mampu membedakan peran frontend dan backend; mampu menjelaskan alur request-response HTTP."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 2,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menerapkan (C3) struktur dokumen HTML5 untuk membangun kerangka halaman web yang semantik.",
+      "bahan_kajian_judul": "Struktur Dasar HTML5",
+      "bahan_kajian": "Tag HTML, Atribut Global, Struktur Semantik (header, nav, main, footer), Form Input",
+      "metode": "Praktikum, SDL",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa melakukan coding langsung di editor teks untuk membuat halaman statis, validasi W3C, dan memperbaiki error markup."
+      ],
+      "target_cpmk": [
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Mampu menulis kode HTML yang valid; mampu menggunakan tag semantik dengan benar."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 3,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menerapkan (C3) Cascading Style Sheets (CSS) untuk mengatur tata letak dan tampilan visual halaman web.",
+      "bahan_kajian_judul": "Styling dengan CSS Dasar",
+      "bahan_kajian": "Selector CSS, Box Model, Typography, Warna, Background, Linking CSS",
+      "metode": "Praktikum, Case Method",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mengubah tampilan halaman HTML dari minggu sebelumnya menggunakan CSS eksternal, internal, dan inline, serta menganalisis kasus desain buruk."
+      ],
+      "target_cpmk": [
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Mampu menerapkan box model; mampu memilih elemen menggunakan selector yang tepat."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 4,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mendesain (C6) tata letak responsif menggunakan Flexbox dan Grid Layout.",
+      "bahan_kajian_judul": "Layout Responsif Modern",
+      "bahan_kajian": "Flexbox Properties, CSS Grid, Media Queries, Mobile-First Design",
+      "metode": "Project Based Learning, Praktikum",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mengerjakan mini-project membuat landing page yang dapat menyesuaikan diri pada berbagai ukuran layar (desktop, tablet, mobile)."
+      ],
+      "target_cpmk": [
+        "CPMK 3.1",
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Mampu menyusun layout kompleks dengan Grid/Flexbox; hasil tampilan konsisten di berbagai viewport."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 5,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menerapkan (C3) sintaks dasar JavaScript untuk manipulasi DOM dan event handling.",
+      "bahan_kajian_judul": "Dasar JavaScript & DOM Manipulation",
+      "bahan_kajian": "Variabel, Tipe Data, Operator, Control Flow, Fungsi, Event Listener, Query Selector",
+      "metode": "Praktikum, Simulasi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa membuat interaktivitas sederhana seperti tombol toggle, form validation real-time, dan animasi berbasis event menggunakan JavaScript murni."
+      ],
+      "target_cpmk": [
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Mampu mengakses dan mengubah elemen DOM; mampu menangani event klik/input dengan benar."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 6,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menganalisis (C4) penggunaan Asynchronous JavaScript (Promises, Fetch API) untuk komunikasi dengan server.",
+      "bahan_kajian_judul": "JavaScript Asynchronous & API",
+      "bahan_kajian": "Callback Hell, Promises, Async/Await, Fetch API, JSON Parsing",
+      "metode": "Case Method, Praktikum",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mengambil data dari public API (misalnya OpenWeatherMap), menampilkannya di UI, dan menangani error network secara asinkron."
+      ],
+      "target_cpmk": [
+        "CPMK 3.2",
+        "CPMK 5.1"
+      ],
+      "kriteria_indikator": [
+        "Mampu menggunakan async/await; mampu memproses response JSON tanpa blocking UI."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 7,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mendesain (C6) skema basis data relasional untuk mendukung aplikasi web.",
+      "bahan_kajian_judul": "Desain Basis Data untuk Web",
+      "bahan_kajian": "ERD, Normalisasi, SQL DDL, Relasi Tabel, Indexing",
+      "metode": "Diskusi, Kuliah Interaktif",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa merancang ERD untuk studi kasus e-commerce sederhana, menentukan primary key, foreign key, dan normalisasi hingga 3NF."
+      ],
+      "target_cpmk": [
+        "CPMK 3.1",
+        "CPMK 3.3"
+      ],
+      "kriteria_indikator": [
+        "Mampu menggambar ERD yang logis; mampu menulis script SQL CREATE TABLE yang valid."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 8,
+      "jenis": "UTS",
+      "bobot": 15
+    },
+    {
+      "minggu": 9,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menerapkan (C3) koneksi antara aplikasi web (PHP/Node.js) dengan basis data MySQL/PostgreSQL.",
+      "bahan_kajian_judul": "Back-End Development: Koneksi Database",
+      "bahan_kajian": "PDO/Mysqli atau Sequelize/Knex, Connection Pooling, Environment Variables",
+      "metode": "Praktikum, SDL",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menyiapkan server lokal, menghubungkan file konfigurasi database, dan melakukan query SELECT sederhana untuk menampilkan data ke browser."
+      ],
+      "target_cpmk": [
+        "CPMK 3.2",
+        "CPMK 3.3"
+      ],
+      "kriteria_indikator": [
+        "Mampu terhubung ke DB tanpa hardcode kredensial; mampu mengeksekusi query dasar."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 10,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengimplementasikan (C3) operasi CRUD (Create, Read, Update, Delete) pada aplikasi web.",
+      "bahan_kajian_judul": "Implementasi CRUD",
+      "bahan_kajian": "Form Processing, INSERT, UPDATE, DELETE, Redirect, Flash Message",
+      "metode": "Project Based Learning, Praktikum",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa membangun modul manajemen data (misalnya daftar buku) yang memungkinkan user menambah, melihat, mengedit, dan menghapus record via web interface."
+      ],
+      "target_cpmk": [
+        "CPMK 3.2",
+        "CPMK 3.3"
+      ],
+      "kriteria_indikator": [
+        "Fungsi Create/Read/Update/Delete berjalan sinkron dengan database; input divalidasi sebelum diproses."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 11,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menerapkan (C3) mekanisme autentikasi dan otorisasi pengguna (Login/Register).",
+      "bahan_kajian_judul": "Autentikasi & Session Management",
+      "bahan_kajian": "Password Hashing (bcrypt), Session vs Cookie, Middleware Auth, Role-Based Access Control",
+      "metode": "Case Method, Praktikum",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menambahkan fitur login dan register ke proyek CRUD, memastikan password disimpan secara hashed, dan melindungi halaman tertentu hanya untuk user yang login."
+      ],
+      "target_cpmk": [
+        "CPMK 3.2",
+        "CPMK 5.1"
+      ],
+      "kriteria_indikator": [
+        "Password tidak tersimpan plaintext; akses ke halaman terproteksi ditolak jika session invalid."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 12,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menganalisis (C4) kerentanan keamanan umum pada aplikasi web dan cara mitigasinya.",
+      "bahan_kajian_judul": "Keamanan Aplikasi Web",
+      "bahan_kajian": "SQL Injection, XSS, CSRF, HTTPS, Security Headers",
+      "metode": "Simulasi, Diskusi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa melakukan penetration testing sederhana pada aplikasi teman sekelas untuk menemukan celah SQLi/XSS, kemudian memperbaiki kode tersebut."
+      ],
+      "target_cpmk": [
+        "CPMK 3.2",
+        "CPMK 5.1"
+      ],
+      "kriteria_indikator": [
+        "Mampu mengidentifikasi titik rentan; mampu menerapkan prepared statements dan sanitization input."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 13,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menerapkan (C3) pengembangan aplikasi web menggunakan Framework Modern (React/Vue/Laravel/Spring Boot).",
+      "bahan_kajian_judul": "Introduction to Web Frameworks",
+      "bahan_kajian": "Komponen, Routing, State Management, MVC Pattern, ORM",
+      "metode": "Praktikum, Kuliah Tamu",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa memigrasikan salah satu fitur dari aplikasi vanilla JS/PHP ke dalam struktur framework yang dipilih untuk memahami abstraksi dan produktivitas."
+      ],
+      "target_cpmk": [
+        "CPMK 3.1",
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Mampu membuat komponen/route dasar dalam framework; memahami pola MVC atau Component-based."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 14,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mendesain (C6) arsitektur RESTful API untuk integrasi frontend-backend terpisah.",
+      "bahan_kajian_judul": "RESTful API Design",
+      "bahan_kajian": "HTTP Methods, Status Codes, Resource Naming, JSON Response Structure, API Documentation (Swagger)",
+      "metode": "Diskusi, Praktikum",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa merancang endpoint API untuk aplikasi web mereka, mendokumentasikannya, dan mengujinya menggunakan Postman/Insomnia."
+      ],
+      "target_cpmk": [
+        "CPMK 3.1",
+        "CPMK 7.1"
+      ],
+      "kriteria_indikator": [
+        "Endpoint mengikuti konvensi REST; dokumentasi API lengkap dan jelas."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 15,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mempresentasikan (C6) hasil proyek akhir aplikasi web beserta demonstrasi fungsi.",
+      "bahan_kajian_judul": "Presentasi Proyek Akhir",
+      "bahan_kajian": "Demo Aplikasi, Code Review, Dokumentasi Teknis, User Manual",
+      "metode": "Presentasi, Peer Review",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Kelompok mahasiswa mempresentasikan aplikasi web yang telah dikembangkan, menjawab pertanyaan dosen/rekan, dan menyerahkan repositori GitHub."
+      ],
+      "target_cpmk": [
+        "CPMK 2.1",
+        "CPMK 7.1"
+      ],
+      "kriteria_indikator": [
+        "Aplikasi berfungsi sesuai spesifikasi; presentasi runtut dan komunikatif; kode terdokumentasi."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 16,
+      "jenis": "UAS",
+      "bobot": 15
+    }
+  ],
+  "referensi": [
+    "Jon Duckett, HTML and CSS: Design and Build Websites, Wiley, 2011",
+    "Eloquent JavaScript by Marijn Haverbeke, No Starch Press, 2018",
+    "Head First PHP & MySQL by Lynn Beighley and Michael Morrison, O'Reilly Media, 2008",
+    "Learning React by Alex Banks and Eve Porcello, O'Reilly Media, 2020",
+    "Web Application Security by Andrew van der Stock et al., OWASP Foundation, 2021"
+  ],
+  "format": 2
+}

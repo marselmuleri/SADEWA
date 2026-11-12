@@ -1,0 +1,11 @@
+﻿metrik,hasil
+RPS dibangkitkan,15 (5 mata kuliah)
+Lolos validate_rps di percobaan pertama,"15/15 = 100,0%"
+Lolos validate_rps setelah retry,"15/15 = 100,0%"
+Rata-rata percobaan LLM per RPS,"1,00"
+Waktu generate RPS rata-rata / median / maks (s),"62,4 / 62,2 / 69,6"
+RPS di atas target 10 s,15/15
+RPS di atas target 15 s,15/15
+Waktu langkah web rata-rata / maks (s),"5,2 / 8,2"
+"Waktu generate tanpa langkah web, rata-rata (s)","57,2"
+RPS yang mendapat referensi web,15/15

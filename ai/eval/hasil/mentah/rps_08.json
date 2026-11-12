@@ -1,0 +1,394 @@
+{
+  "kode_mk": "PTSK6752",
+  "deskripsi_mk": "Mata kuliah ini membahas konsep dasar, arsitektur, dan algoritma Jaringan Syaraf Tiruan (JST). Mahasiswa mempelajari model neuron buatan, jaringan feedforward, backpropagation, serta aplikasi JST dalam pengenalan pola dan prediksi.",
+  "cpl": [
+    {
+      "kode": "CPL 2",
+      "deskripsi": "Memiliki kompetensi keilmuan dan keahlian di bidang teknik komputer dan bidang terkait lainnya yang menunjang profesionalitas kerja, baik secara individu maupun tim, serta kemampuan beradaptasi dan pengembangan diri di lingkungan kerja.",
+      "label": "ENGINEERING DESIGN"
+    },
+    {
+      "kode": "CPL 3",
+      "deskripsi": "Memiliki pemahaman keilmuan dan penguasaan keterampilan di bidang teknik komputer, meliputi sistem tertanam dan robotika, jaringan dan keamanan, serta kecerdasan buatan.",
+      "label": "COMPUTER SCIENCE KNOWLEDGE"
+    }
+  ],
+  "cpmk": [
+    {
+      "kode": "CPMK 2.1",
+      "deskripsi": "Mahasiswa mampu memahami konsep dasar neuron buatan dan struktur jaringan syaraf tiruan."
+    },
+    {
+      "kode": "CPMK 2.2",
+      "deskripsi": "Mahasiswa mampu menganalisis algoritma pembelajaran pada jaringan syaraf tiruan, khususnya Backpropagation."
+    },
+    {
+      "kode": "CPMK 3.1",
+      "deskripsi": "Mahasiswa mampu mengimplementasikan jaringan syaraf tiruan untuk menyelesaikan masalah klasifikasi dan regresi sederhana."
+    },
+    {
+      "kode": "CPMK 3.2",
+      "deskripsi": "Mahasiswa mampu mengevaluasi kinerja model jaringan syaraf tiruan berdasarkan metrik akurasi dan loss function."
+    }
+  ],
+  "penilaian": [
+    {
+      "poin": "Aktivitas Partisipatif",
+      "komponen": "Aktivitas",
+      "rincian": [
+        "Keaktifan diskusi kelas",
+        "Kerjasama kelompok praktikum"
+      ],
+      "bobot": 10,
+      "cpmk": [
+        "CPMK 2.1",
+        "CPMK 3.1"
+      ]
+    },
+    {
+      "poin": "Hasil Proyek",
+      "komponen": "Hasil Proyek",
+      "rincian": [
+        "Tugas Besar Implementasi JST"
+      ],
+      "bobot": 40,
+      "cpmk": [
+        "CPMK 3.1",
+        "CPMK 3.2"
+      ]
+    },
+    {
+      "poin": "Tugas",
+      "komponen": "Tugas",
+      "rincian": [
+        "Latihan soal perhitungan manual",
+        "Kuis mingguan"
+      ],
+      "bobot": 20,
+      "cpmk": [
+        "CPMK 2.1",
+        "CPMK 2.2"
+      ]
+    },
+    {
+      "poin": "Kognitif / Pengetahuan",
+      "komponen": "UTS",
+      "rincian": [],
+      "bobot": 15,
+      "cpmk": [
+        "CPMK 2.1",
+        "CPMK 2.2"
+      ]
+    },
+    {
+      "poin": "Kognitif / Pengetahuan",
+      "komponen": "UAS",
+      "rincian": [],
+      "bobot": 15,
+      "cpmk": [
+        "CPMK 2.2",
+        "CPMK 3.2"
+      ]
+    }
+  ],
+  "pertemuan": [
+    {
+      "minggu": 1,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menjelaskan definisi dan sejarah perkembangan Jaringan Syaraf Tiruan (C2)",
+      "bahan_kajian_judul": "Pengantar Jaringan Syaraf Tiruan",
+      "bahan_kajian": "Definisi JST, Perbedaan dengan AI konvensional, Sejarah singkat, Aplikasi umum JST",
+      "metode": "Ceramah, Diskusi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menyimak penjelasan dosen mengenai konsep dasar JST",
+        "Mahasiswa berdiskusi tentang contoh aplikasi JST dalam kehidupan sehari-hari"
+      ],
+      "target_cpmk": [
+        "CPMK 2.1"
+      ],
+      "kriteria_indikator": [
+        "Mampu mendefinisikan JST dengan benar; Mampu menyebutkan minimal 3 aplikasi JST."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 2,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengidentifikasi komponen-komponen dasar neuron buatan (McCulloch-Pitts) (C2)",
+      "bahan_kajian_judul": "Model Neuron Buatan",
+      "bahan_kajian": "Struktur neuron biologis vs buatan, Fungsi aktivasi (Step, Sigmoid, Tanh, ReLU), Bias dan Bobot",
+      "metode": "Ceramah, Simulasi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mempelajari diagram neuron buatan",
+        "Mahasiswa melakukan simulasi output neuron dengan berbagai fungsi aktivasi menggunakan software atau spreadsheet"
+      ],
+      "target_cpmk": [
+        "CPMK 2.1"
+      ],
+      "kriteria_indikator": [
+        "Mampu membedakan jenis-jenis fungsi aktivasi; Mampu menghitung output neuron sederhana."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 3,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menerapkan logika Boolean menggunakan jaringan perceptron tunggal (C3)",
+      "bahan_kajian_judul": "Perceptron dan Logika Boolean",
+      "bahan_kajian": "Algoritma Perceptron, Masalah XOR, Linear Separability, Training rule perceptron",
+      "metode": "Praktikum, Problem Based Learning",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mengerjakan latihan soal training perceptron untuk gerbang AND/OR",
+        "Mahasiswa menganalisis mengapa perceptron gagal pada masalah XOR"
+      ],
+      "target_cpmk": [
+        "CPMK 2.1"
+      ],
+      "kriteria_indikator": [
+        "Mampu menghitung update bobot perceptron; Mampu menjelaskan keterbatasan perceptron tunggal."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 4,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu merancang arsitektur Multi-Layer Perceptron (MLP) untuk masalah non-linear (C3)",
+      "bahan_kajian_judul": "Multi-Layer Perceptron (MLP)",
+      "bahan_kajian": "Konsep Hidden Layer, Feedforward Network, Propagasi sinyal maju, Arsitektur MLP",
+      "metode": "Ceramah, Diskusi Kelompok",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mendiskusikan peran hidden layer dalam meningkatkan kapasitas model",
+        "Mahasiswa menggambar skema arsitektur MLP untuk kasus tertentu"
+      ],
+      "target_cpmk": [
+        "CPMK 2.1"
+      ],
+      "kriteria_indikator": [
+        "Mampu menentukan jumlah layer dan neuron yang sesuai; Mampu menggambarkan aliran data pada MLP."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 5,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menghitung gradien error menggunakan metode Chain Rule pada jaringan sederhana (C3)",
+      "bahan_kajian_judul": "Dasar-Dasar Backpropagation",
+      "bahan_kajian": "Fungsi Loss (MSE, Cross-Entropy), Turunan parsial, Aturan rantai (Chain Rule), Gradien descent",
+      "metode": "Ceramah, Latihan Soal",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menghitung nilai error pada output layer",
+        "Mahasiswa melakukan perhitungan manual turunan parsial untuk satu lapisan tersembunyi"
+      ],
+      "target_cpmk": [
+        "CPMK 2.2"
+      ],
+      "kriteria_indikator": [
+        "Mampu menghitung MSE/Cross-Entropy; Mampu menurunkan rumus gradien secara matematis."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 6,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menganalisis proses pembaruan bobot (Weight Update) pada algoritma Backpropagation (C4)",
+      "bahan_kajian_judul": "Algoritma Backpropagation Lengkap",
+      "bahan_kajian": "Propagasi mundur error, Perhitungan delta hidden layer, Perhitungan delta input layer, Update bobot dan bias",
+      "metode": "Simulasi, Praktikum",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menjalankan kode Python/Matlab implementasi backpropagation sederhana",
+        "Mahasiswa mengamati perubahan bobot setelah setiap epoch"
+      ],
+      "target_cpmk": [
+        "CPMK 2.2"
+      ],
+      "kriteria_indikator": [
+        "Mampu melacak alur perhitungan backpropagation; Mampu menginterpretasikan hasil update bobot."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 7,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu memilih parameter hyperparameter yang tepat untuk pelatihan jaringan (C3)",
+      "bahan_kajian_judul": "Hyperparameter dan Inisialisasi",
+      "bahan_kajian": "Learning Rate, Momentum, Batch Size, Epoch, Metode inisialisasi bobot (Xavier/He), Overfitting & Underfitting",
+      "metode": "Diskusi, Studi Kasus",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa berdiskusi tentang dampak learning rate yang terlalu besar/kecil",
+        "Mahasiswa menganalisis kurva loss untuk mendeteksi overfitting"
+      ],
+      "target_cpmk": [
+        "CPMK 2.2"
+      ],
+      "kriteria_indikator": [
+        "Mampu menjelaskan pengaruh masing-masing hyperparameter; Mampu mengidentifikasi gejala overfitting dari grafik."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 8,
+      "jenis": "UTS",
+      "bobot": 15
+    },
+    {
+      "minggu": 9,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengimplementasikan jaringan syaraf tiruan untuk tugas klasifikasi biner menggunakan library standar (C3)",
+      "bahan_kajian_judul": "Implementasi Klasifikasi Biner",
+      "bahan_kajian": "Preprocessing data, Splitting train/test, Membangun model MLP, Kompilasi dan Training, Evaluasi Akurasi",
+      "metode": "Praktikum, Project Based Learning",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa membuat notebook Jupyter untuk klasifikasi dataset sederhana (misal: Iris atau Titanic subset)",
+        "Mahasiswa memvisualisasikan confusion matrix"
+      ],
+      "target_cpmk": [
+        "CPMK 3.1"
+      ],
+      "kriteria_indikator": [
+        "Kode berjalan tanpa error; Model mencapai akurasi baseline yang wajar."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 10,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengadaptasi arsitektur JST untuk tugas klasifikasi multi-kelas (C3)",
+      "bahan_kajian_judul": "Klasifikasi Multi-Kelas",
+      "bahan_kajian": "One-Hot Encoding, Softmax Activation, Categorical Cross-Entropy, Arsitektur Output Layer",
+      "metode": "Praktikum, Diskusi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mengubah target label menjadi format one-hot",
+        "Mahasiswa mengganti fungsi aktivasi output menjadi softmax"
+      ],
+      "target_cpmk": [
+        "CPMK 3.1"
+      ],
+      "kriteria_indikator": [
+        "Mampu menangani dataset dengan >2 kelas; Mampu menghitung probabilitas prediksi."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 11,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menerapkan jaringan syaraf tiruan untuk tugas regresi (prediksi nilai kontinu) (C3)",
+      "bahan_kajian_judul": "Regresi dengan JST",
+      "bahan_kajian": "Normalisasi Data (Min-Max/Z-Score), Linear Activation Output, Mean Squared Error, Interpretasi Hasil Regresi",
+      "metode": "Praktikum, Case Method",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa membangun model untuk memprediksi harga rumah atau suhu",
+        "Mahasiswa membandingkan hasil prediksi dengan nilai aktual"
+      ],
+      "target_cpmk": [
+        "CPMK 3.1"
+      ],
+      "kriteria_indikator": [
+        "Mampu menormalisasi fitur numerik; Mampu mengukur RMSE/MAE."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 12,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menganalisis teknik regularisasi untuk mencegah overfitting pada model JST (C4)",
+      "bahan_kajian_judul": "Regularisasi dan Optimasi",
+      "bahan_kajian": "L1/L2 Regularization, Dropout, Early Stopping, Teknik Augmentasi Data",
+      "metode": "Simulasi, Diskusi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menambahkan layer dropout pada model sebelumnya",
+        "Mahasiswa membandingkan validasi loss dengan dan tanpa regularisasi"
+      ],
+      "target_cpmk": [
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Mampu menjelaskan mekanisme dropout; Mampu menunjukkan penurunan gap antara train dan val loss."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 13,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengevaluasi kinerja model menggunakan metrik yang relevan untuk domain masalah (C5)",
+      "bahan_kajian_judul": "Evaluasi Model Lanjutan",
+      "bahan_kajian": "Precision, Recall, F1-Score, ROC Curve, AUC, Analisis Kesalahan (Error Analysis)",
+      "metode": "Studi Kasus, Presentasi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menghitung metrik evaluasi selain akurasi",
+        "Mahasiswa menganalisis sampel-sampel yang salah diprediksi oleh model"
+      ],
+      "target_cpmk": [
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Mampu memilih metrik yang tepat (misal F1 untuk imbalanced data); Mampu menginterpretasikan ROC curve."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 14,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu merancang pipeline lengkap untuk proyek Jaringan Syaraf Tiruan (C6)",
+      "bahan_kajian_judul": "Persiapan Tugas Besar",
+      "bahan_kajian": "Pemilihan Dataset, Definisi Masalah, Desain Arsitektur, Rencana Implementasi, Timeline Proyek",
+      "metode": "Project Based Learning, Konsultasi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Kelompok mahasiswa menyusun proposal proyek akhir",
+        "Dosen memberikan feedback terhadap desain arsitektur dan pemilihan dataset"
+      ],
+      "target_cpmk": [
+        "CPMK 3.1",
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Proposal disetujui; Rencana kerja realistis dan terukur."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 15,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menyampaikan gagasan dan hasil analisis proyek Jaringan Syaraf Tiruan secara efektif (C6)",
+      "bahan_kajian_judul": "Presentasi Proyek",
+      "bahan_kajian": "Penyajian Hasil, Demonstrasi Model, Diskusi Tanya Jawab, Refleksi Pembelajaran",
+      "metode": "Presentasi, Diskusi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Setiap kelompok mempresentasikan hasil proyek mereka",
+        "Mahasiswa lain memberikan kritik konstruktif dan pertanyaan"
+      ],
+      "target_cpmk": [
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Presentasi jelas dan informatif; Mampu menjawab pertanyaan teknis dengan baik."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 16,
+      "jenis": "UAS",
+      "bobot": 15
+    }
+  ],
+  "referensi": [
+    "Simon Haykin, Neural Networks and Learning Machines, Pearson, 2009",
+    "Ian Goodfellow, Yoshua Bengio, Aaron Courville, Deep Learning, MIT Press, 2016",
+    "Michael Nielsen, Neural Networks and Deep Learning, Determination Press, 2015",
+    "James A. Freeman, David M. Skapura, Neural Networks: Algorithms, Applications, and Programming Techniques, Addison-Wesley, 1992"
+  ],
+  "format": 2
+}

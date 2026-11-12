@@ -1,0 +1,375 @@
+{
+  "kode_mk": "PTSK6309",
+  "deskripsi_mk": "Mata kuliah ini membahas prinsip dasar dan konfigurasi jaringan komputer, meliputi switching (VLAN, STP), routing (statis, dinamis RIP/OSPF/EIGRP), serta teknologi nirkabel. Mahasiswa belajar merancang topologi jaringan lokal dan wide area dengan menerapkan protokol keamanan dan manajemen bandwidth.",
+  "cpl": [
+    {
+      "kode": "CPL 2",
+      "deskripsi": "Memiliki pemahaman keilmuan dan penguasaan keterampilan di bidang teknik komputer, meliputi sistem tertanam dan robotika, jaringan dan keamanan komputer, rekayasa perangkat lunak, multimedia, game, dan kecerdasan buatan yang ditopang oleh profesionalitas, pengetahuan sains dasar dan rekayasa yang kuat.",
+      "label": "ENGINEERING DESIGN"
+    }
+  ],
+  "cpmk": [
+    {
+      "kode": "CPMK 2.1",
+      "deskripsi": "Mahasiswa mampu menjelaskan konsep dasar switching, VLAN, dan Spanning Tree Protocol."
+    },
+    {
+      "kode": "CPMK 2.2",
+      "deskripsi": "Mahasiswa mampu mengkonfigurasi routing statis dan dinamis (RIP, OSPF) pada router."
+    },
+    {
+      "kode": "CPMK 2.3",
+      "deskripsi": "Mahasiswa mampu menerapkan Access Control List (ACL) dan Network Address Translation (NAT)."
+    },
+    {
+      "kode": "CPMK 2.4",
+      "deskripsi": "Mahasiswa mampu mendesain dan mengimplementasikan jaringan nirkabel (WLAN) dengan standar keamanan."
+    }
+  ],
+  "penilaian": [
+    {
+      "poin": "Aktivitas Partisipatif",
+      "komponen": "Aktivitas",
+      "rincian": [
+        "Keaktifan diskusi kelas",
+        "Kehadiran praktikum"
+      ],
+      "bobot": 10,
+      "cpmk": [
+        "CPMK 2.1",
+        "CPMK 2.2"
+      ]
+    },
+    {
+      "poin": "Hasil Proyek",
+      "komponen": "Hasil Proyek",
+      "rincian": [
+        "Tugas Besar Perancangan Jaringan Kampus"
+      ],
+      "bobot": 40,
+      "cpmk": [
+        "CPMK 2.2",
+        "CPMK 2.3",
+        "CPMK 2.4"
+      ]
+    },
+    {
+      "poin": "Tugas",
+      "komponen": "Tugas",
+      "rincian": [
+        "Laporan Praktikum Mingguan",
+        "Kuis Konfigurasi CLI"
+      ],
+      "bobot": 20,
+      "cpmk": [
+        "CPMK 2.1",
+        "CPMK 2.2"
+      ]
+    },
+    {
+      "poin": "Kognitif / Pengetahuan",
+      "komponen": "UTS",
+      "rincian": [],
+      "bobot": 15,
+      "cpmk": [
+        "CPMK 2.1",
+        "CPMK 2.2"
+      ]
+    },
+    {
+      "poin": "Kognitif / Pengetahuan",
+      "komponen": "UAS",
+      "rincian": [],
+      "bobot": 15,
+      "cpmk": [
+        "CPMK 2.3",
+        "CPMK 2.4"
+      ]
+    }
+  ],
+  "pertemuan": [
+    {
+      "minggu": 1,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menjelaskan arsitektur jaringan LAN dan peran switch dalam model OSI (C2)",
+      "bahan_kajian_judul": "Introduction to Switched Networks",
+      "bahan_kajian": "Konsep switched network, perbedaan hub vs switch, MAC address table, frame forwarding",
+      "metode": "Diskusi, Kuliah Interaktif, SDL",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mempelajari teori dasar switching dan menganalisis perbedaan media transmisi"
+      ],
+      "target_cpmk": [
+        "CPMK 2.1"
+      ],
+      "kriteria_indikator": [
+        "Mampu membedakan fungsi hub dan switch; mampu menjelaskan proses learning MAC address."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 2,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengkonfigurasi dasar switch melalui CLI (C3)",
+      "bahan_kajian_judul": "Basic Switching Concepts and Configuration",
+      "bahan_kajian": "Akses console, mode konfigurasi, hostname, password, interface status, show command",
+      "metode": "Praktikum, Simulasi Packet Tracer",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa melakukan simulasi konfigurasi awal switch menggunakan Cisco IOS"
+      ],
+      "target_cpmk": [
+        "CPMK 2.1"
+      ],
+      "kriteria_indikator": [
+        "Hasil konfigurasi dapat diverifikasi dengan perintah 'show running-config'."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 3,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengimplementasikan Virtual LAN (VLAN) untuk segmentasi jaringan (C3)",
+      "bahan_kajian_judul": "VLANs",
+      "bahan_kajian": "Konsep VLAN, access port, trunk port, VTP, konfigurasi VLAN pada switch",
+      "metode": "Praktikum, Problem Based Learning",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa merancang skema VLAN sederhana dan mengkonfigurasinya pada dua switch"
+      ],
+      "target_cpmk": [
+        "CPMK 2.1"
+      ],
+      "kriteria_indikator": [
+        "Mampu memisahkan traffic antar departemen menggunakan VLAN ID yang berbeda."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 4,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menganalisis dan mencegah loop pada jaringan switched (C4)",
+      "bahan_kajian_judul": "Spanning Tree Protocol (STP)",
+      "bahan_kajian": "Konsep loop, STP basics, Root Bridge election, Port roles (Root, Designated, Blocking), RSTP",
+      "metode": "Simulasi, Diskusi Kelompok",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mensimulasikan terjadinya broadcast storm dan mengamati kerja STP dalam memutus loop"
+      ],
+      "target_cpmk": [
+        "CPMK 2.1"
+      ],
+      "kriteria_indikator": [
+        "Mampu mengidentifikasi port yang diblokir oleh STP; mampu menjelaskan algoritma pemilihan root bridge."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 5,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menjelaskan konsep dasar routing dan tabel routing (C2)",
+      "bahan_kajian_judul": "Routing Concepts",
+      "bahan_kajian": "Perbedaan switch dan router, paket IP, longest prefix match, jenis rute (directly connected, static, dynamic)",
+      "metode": "Kuliah Interaktif, SDL",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mempelajari struktur header IP dan logika pencarian rute pada router"
+      ],
+      "target_cpmk": [
+        "CPMK 2.2"
+      ],
+      "kriteria_indikator": [
+        "Mampu membaca dan menafsirkan isi tabel routing router."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 6,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengkonfigurasi inter-VLAN routing (C3)",
+      "bahan_kajian_judul": "Inter-VLAN Routing",
+      "bahan_kajian": "Router-on-a-stick, SVI (Switch Virtual Interface), subinterface configuration, encapsulation dot1q",
+      "metode": "Praktikum, Case Method",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menghubungkan beberapa VLAN agar dapat saling berkomunikasi melalui satu link trunk"
+      ],
+      "target_cpmk": [
+        "CPMK 2.2"
+      ],
+      "kriteria_indikator": [
+        "Ping berhasil dari PC di VLAN A ke PC di VLAN B melalui router."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 7,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengimplementasikan routing statis pada jaringan skala kecil (C3)",
+      "bahan_kajian_judul": "Static Routing",
+      "bahan_kajian": "Syntax ip route, default route, floating static route, troubleshooting konektivitas",
+      "metode": "Praktikum, Simulasi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa membangun topologi 3 router dan menentukan jalur manual antar subnet"
+      ],
+      "target_cpmk": [
+        "CPMK 2.2"
+      ],
+      "kriteria_indikator": [
+        "Semua subnet terhubung penuh tanpa protokol dinamis; konfigurasi tersimpan di startup-config."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 8,
+      "jenis": "UTS",
+      "bobot": 15
+    },
+    {
+      "minggu": 9,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu memahami prinsip kerja routing dinamis dan distance vector (C2)",
+      "bahan_kajian_judul": "Routing Dynamically: Distance Vector",
+      "bahan_kajian": "Konsep hop count, split horizon, poison reverse, RIP v1 vs v2, metric calculation",
+      "metode": "Diskusi, Kuliah Interaktif",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menganalisis bagaimana RIP bertukar informasi rute antar tetangga"
+      ],
+      "target_cpmk": [
+        "CPMK 2.2"
+      ],
+      "kriteria_indikator": [
+        "Mampu menjelaskan kelebihan dan kekurangan protokol distance vector dibandingkan static routing."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 10,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengkonfigurasi protokol RIP versi 2 (C3)",
+      "bahan_kajian_judul": "Configuring RIP Version 2",
+      "bahan_kajian": "Command 'router rip', network statement, no auto-summary, verification commands",
+      "metode": "Praktikum, Problem Based Learning",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mengaktifkan RIP pada rangkaian router dan memastikan rute terdistribusi otomatis"
+      ],
+      "target_cpmk": [
+        "CPMK 2.2"
+      ],
+      "kriteria_indikator": [
+        "Tabel routing terisi secara dinamis; konektivitas end-to-end tercapai."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 11,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengimplementasikan protokol Link-State OSPF single-area (C3)",
+      "bahan_kajian_judul": "Single-Area OSPF",
+      "bahan_kajian": "Konsep LSA, Area 0 backbone, neighbor state machine, cost calculation, wildcard mask",
+      "metode": "Praktikum, Simulasi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mengkonfigurasi OSPF pada topologi lebih kompleks daripada RIP"
+      ],
+      "target_cpmk": [
+        "CPMK 2.2"
+      ],
+      "kriteria_indikator": [
+        "Status adjacency menjadi FULL; rute OSPF muncul di tabel routing dengan kode 'O'."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 12,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menerapkan Access Control List (ACL) untuk keamanan jaringan (C3)",
+      "bahan_kajian_judul": "Access Control Lists",
+      "bahan_kajian": "Standard ACL, Extended ACL, wildcard mask, placement logic (in/out), deny any implicit",
+      "metode": "Case Method, Praktikum",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa membuat aturan filter trafik untuk memblokir akses HTTP dari subnet tertentu"
+      ],
+      "target_cpmk": [
+        "CPMK 2.3"
+      ],
+      "kriteria_indikator": [
+        "Trafik yang tidak diizinkan diblokir sesuai policy; trafik legal tetap berjalan."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 13,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengkonfigurasi DHCP dan NAT untuk manajemen alamat IP (C3)",
+      "bahan_kajian_judul": "DHCP and NAT",
+      "bahan_kajian": "Pool DHCP, exclusion, NAT Inside/Outside, Static NAT, Dynamic NAT, PAT (Overloading)",
+      "metode": "Praktikum, Diskusi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mensimulasikan server DHCP internal dan gateway internet dengan NAT overload"
+      ],
+      "target_cpmk": [
+        "CPMK 2.3"
+      ],
+      "kriteria_indikator": [
+        "Client mendapatkan IP otomatis; host private dapat mengakses sumber daya publik via NAT."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 14,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menjelaskan konsep dasar jaringan nirkabel (WLAN) dan standar IEEE 802.11 (C2)",
+      "bahan_kajian_judul": "Wireless LAN Fundamentals",
+      "bahan_kajian": "Topologi WLAN (BSS, ESS), SSID, Channel, Frequency, 802.11 a/b/g/n/ac, Antenna diversity",
+      "metode": "Kuliah Interaktif, Video Tutorial",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mempelajari perbedaan infrastruktur wired dan wireless serta faktor interferensi"
+      ],
+      "target_cpmk": [
+        "CPMK 2.4"
+      ],
+      "kriteria_indikator": [
+        "Mampu memilih channel yang tepat untuk menghindari interferensi berdasarkan teori."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 15,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengkonfigurasi Wireless LAN Controller atau Access Point dengan keamanan WPA2/WPA3 (C3)",
+      "bahan_kajian_judul": "Configuring Wireless Security",
+      "bahan_kajian": "Authentication methods (PSK, EAP), Encryption (TKIP, AES), Guest Network, Rogue AP detection",
+      "metode": "Praktikum, Project Based Learning",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa melakukan setup AP, mengatur SSID, dan menerapkan kebijakan keamanan enkripsi"
+      ],
+      "target_cpmk": [
+        "CPMK 2.4"
+      ],
+      "kriteria_indikator": [
+        "Hanya client dengan kredensial benar yang dapat terhubung; trafik terenkripsi."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 16,
+      "jenis": "UAS",
+      "bobot": 15
+    }
+  ],
+  "referensi": [
+    "Cisco Networking Academy, CCNA Exploration: Routing and Switching Essentials, Pearson Education, 2013",
+    "William Stallings, Data and Computer Communications, Prentice Hall, 2007",
+    "Andrew S. Tanenbaum, David J. Wetherall, Computer Networks, Pearson, 2011",
+    "F. Halsall, Data Communications, Computer Networks and Open Systems, Addison-Wesley, 1996"
+  ],
+  "format": 2
+}
