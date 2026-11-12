@@ -13,6 +13,7 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import { PageHeader, SectionCard, Badge, ActionButton } from '../../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionButton } from '../../components/TableActions'
 import Modal from '../../components/Modal'
 import SearchableSelect from '../../components/SearchableSelect'
 import ConfirmDialog from '../../components/ConfirmDialog'
@@ -624,7 +625,7 @@ export default function MataKuliahListPage() {
                 <th className="py-3 px-4 text-center w-24">Semester</th>
                 <th className="py-3 px-4 text-center w-28">Tahun Ajaran</th>
                 <th className="py-3 px-4 w-80">Tim Pengampu (Ketua &amp; Anggota)</th>
-                <th className="py-3 px-4 text-right w-24">Aksi</th>
+                <TableActionHeader />
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0]">
@@ -649,7 +650,7 @@ export default function MataKuliahListPage() {
                 paginatedMks.map((mk) => (
                   <tr
                     key={mk.id}
-                    className="transition-colors hover:bg-[#F8FAFC]"
+                    className="align-top transition-colors hover:bg-[#F8FAFC]"
                     data-testid={`mk-row-${mk.id}`}
                   >
                     <td className="py-3 px-4 font-mono font-bold text-[#1A3A6B]">{mk.kode}</td>
@@ -672,19 +673,18 @@ export default function MataKuliahListPage() {
                       {mk.tahun_ajaran || '-'}
                     </td>
                     <td className="py-3 px-4">{formatPengampuDisplay(mk.id)}</td>
-                    <td className="py-3 px-4 text-right">
+                    <TableActionCell>
                       {isAdminProdi && (
-                        <button
-                          type="button"
+                        <TableActionButton
+                          variant="secondary"
                           onClick={() => handleOpenEdit(mk)}
                           data-testid={`edit-mk-button-${mk.id}`}
-                          className="inline-flex items-center gap-1 rounded-[4px] border border-[#CBD5E1] bg-white px-2.5 py-1 text-xs font-semibold text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B] transition-colors"
-                        >
-                          <Edit2 className="h-3 w-3" />
-                          <span>Edit</span>
-                        </button>
+                          icon={Edit2}
+                          label="Edit"
+                          title="Edit Mata Kuliah"
+                        />
                       )}
-                    </td>
+                    </TableActionCell>
                   </tr>
                 ))
               )}

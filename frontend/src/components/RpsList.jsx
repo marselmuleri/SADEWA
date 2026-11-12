@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useRef } from 'react'
 import { getApiErrorMessage } from '../pages/superAdminHelpers'
 import { ChevronDown, ChevronUp, Download, Loader2, Pencil, Printer, RefreshCw, Trash2 } from 'lucide-react'
 import { ActionButton, Badge, SectionCard } from './PageChrome'
+import { TableActions, TableActionButton } from './TableActions'
 import ConfirmDialog from './ConfirmDialog'
 import useToast from '../hooks/useToast'
 import api from '../services/api'
@@ -210,11 +211,12 @@ export default function RpsList({ mataKuliahId, mataKuliah = null, refreshKey = 
                     </span>
                   </button>
                   {!isEditing && (
-                    <div className="flex flex-wrap gap-1.5">
-                      <ActionButton
+                    <TableActions>
+                      <TableActionButton
                         variant="secondary"
                         onClick={() => { setOpenId(rps.id); setEditId(rps.id) }}
                         data-testid={`rps-edit-${rps.id}`}
+<<<<<<< HEAD
                       >
                         <Pencil className="h-3.5 w-3.5" /> Edit
                       </ActionButton>
@@ -228,6 +230,37 @@ export default function RpsList({ mataKuliahId, mataKuliah = null, refreshKey = 
                         <Trash2 className="h-3.5 w-3.5 text-[#EF4444]" /> Hapus
                       </ActionButton>
                     </div>
+=======
+                        icon={Pencil}
+                        label="Edit"
+                        title="Edit Draf RPS"
+                      />
+                      <TableActionButton
+                        variant="secondary"
+                        onClick={() => downloadRpsWord(rps, mataKuliah)}
+                        data-testid={`rps-word-${rps.id}`}
+                        icon={Download}
+                        label="Word"
+                        title="Unduh sebagai dokumen Word"
+                      />
+                      <TableActionButton
+                        variant="secondary"
+                        onClick={() => cetak(rps)}
+                        data-testid={`rps-pdf-${rps.id}`}
+                        icon={Printer}
+                        label="Cetak / PDF"
+                        title="Cetak atau simpan sebagai PDF"
+                      />
+                      <TableActionButton
+                        variant="danger"
+                        onClick={() => setHapusTarget(rps)}
+                        data-testid={`rps-hapus-${rps.id}`}
+                        icon={Trash2}
+                        label="Hapus"
+                        title="Hapus Draf RPS"
+                      />
+                    </TableActions>
+>>>>>>> 3c9876ccfd08fbf37e89548563c1f282ab5fd208
                   )}
                 </div>
                 {isOpen && (

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Building2, Loader2, Plus, Search, Pencil, Trash2 } from 'lucide-react'
 import { ActionButton, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionButton } from '../components/TableActions'
 import Modal from '../components/Modal'
 import useToast from '../hooks/useToast'
 import api from '../services/api'
@@ -197,7 +198,7 @@ export default function FakultasPage() {
               <tr className="border-b border-[#E2E8F0] text-[10px] uppercase tracking-[0.14em] text-[#6D778E]">
                 <th className="pb-3 font-semibold">Kode</th>
                 <th className="pb-3 font-semibold">Nama Fakultas</th>
-                <th className="pb-3 font-semibold text-right">Aksi</th>
+                <TableActionHeader className="pb-3 font-semibold" />
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F2F4F7]">
@@ -205,33 +206,29 @@ export default function FakultasPage() {
                 <SkeletonRows />
               ) : filteredItems.length ? (
                 filteredItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-[#F8FAFC]/80 transition-colors">
+                  <tr key={item.id} className="align-top hover:bg-[#F8FAFC]/80 transition-colors">
                     <td className="py-3.5">
                       <span className="rounded-[4px] bg-[#1A3A6B]/10 px-2 py-0.5 font-bold text-[#1A3A6B]">{item.kode}</span>
                     </td>
                     <td className="py-3.5 font-semibold text-[#142B4A]">{item.nama}</td>
-                    <td className="py-3.5 text-right">
-                      <div className="inline-flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(item)}
-                          className="inline-flex h-8 items-center gap-1.5 rounded-[4px] border border-[#CBD5E1] bg-white px-3 text-[11px] font-medium text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B]"
-                          data-testid={`fakultas-edit-${item.id}`}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteTarget(item)}
-                          className="inline-flex h-8 items-center gap-1.5 rounded-[4px] border border-red-200 bg-white px-3 text-[11px] font-medium text-red-700 hover:bg-red-50"
-                          data-testid={`fakultas-delete-${item.id}`}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Delete
-                        </button>
-                      </div>
-                    </td>
+                    <TableActionCell className="py-3.5">
+                      <TableActionButton
+                        variant="secondary"
+                        onClick={() => openEdit(item)}
+                        data-testid={`fakultas-edit-${item.id}`}
+                        icon={Pencil}
+                        label="Edit"
+                        title="Edit fakultas"
+                      />
+                      <TableActionButton
+                        variant="danger"
+                        onClick={() => setDeleteTarget(item)}
+                        data-testid={`fakultas-delete-${item.id}`}
+                        icon={Trash2}
+                        label="Delete"
+                        title="Hapus fakultas"
+                      />
+                    </TableActionCell>
                   </tr>
                 ))
               ) : (

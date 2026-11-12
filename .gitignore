@@ -51,3 +51,9 @@ Thumbs.db
 htmlcov/
 
 backend/uploads/
+
+# Local capstone documents (do not track)
+/C500_SADEWA*
+/c500_SADEWA*
+/Catatan_Akhir_C500*
+/catatan akhir c500*

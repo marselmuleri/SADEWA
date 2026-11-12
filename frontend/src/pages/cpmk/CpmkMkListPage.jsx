@@ -9,6 +9,7 @@ import {
   Layers,
 } from 'lucide-react'
 import { PageHeader, SectionCard, Badge, ActionButton } from '../../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionLink } from '../../components/TableActions'
 import KurikulumVersionSelector from '../../components/KurikulumVersionSelector'
 import api from '../../services/api'
 import useToast from '../../hooks/useToast'
@@ -174,7 +175,7 @@ export default function CpmkMkListPage() {
                 <th className="py-3 px-4 text-center w-20">SKS</th>
                 <th className="py-3 px-4 text-center w-32">Tahun Ajaran</th>
                 <th className="py-3 px-4 text-center w-28">Jumlah CPMK</th>
-                <th className="py-3 px-4 text-right w-36">Aksi</th>
+                <TableActionHeader />
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0]">
@@ -201,7 +202,7 @@ export default function CpmkMkListPage() {
                   return (
                     <tr
                       key={mk.id}
-                      className="transition-colors hover:bg-[#F8FAFC]"
+                      className="align-top transition-colors hover:bg-[#F8FAFC]"
                       data-testid={`mk-row-${mk.id}`}
                     >
                       <td className="py-3 px-4 font-mono font-bold text-[#1A3A6B]">{mk.kode}</td>
@@ -234,16 +235,16 @@ export default function CpmkMkListPage() {
                           {count} CPMK
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right">
-                        <Link
+                      <TableActionCell>
+                        <TableActionLink
                           to={`/kurikulum/cpmk/mk/${mk.id}`}
                           data-testid={`manage-cpmk-button-${mk.id}`}
-                          className="inline-flex items-center gap-1 rounded-[4px] border border-[#1A3A6B] bg-[#1A3A6B] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#142B4A] transition-colors"
-                        >
-                          <span>Kelola CPMK</span>
-                          <ChevronRight className="h-3 w-3" />
-                        </Link>
-                      </td>
+                          variant="primary"
+                          icon={ChevronRight}
+                          label="Kelola CPMK"
+                          title="Kelola CPMK"
+                        />
+                      </TableActionCell>
                     </tr>
                   )
                 })

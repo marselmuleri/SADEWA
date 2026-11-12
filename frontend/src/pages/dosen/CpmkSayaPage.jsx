@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { AlertCircle, Edit2, Loader2, Network, Plus, Search, Trash2 } from 'lucide-react'
 import { ActionButton, PageHeader, SectionCard } from '../../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionButton } from '../../components/TableActions'
 import SearchableSelect from '../../components/SearchableSelect'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import CpmkFormModal from '../../components/cpmk/CpmkFormModal'
@@ -146,7 +147,7 @@ export default function CpmkSayaPage() {
                 <th className="px-4 py-3">Deskripsi CPMK</th>
                 <th className="w-44 px-4 py-3">CPL &amp; IK</th>
                 <th className="w-20 px-4 py-3 text-right">Bobot</th>
-                <th className="w-64 px-4 py-3 text-right">Aksi</th>
+                <TableActionHeader />
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0]">
@@ -196,40 +197,32 @@ export default function CpmkSayaPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-right font-mono font-bold text-[#1A3A6B]">{cpmk.bobot}%</td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setMappingTarget(cpmk)}
-                            data-testid={`cpmk-saya-map-${cpmk.id}`}
-                            className="inline-flex items-center gap-1.5 rounded-[6px] border border-[#1A3A6B] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#1A3A6B] transition-colors hover:bg-[#1A3A6B] hover:text-white"
-                          >
-                            <Network className="h-3.5 w-3.5" />
-                            Atur CPL &amp; IK
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingCpmk(cpmk)
-                              setFormOpen(true)
-                            }}
-                            data-testid={`cpmk-saya-edit-${cpmk.id}`}
-                            className="inline-flex items-center gap-1 rounded-[6px] border border-[#CBD5E1] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#142B4A] transition-colors hover:border-[#1A3A6B] hover:text-[#1A3A6B]"
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteTarget(cpmk)}
-                            data-testid={`cpmk-saya-delete-${cpmk.id}`}
-                            className="inline-flex items-center gap-1 rounded-[6px] border border-red-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Hapus
-                          </button>
-                        </div>
-                      </td>
+                      <TableActionCell>
+                        <TableActionButton
+                          variant="primary"
+                          icon={Network}
+                          label="Atur CPL & IK"
+                          onClick={() => setMappingTarget(cpmk)}
+                          data-testid={`cpmk-saya-map-${cpmk.id}`}
+                        />
+                        <TableActionButton
+                          variant="secondary"
+                          icon={Edit2}
+                          label="Edit"
+                          onClick={() => {
+                            setEditingCpmk(cpmk)
+                            setFormOpen(true)
+                          }}
+                          data-testid={`cpmk-saya-edit-${cpmk.id}`}
+                        />
+                        <TableActionButton
+                          variant="danger"
+                          icon={Trash2}
+                          label="Hapus"
+                          onClick={() => setDeleteTarget(cpmk)}
+                          data-testid={`cpmk-saya-delete-${cpmk.id}`}
+                        />
+                      </TableActionCell>
                     </tr>
                   )
                 })

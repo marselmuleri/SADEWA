@@ -10,6 +10,7 @@ import {
   Award,
 } from 'lucide-react'
 import { PageHeader, SectionCard, Badge, ActionButton } from '../../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionButton } from '../../components/TableActions'
 import Modal from '../../components/Modal'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import api from '../../services/api'
@@ -238,7 +239,7 @@ export default function CplIndikatorPage() {
                 <th className="py-3 px-4 w-20 text-center">Urutan</th>
                 <th className="py-3 px-4 w-32">Kode IK</th>
                 <th className="py-3 px-4">Deskripsi Indikator Kinerja</th>
-                {isAdminProdi && <th className="py-3 px-4 text-right w-36">Aksi</th>}
+                {isAdminProdi && <TableActionHeader />}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0]">
@@ -261,7 +262,7 @@ export default function CplIndikatorPage() {
                 ikList.map((ik, idx) => (
                   <tr
                     key={ik.id}
-                    className="transition-colors hover:bg-[#F8FAFC]"
+                    className="align-top transition-colors hover:bg-[#F8FAFC]"
                     data-testid={`ik-row-${ik.id}`}
                   >
                     <td className="py-3 px-4 text-center font-mono text-[#64748B]">
@@ -270,30 +271,24 @@ export default function CplIndikatorPage() {
                     <td className="py-3 px-4 font-mono font-bold text-[#1A3A6B]">{ik.kode}</td>
                     <td className="py-3 px-4 text-[#142B4A] leading-relaxed">{ik.deskripsi}</td>
                     {isAdminProdi && (
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEdit(ik)}
-                            data-testid={`ik-edit-button-${ik.id}`}
-                            className="inline-flex items-center gap-1 rounded-[4px] border border-[#CBD5E1] bg-white px-2 py-1 text-xs text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B] transition-colors"
-                            title="Edit IK"
-                          >
-                            <Edit2 className="h-3 w-3" />
-                            <span>Edit</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setIkToDelete(ik)}
-                            data-testid={`ik-delete-button-${ik.id}`}
-                            className="inline-flex items-center gap-1 rounded-[4px] border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-600 hover:bg-red-100 transition-colors"
-                            title="Hapus IK"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                            <span>Hapus</span>
-                          </button>
-                        </div>
-                      </td>
+                      <TableActionCell>
+                        <TableActionButton
+                          variant="secondary"
+                          onClick={() => handleOpenEdit(ik)}
+                          data-testid={`ik-edit-button-${ik.id}`}
+                          icon={Edit2}
+                          label="Edit"
+                          title="Edit IK"
+                        />
+                        <TableActionButton
+                          variant="danger"
+                          onClick={() => setIkToDelete(ik)}
+                          data-testid={`ik-delete-button-${ik.id}`}
+                          icon={Trash2}
+                          label="Hapus"
+                          title="Hapus IK"
+                        />
+                      </TableActionCell>
                     )}
                   </tr>
                 ))

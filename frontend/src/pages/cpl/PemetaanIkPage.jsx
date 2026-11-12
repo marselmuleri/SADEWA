@@ -11,6 +11,7 @@ import {
   Filter,
 } from 'lucide-react'
 import { PageHeader, SectionCard, Badge } from '../../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionButton } from '../../components/TableActions'
 import Modal from '../../components/Modal'
 import KurikulumVersionSelector from '../../components/KurikulumVersionSelector'
 import api from '../../services/api'
@@ -521,7 +522,7 @@ export default function PemetaanIkPage() {
                   <th className="py-3 px-4 w-28">CPL Induk</th>
                   <th className="py-3 px-4">Deskripsi Indikator</th>
                   <th className="py-3 px-4 text-center w-36">Mata Kuliah Pemeta</th>
-                  <th className="py-3 px-4 text-right w-28">Aksi</th>
+                  <TableActionHeader />
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#E2E8F0]">
@@ -546,7 +547,7 @@ export default function PemetaanIkPage() {
                     const mappings = ikMappingSummary.get(ik.id) || []
                     const totalBobot = mappings.reduce((acc, m) => acc + m.bobot, 0)
                     return (
-                      <tr key={ik.id} className="transition-colors hover:bg-[#F8FAFC]" data-testid={`ik-row-${ik.id}`}>
+                      <tr key={ik.id} className="align-top transition-colors hover:bg-[#F8FAFC]" data-testid={`ik-row-${ik.id}`}>
                         <td className="py-3 px-4 font-mono font-bold text-[#1A3A6B]">{ik.kode}</td>
                         <td className="py-3 px-4 font-mono font-semibold text-[#64748B]">
                           {cpl?.kode || '-'}
@@ -561,17 +562,16 @@ export default function PemetaanIkPage() {
                             <span className="text-xs text-[#94A3B8]">-</span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-right">
-                          <button
-                            type="button"
+                        <TableActionCell>
+                          <TableActionButton
+                            variant="secondary"
                             onClick={() => handleOpenDetailModal(ik)}
                             data-testid={`ik-detail-button-${ik.id}`}
-                            className="inline-flex items-center gap-1 rounded-[4px] border border-[#CBD5E1] bg-white px-2.5 py-1 text-xs font-semibold text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B] transition-colors"
-                          >
-                            <Eye className="h-3 w-3 text-[#1A3A6B]" />
-                            <span>Detail</span>
-                          </button>
-                        </td>
+                            icon={Eye}
+                            label="Detail"
+                            title="Detail Pemetaan IK"
+                          />
+                        </TableActionCell>
                       </tr>
                     )
                   })

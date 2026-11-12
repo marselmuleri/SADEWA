@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertCircle, AlertTriangle, CheckCircle2, Circle, FileText, Lightbulb, MinusCircle } from 'lucide-react'
+import { AlertCircle, AlertTriangle, CheckCircle2, Circle, Lightbulb, MinusCircle } from 'lucide-react'
 import { SadewaLoader } from './brand/SadewaLogo'
 import { BATAS_LAMBAT, JUDUL, formatDurasi, labelTahapAktif, namaMk, statusTahap } from '../utils/aiJob'
 import { parsePartialJson } from '../utils/partialJson'
@@ -185,31 +185,9 @@ function DataCapaian({ capaian }) {
   )
 }
 
-function SumberPedoman({ sumber, compact }) {
-  const list = (Array.isArray(sumber) ? sumber : []).slice(0, compact ? 2 : 3)
-  if (!list.length) return null
-  return (
-    <ul className="space-y-1.5">
-      {list.map((s, i) => (
-        <li key={`${s.file}-${s.page}-${i}`} className="flex gap-2 text-[11px]">
-          <FileText className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1A3A6B]" aria-hidden="true" />
-          <div className="min-w-0">
-            <p className="truncate font-semibold text-[#142B4A]">
-              {s.file}
-              {s.page ? <span className="font-normal text-[#64748B]"> · hal. {s.page}</span> : null}
-            </p>
-            {s.snippet ? <p className="line-clamp-2 leading-snug text-[#64748B]">“{s.snippet}”</p> : null}
-          </div>
-        </li>
-      ))}
-    </ul>
-  )
-}
-
 function Konteks({ job, compact }) {
   const info = job.info || {}
   const mk = info.mata_kuliah || job.mk || {}
-  const adaSumber = Array.isArray(job.sumber) && job.sumber.length > 0
   const capaian = job.jenis === 'narasi' ? info.capaian : null
   if (job.mode !== 'stream' && !mk.nama) return null
 
@@ -228,14 +206,6 @@ function Konteks({ job, compact }) {
         ) : null}
       </p>
       {capaian ? <DataCapaian capaian={capaian} /> : null}
-      {adaSumber ? (
-        <div className="space-y-1.5">
-          <p className="text-[11px] text-[#64748B]">Potongan pedoman yang dibaca:</p>
-          <SumberPedoman sumber={job.sumber} compact={compact} />
-        </div>
-      ) : job.mode === 'stream' && job.status === 'running' ? (
-        <p className="text-[11px] text-[#94A3B8]">Mencari potongan pedoman yang relevan…</p>
-      ) : null}
     </section>
   )
 }

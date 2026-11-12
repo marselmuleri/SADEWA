@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Plus, Edit2, Network, Loader2, AlertCircle, AlertTriangle, CheckCircle2, Trash2 } from 'lucide-react'
 import { PageHeader, SectionCard, ActionButton } from '../../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionButton } from '../../components/TableActions'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import CpmkFormModal from '../../components/cpmk/CpmkFormModal'
 import CpmkMappingModal from '../../components/cpmk/CpmkMappingModal'
@@ -208,7 +209,7 @@ export default function CpmkDetailPage() {
                 <th className="w-44 px-4 py-3">CPL &amp; IK</th>
                 <th className="w-24 px-4 py-3 text-center">Taksonomi</th>
                 <th className="w-20 px-4 py-3 text-right">Bobot</th>
-                <th className="w-64 px-4 py-3 text-right">Aksi</th>
+                <TableActionHeader />
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0]">
@@ -252,41 +253,33 @@ export default function CpmkDetailPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right font-mono font-bold text-[#1A3A6B]">{cpmk.bobot}%</td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setMappingTarget(cpmk)}
-                            data-testid={`cpmk-map-ik-button-${cpmk.id}`}
-                            className="inline-flex items-center gap-1.5 rounded-[6px] border border-[#1A3A6B] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#1A3A6B] transition-colors hover:bg-[#1A3A6B] hover:text-white"
-                          >
-                            <Network className="h-3.5 w-3.5" />
-                            <span>{canManage ? 'Atur CPL & IK' : 'Lihat CPL & IK'}</span>
-                          </button>
-                          {canManage && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => openEdit(cpmk)}
-                                data-testid={`cpmk-edit-button-${cpmk.id}`}
-                                className="inline-flex items-center gap-1 rounded-[6px] border border-[#CBD5E1] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#142B4A] transition-colors hover:border-[#1A3A6B] hover:text-[#1A3A6B]"
-                              >
-                                <Edit2 className="h-3.5 w-3.5" />
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setDeleteTarget(cpmk)}
-                                data-testid={`cpmk-delete-button-${cpmk.id}`}
-                                className="inline-flex items-center gap-1 rounded-[6px] border border-red-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-50"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                Hapus
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
+                      <TableActionCell>
+                        <TableActionButton
+                          variant="primary"
+                          icon={Network}
+                          label={canManage ? 'Atur CPL & IK' : 'Lihat CPL & IK'}
+                          onClick={() => setMappingTarget(cpmk)}
+                          data-testid={`cpmk-map-ik-button-${cpmk.id}`}
+                        />
+                        {canManage && (
+                          <>
+                            <TableActionButton
+                              variant="secondary"
+                              icon={Edit2}
+                              label="Edit"
+                              onClick={() => openEdit(cpmk)}
+                              data-testid={`cpmk-edit-button-${cpmk.id}`}
+                            />
+                            <TableActionButton
+                              variant="danger"
+                              icon={Trash2}
+                              label="Hapus"
+                              onClick={() => setDeleteTarget(cpmk)}
+                              data-testid={`cpmk-delete-button-${cpmk.id}`}
+                            />
+                          </>
+                        )}
+                      </TableActionCell>
                     </tr>
                   )
                 })

@@ -16,6 +16,7 @@ import useToast from '../../hooks/useToast'
 import Modal from '../../components/Modal'
 import ConfirmDialog from '../../components/ConfirmDialog'
 import { PageHeader, ActionButton } from '../../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionButton } from '../../components/TableActions'
 import { getApiErrorMessage } from '../superAdminHelpers'
 
 export default function JenisEvaluasiPage() {
@@ -303,7 +304,7 @@ export default function JenisEvaluasiPage() {
                 <th className="py-3 px-4 w-16 text-center">No</th>
                 <th className="py-3 px-4">Nama Jenis Evaluasi</th>
                 <th className="py-3 px-4 w-36 text-center">Urutan Tampilan</th>
-                <th className="py-3 px-4 w-28 text-right">Aksi</th>
+                <TableActionHeader />
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E2E8F0]">
@@ -334,7 +335,7 @@ export default function JenisEvaluasiPage() {
                 </tr>
               ) : (
                 filteredList.map((item, idx) => (
-                  <tr key={item.id} className="hover:bg-[#F8FAFC]/80 transition-colors">
+                  <tr key={item.id} className="align-top hover:bg-[#F8FAFC]/80 transition-colors">
                     <td className="py-3 px-4 text-center font-medium text-[#64748B]">
                       {idx + 1}
                     </td>
@@ -347,18 +348,16 @@ export default function JenisEvaluasiPage() {
                     <td className="py-3 px-4 text-center font-mono text-[#64748B]">
                       {item.urutan ?? '-'}
                     </td>
-                    <td className="py-3 px-4 text-right">
-                      <button
-                        type="button"
+                    <TableActionCell>
+                      <TableActionButton
+                        variant="secondary"
                         onClick={() => handleOpenEdit(item)}
                         data-testid={`btn-edit-jenis-${item.id}`}
-                        className="inline-flex items-center gap-1 rounded px-2.5 py-1 text-xs font-semibold text-[#1A3A6B] hover:bg-[#F1F5F9] transition-colors"
+                        icon={Edit2}
+                        label="Ubah"
                         title="Ubah jenis evaluasi"
-                      >
-                        <Edit2 className="h-3.5 w-3.5" />
-                        <span>Ubah</span>
-                      </button>
-                    </td>
+                      />
+                    </TableActionCell>
                   </tr>
                 ))
               )}

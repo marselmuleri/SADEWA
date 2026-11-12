@@ -20,6 +20,7 @@ import {
   PenLine,
 } from 'lucide-react'
 import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionButton } from '../components/TableActions'
 import Modal from '../components/Modal'
 import RpsList from '../components/RpsList'
 import AiLoadingStage from '../components/AiLoadingStage'
@@ -707,7 +708,7 @@ export default function DokumenPage() {
                   <th className="pb-3">Semester</th>
                   <th className="pb-3">Ringkasan Konten</th>
                   <th className="pb-3 text-center">Status</th>
-                  <th className="pb-3 text-right">Aksi</th>
+                  <TableActionHeader className="pb-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F2F4F7]">
@@ -732,7 +733,7 @@ export default function DokumenPage() {
                       : 'Draf'
 
                   return (
-                    <tr key={row.id} className="hover:bg-[#F8FAFC]">
+                    <tr key={row.id} className="align-top hover:bg-[#F8FAFC]">
                       {!isDosen && (
                         <td className="py-3 font-semibold text-xs text-[#142B4A]">
                           {course ? (
@@ -760,75 +761,69 @@ export default function DokumenPage() {
                       <td className="py-3 text-center">
                         <Badge tone={statusTone}>{statusLabel}</Badge>
                       </td>
-                      <td className="py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Tombol Lihat Detail */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setDetailReport(row)
-                              setDetailModalOpen(true)
-                            }}
-                            className="inline-flex h-7 items-center gap-1 rounded border border-[#CBD5E1] bg-white px-2 text-[11px] font-semibold text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B]"
-                            data-testid={`btn-detail-laporan-${row.id}`}
-                          >
-                            <Eye className="h-3 w-3" />
-                            Detail
-                          </button>
+                      <TableActionCell className="py-3">
+                        {/* Tombol Lihat Detail */}
+                        <TableActionButton
+                          variant="secondary"
+                          onClick={() => {
+                            setDetailReport(row)
+                            setDetailModalOpen(true)
+                          }}
+                          data-testid={`btn-detail-laporan-${row.id}`}
+                          icon={Eye}
+                          label="Detail"
+                          title="Lihat detail laporan"
+                        />
 
-                          {/* Dosen Actions */}
-                          {isDosen && (row.status === 'draft' || row.status === 'rejected') && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveLaporan(row)
-                                  setEditContent(row.konten || '')
-                                  setOpenEditModal(true)
-                                }}
-                                className="inline-flex h-7 items-center gap-1 rounded border border-[#CBD5E1] bg-white px-2 text-[11px] font-semibold text-[#1A3A6B] hover:border-[#1A3A6B]"
-                                data-testid={`btn-edit-laporan-${row.id}`}
-                              >
-                                <Edit3 className="h-3 w-3" />
-                                Edit
-                              </button>
-                              <ActionButton
-                                onClick={() => handleSubmitLaporan(row.id)}
-                                disabled={submitting || !row.konten}
-                                data-testid={`btn-submit-laporan-${row.id}`}
-                                className="h-7 text-xs px-2.5"
-                              >
-                                <Send className="h-3 w-3" />
-                                Kirim
-                              </ActionButton>
-                            </>
-                          )}
+                        {/* Dosen Actions */}
+                        {isDosen && (row.status === 'draft' || row.status === 'rejected') && (
+                          <>
+                            <TableActionButton
+                              variant="secondary"
+                              onClick={() => {
+                                setActiveLaporan(row)
+                                setEditContent(row.konten || '')
+                                setOpenEditModal(true)
+                              }}
+                              data-testid={`btn-edit-laporan-${row.id}`}
+                              icon={Edit3}
+                              label="Edit"
+                              title="Edit narasi laporan"
+                            />
+                            <TableActionButton
+                              variant="primary"
+                              onClick={() => handleSubmitLaporan(row.id)}
+                              disabled={submitting || !row.konten}
+                              data-testid={`btn-submit-laporan-${row.id}`}
+                              icon={Send}
+                              label="Kirim"
+                              title="Kirim laporan ke Kaprodi"
+                            />
+                          </>
+                        )}
 
-                          {/* Kaprodi Actions: ONLY Kaprodi & only if submitted */}
-                          {isKaprodi && row.status === 'submitted' && (
-                            <>
-                              <ActionButton
-                                variant="secondary"
-                                onClick={() => handleOpenApproveModal(row)}
-                                className="h-7 text-xs px-2.5 text-emerald-700 border-emerald-300 hover:bg-emerald-50"
-                                data-testid={`btn-approve-${row.id}`}
-                              >
-                                <CheckCircle2 className="h-3 w-3" />
-                                Setujui
-                              </ActionButton>
-                              <ActionButton
-                                variant="secondary"
-                                onClick={() => handleOpenRejectModal(row)}
-                                className="h-7 text-xs px-2.5 text-red-700 border-red-300 hover:bg-red-50"
-                                data-testid={`btn-reject-${row.id}`}
-                              >
-                                <RotateCcw className="h-3 w-3" />
-                                Kembalikan
-                              </ActionButton>
-                            </>
-                          )}
-                        </div>
-                      </td>
+                        {/* Kaprodi Actions: ONLY Kaprodi & only if submitted */}
+                        {isKaprodi && row.status === 'submitted' && (
+                          <>
+                            <TableActionButton
+                              variant="success"
+                              onClick={() => handleOpenApproveModal(row)}
+                              data-testid={`btn-approve-${row.id}`}
+                              icon={CheckCircle2}
+                              label="Setujui"
+                              title="Setujui laporan evaluasi"
+                            />
+                            <TableActionButton
+                              variant="danger"
+                              onClick={() => handleOpenRejectModal(row)}
+                              data-testid={`btn-reject-${row.id}`}
+                              icon={RotateCcw}
+                              label="Kembalikan"
+                              title="Kembalikan laporan untuk revisi"
+                            />
+                          </>
+                        )}
+                      </TableActionCell>
                     </tr>
                   )
                 })}

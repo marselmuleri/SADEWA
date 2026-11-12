@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Building2, Loader2, Plus, Search, Pencil, Trash2, Shield, UserCog, UserCheck, UserX, Eye, EyeOff } from 'lucide-react'
 import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../components/PageChrome'
+import { TableActionHeader, TableActionCell, TableActionButton } from '../components/TableActions'
 import Modal from '../components/Modal'
 import SearchableSelect from '../components/SearchableSelect'
 import useToast from '../hooks/useToast'
@@ -352,7 +353,7 @@ export default function UserManagementSAPage() {
                 <th className="pb-3 font-semibold">Role</th>
                 <th className="pb-3 font-semibold">Scope</th>
                 <th className="pb-3 font-semibold">Status</th>
-                <th className="pb-3 font-semibold text-right">Aksi</th>
+                <TableActionHeader className="pb-3 font-semibold" />
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F2F4F7]">
@@ -360,7 +361,7 @@ export default function UserManagementSAPage() {
                 <SkeletonRows />
               ) : filteredUsers.length ? (
                 filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-[#F8FAFC]/80 transition-colors">
+                  <tr key={user.id} className="align-top hover:bg-[#F8FAFC]/80 transition-colors">
                     <td className="py-3.5">
                       <div className="font-semibold text-[#142B4A]">{user.nama}</div>
                       <div className="text-[11px] text-[#64748B]">{user.nip || '-'}</div>
@@ -377,41 +378,24 @@ export default function UserManagementSAPage() {
                         {user.is_active ? 'Aktif' : 'Nonaktif'}
                       </Badge>
                     </td>
-                    <td className="py-3.5 text-right">
-                      <div className="inline-flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(user)}
-                          className="inline-flex h-7 items-center gap-1 rounded-[4px] border border-[#CBD5E1] bg-white px-2 text-[11px] font-medium text-[#142B4A] hover:border-[#1A3A6B] hover:text-[#1A3A6B]"
-                          data-testid={`user-edit-${user.id}`}
-                        >
-                          <Pencil className="h-3 w-3" />
-                          <span>Edit</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleStatus(user)}
-                          className={`inline-flex h-7 items-center gap-1 rounded-[4px] border px-2 text-[11px] font-medium transition-colors ${
-                            user.is_active
-                              ? 'border-red-200 text-red-700 hover:bg-red-50'
-                              : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
-                          }`}
-                          data-testid={`user-toggle-${user.id}`}
-                        >
-                          {user.is_active ? (
-                            <>
-                              <UserX className="h-3 w-3" />
-                              <span>Nonaktifkan</span>
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck className="h-3 w-3" />
-                              <span>Aktifkan</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </td>
+                    <TableActionCell className="py-3.5">
+                      <TableActionButton
+                        variant="secondary"
+                        onClick={() => openEdit(user)}
+                        data-testid={`user-edit-${user.id}`}
+                        icon={Pencil}
+                        label="Edit"
+                        title="Edit akun pengguna"
+                      />
+                      <TableActionButton
+                        variant={user.is_active ? 'danger' : 'success'}
+                        onClick={() => handleToggleStatus(user)}
+                        data-testid={`user-toggle-${user.id}`}
+                        icon={user.is_active ? UserX : UserCheck}
+                        label={user.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                        title={user.is_active ? 'Nonaktifkan akun pengguna' : 'Aktifkan akun pengguna'}
+                      />
+                    </TableActionCell>
                   </tr>
                 ))
               ) : (
