@@ -1,6 +1,0 @@
-# perintah: node tes-tambahan/uji_antarmuka_playwright.js antarmuka
-# mulai: 2026-11-10 11:30:38 WIB
-# frontend: hasil npm run build disajikan 'vite preview' :5173; backend uvicorn :8000 + PostgreSQL (data seed_demo sintetis); AI Service tidak berjalan; Chromium headless, container 2 vCPU, viewport 1366x768
-# error konsol yang muncul seluruhnya ERR_TUNNEL_CONNECTION_FAILED dari Google Fonts (fonts.googleapis.com diblokir proxy container)
-# exit=0
-# selesai: 2026-11-10 11:31:41 WIB
