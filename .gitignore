@@ -57,3 +57,7 @@ backend/uploads/
 /c500_SADEWA*
 /Catatan_Akhir_C500*
 /catatan akhir c500*
+
+# Keluaran lokal (tidak dilacak)
+/Claude outputs/
+/loadtest/
