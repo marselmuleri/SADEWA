@@ -1,0 +1,12 @@
+{
+  "_petunjuk": "Bagian narasi dikosongkan karena butuh data capaian asli dari SADEWA. Isi dulu sebelum menguji narasi.",
+  "percobaan_per_mk": 3,
+  "rps": [
+    {"mk_name": "Jaringan Komputer", "sks": 3, "semester": "Ganjil", "prodi": "Teknik Komputer", "deskripsi": ""},
+    {"mk_name": "Sistem Tertanam", "sks": 3, "semester": "Genap", "prodi": "Teknik Komputer", "deskripsi": ""},
+    {"mk_name": "Jaringan Syaraf Tiruan", "sks": 3, "semester": "Ganjil", "prodi": "Teknik Komputer", "deskripsi": ""},
+    {"mk_name": "Switching, Routing and Wireless Essential", "sks": 3, "semester": "Ganjil", "prodi": "Teknik Komputer", "deskripsi": ""},
+    {"mk_name": "Pemrograman Web", "sks": 3, "semester": "Genap", "prodi": "Teknik Komputer", "deskripsi": ""}
+  ],
+  "narasi": []
+}

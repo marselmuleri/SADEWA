@@ -1,0 +1,393 @@
+{
+  "kode_mk": "PTSK6410",
+  "deskripsi_mk": "Mata kuliah ini membahas konsep dasar, arsitektur, dan implementasi sistem tertanam (embedded system). Mahasiswa mempelajari pemrograman tingkat rendah, interaksi dengan perangkat keras, serta desain sistem cerdas yang terintegrasi untuk aplikasi industri dan konsumen.",
+  "cpl": [
+    {
+      "kode": "CPL 3",
+      "deskripsi": "Memiliki pemahaman keilmuan dan penguasaan keterampilan di bidang teknik komputer, meliputi sistem tertanam dan robotika, jaringan dan keamanan komputer, rekayasa perangkat lunak, multimedia, game, dan kecerdasan buatan.",
+      "label": "KEILMUAN DAN KETERAMPILAN TEKNIK KOMPUTER"
+    },
+    {
+      "kode": "CPL 5",
+      "deskripsi": "Mampu menggunakan tahapan-tahapan penelitian untuk menawarkan solusi pada suatu domain permasalahan, terutama di bidang teknik komputer.",
+      "label": "METODOLOGI PENELITIAN DAN SOLUSI"
+    }
+  ],
+  "cpmk": [
+    {
+      "kode": "CPMK 3.1",
+      "deskripsi": "Mahasiswa mampu mengidentifikasikan konsep teoritis di bidang teknik komputer untuk berbagai permasalahan komputasi, khususnya terkait arsitektur mikrokontroler dan peripheral."
+    },
+    {
+      "kode": "CPMK 3.2",
+      "deskripsi": "Mahasiswa mampu mendesain sistem cerdas dan merakit komponen untuk pengembangan robot atau sistem tertanam sederhana hingga kompleks."
+    },
+    {
+      "kode": "CPMK 5.1",
+      "deskripsi": "Mahasiswa mampu menerapkan prinsip-prinsip legalitas, etika, sosial, dan kelestarian lingkungan dalam merancang suatu solusi sistem tertanam."
+    }
+  ],
+  "penilaian": [
+    {
+      "poin": "Aktivitas Partisipatif",
+      "komponen": "Aktivitas",
+      "rincian": [
+        "Keaktifan diskusi kelas",
+        "Kolaborasi dalam praktikum"
+      ],
+      "bobot": 10,
+      "cpmk": [
+        "CPMK 3.1",
+        "CPMK 5.1"
+      ]
+    },
+    {
+      "poin": "Hasil Proyek",
+      "komponen": "Hasil Proyek",
+      "rincian": [
+        "Tugas Besar: Prototipe Sistem Tertanam",
+        "Presentasi Akhir Proyek"
+      ],
+      "bobot": 40,
+      "cpmk": [
+        "CPMK 3.2",
+        "CPMK 5.1"
+      ]
+    },
+    {
+      "poin": "Tugas",
+      "komponen": "Tugas",
+      "rincian": [
+        "Laporan Praktikum Mingguan",
+        "Kuis Konsep Dasar"
+      ],
+      "bobot": 20,
+      "cpmk": [
+        "CPMK 3.1"
+      ]
+    },
+    {
+      "poin": "Kognitif / Pengetahuan",
+      "komponen": "UTS",
+      "rincian": [],
+      "bobot": 15,
+      "cpmk": [
+        "CPMK 3.1"
+      ]
+    },
+    {
+      "poin": "Kognitif / Pengetahuan",
+      "komponen": "UAS",
+      "rincian": [],
+      "bobot": 15,
+      "cpmk": [
+        "CPMK 3.1",
+        "CPMK 3.2"
+      ]
+    }
+  ],
+  "pertemuan": [
+    {
+      "minggu": 1,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menjelaskan definisi, karakteristik, dan aplikasi sistem tertanam (C2)",
+      "bahan_kajian_judul": "Pengantar Sistem Tertanam",
+      "bahan_kajian": "Definisi embedded system, perbedaan dengan general purpose computer, contoh aplikasi sehari-hari, tren teknologi IoT",
+      "metode": "Ceramah, Diskusi, SDL",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa membaca modul pengantar",
+        "Mahasiswa berdiskusi mengenai contoh sistem tertanam di lingkungan sekitar"
+      ],
+      "target_cpmk": [
+        "CPMK 3.1"
+      ],
+      "kriteria_indikator": [
+        "Mampu membedakan sistem tertanam dengan PC umum; mampu menyebutkan minimal 3 contoh aplikasi nyata."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 2,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menganalisis arsitektur mikrokontroler dan unit-unit dasarnya (C4)",
+      "bahan_kajian_judul": "Arsitektur Mikrokontroler",
+      "bahan_kajian": "CPU core, memory map (RAM/ROM), I/O ports, timer/counter, interrupt controller",
+      "metode": "Ceramah, Simulasi, Praktikum",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa memetakan blok diagram mikrokontroler",
+        "Mahasiswa melakukan simulasi akses memori dasar"
+      ],
+      "target_cpmk": [
+        "CPMK 3.1"
+      ],
+      "kriteria_indikator": [
+        "Mampu mengidentifikasi fungsi setiap blok dalam diagram blok MCU; mampu menjelaskan mekanisme interrupt."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 3,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menerapkan pemrograman C/C++ untuk kontrol GPIO dasar (C3)",
+      "bahan_kajian_judul": "Pemrograman Dasar Embedded",
+      "bahan_kajian": "Setup development environment (IDE/Compiler), sintaks C untuk register, manipulasi bit, LED blinking",
+      "metode": "Praktikum, Case Method",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menginstal toolchain compiler",
+        "Mahasiswa menulis kode untuk menyalakan/mematikan LED via GPIO"
+      ],
+      "target_cpmk": [
+        "CPMK 3.1",
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Kode dapat dikompilasi tanpa error; LED merespons sesuai pola waktu yang ditentukan."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 4,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengimplementasikan komunikasi serial UART untuk transfer data (C3)",
+      "bahan_kajian_judul": "Komunikasi Serial (UART)",
+      "bahan_kajian": "Protokol UART, baud rate, frame format, transmit/receive buffer, debugging via terminal",
+      "metode": "Praktikum, Problem Based Learning",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menghubungkan MCU ke PC via USB-Serial",
+        "Mahasiswa mengirim dan menerima string data"
+      ],
+      "target_cpmk": [
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Data terkirim utuh tanpa karakter hilang; konfigurasi baud rate sesuai."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 5,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mendesain antarmuka sensor analog menggunakan ADC (C4)",
+      "bahan_kajian_judul": "Interfacing Sensor Analog & ADC",
+      "bahan_kajian": "Prinsip kerja ADC, resolusi, sampling rate, kalibrasi sensor suhu/cahaya, noise filtering",
+      "metode": "Praktikum, Simulasi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa merangkai rangkaian sensor potensiometer",
+        "Mahasiswa membaca nilai ADC dan mengkonversinya ke satuan fisik"
+      ],
+      "target_cpmk": [
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Nilai pembacaan stabil; konversi matematis dari digital ke analog benar."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 6,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengimplementasikan kontrol motor DC menggunakan PWM (C3)",
+      "bahan_kajian_judul": "Pulse Width Modulation (PWM) & Motor Control",
+      "bahan_kajian": "Konsep duty cycle, frekuensi PWM, driver motor (H-Bridge), kontrol kecepatan motor",
+      "metode": "Praktikum, Project Based Learning",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mengatur sinyal PWM dari MCU",
+        "Mahasiswa mengendalikan arah dan kecepatan motor DC"
+      ],
+      "target_cpmk": [
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Motor berputar halus; perubahan duty cycle mempengaruhi kecepatan secara linear."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 7,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menerapkan protokol komunikasi I2C untuk periferal eksternal (C3)",
+      "bahan_kajian_judul": "Komunikasi I2C",
+      "bahan_kajian": "Struktur bus I2C, master/slave, addressing, pull-up resistor, interfacing LCD/OLED",
+      "metode": "Praktikum, Diskusi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menyambungkan modul display I2C",
+        "Mahasiswa menampilkan teks dinamis pada layar"
+      ],
+      "target_cpmk": [
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Display berfungsi normal; tidak ada konflik alamat pada bus."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 8,
+      "jenis": "UTS",
+      "bobot": 15
+    },
+    {
+      "minggu": 9,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengimplementasikan protokol komunikasi SPI untuk penyimpanan data (C3)",
+      "bahan_kajian_judul": "Komunikasi SPI & Memory Interface",
+      "bahan_kajian": "Struktur bus SPI, clock polarity/phase, chip select, interfacing Flash EEPROM",
+      "metode": "Praktikum, Case Method",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menulis data ke modul SD Card atau EEPROM SPI",
+        "Mahasiswa membaca kembali data tersebut"
+      ],
+      "target_cpmk": [
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Data tersimpan permanen setelah power off; proses baca tulis berhasil."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 10,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mendesain sistem real-time sederhana menggunakan RTOS (C4)",
+      "bahan_kajian_judul": "Real-Time Operating System (RTOS)",
+      "bahan_kajian": "Konsep task scheduling, priority, semaphore, mutex, message queue, FreeRTOS basics",
+      "metode": "Simulasi, Praktikum",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa membuat dua task independen",
+        "Mahasiswa mengelola resource sharing antar task"
+      ],
+      "target_cpmk": [
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Task berjalan paralel sesuai prioritas; tidak terjadi race condition."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 11,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu mengintegrasikan sistem tertanam dengan jaringan nirkabel (IoT) (C3)",
+      "bahan_kajian_judul": "Embedded Connectivity & IoT",
+      "bahan_kajian": "WiFi module (ESP8266/ESP32), MQTT protocol, HTTP request, cloud dashboard basic",
+      "metode": "Project Based Learning, Praktikum",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menghubungkan sensor ke broker MQTT",
+        "Mahasiswa memvisualisasikan data di dashboard web"
+      ],
+      "target_cpmk": [
+        "CPMK 3.2",
+        "CPMK 5.1"
+      ],
+      "kriteria_indikator": [
+        "Data terkirim ke server/cloud; latency koneksi dapat diterima."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 12,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menerapkan teknik debugging dan optimasi daya (C4)",
+      "bahan_kajian_judul": "Debugging & Power Management",
+      "bahan_kajian": "JTAG/SWD debugging, sleep modes, wake-up sources, battery life estimation",
+      "metode": "Case Method, Diskusi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menganalisis konsumsi arus pada mode aktif vs sleep",
+        "Mahasiswa memperbaiki bug logika menggunakan debugger"
+      ],
+      "target_cpmk": [
+        "CPMK 3.1",
+        "CPMK 5.1"
+      ],
+      "kriteria_indikator": [
+        "Dapat mengidentifikasi penyebab hang/crash; efisiensi daya meningkat >50% saat idle."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 13,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu merancang prototipe sistem tertanam lengkap (C6)",
+      "bahan_kajian_judul": "Perancangan Sistem Tertanam Terintegrasi",
+      "bahan_kajian": "Requirement analysis, schematic design, PCB layout basic, firmware architecture",
+      "metode": "Project Based Learning",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menyusun spesifikasi teknis proyek akhir",
+        "Mahasiswa membuat skema rangkaian keseluruhan"
+      ],
+      "target_cpmk": [
+        "CPMK 3.2",
+        "CPMK 5.1"
+      ],
+      "kriteria_indikator": [
+        "Desain memenuhi kebutuhan fungsional; skema listrik valid."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 14,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menguji dan memvalidasi kinerja sistem tertanam (C5)",
+      "bahan_kajian_judul": "Testing & Validation",
+      "bahan_kajian": "Unit testing firmware, stress test hardware, error handling, reliability check",
+      "metode": "Praktikum, Peer Review",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa menjalankan skenario uji coba ekstrem",
+        "Mahasiswa mencatat anomali dan memperbaikinya"
+      ],
+      "target_cpmk": [
+        "CPMK 3.2"
+      ],
+      "kriteria_indikator": [
+        "Sistem bertahan selama durasi uji; laporan bug terselesaikan."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 15,
+      "jenis": "kuliah",
+      "kemampuan_akhir": "Mahasiswa mampu menyajikan hasil pengembangan sistem dalam forum ilmiah (C6)",
+      "bahan_kajian_judul": "Presentasi Proyek Akhir",
+      "bahan_kajian": "Penyusunan laporan teknis, demo live, tanya jawab, evaluasi peer",
+      "metode": "Diskusi, Presentasi",
+      "waktu": "3 x 50 menit",
+      "pengalaman_belajar": [
+        "Mahasiswa mempresentasikan prototipe dan dokumentasi",
+        "Mahasiswa memberikan feedback konstruktif kepada kelompok lain"
+      ],
+      "target_cpmk": [
+        "CPMK 3.2",
+        "CPMK 5.1"
+      ],
+      "kriteria_indikator": [
+        "Presentasi runtut dan jelas; demonstrasi alat berfungsi sesuai rencana."
+      ],
+      "bobot": null
+    },
+    {
+      "minggu": 16,
+      "jenis": "UAS",
+      "bobot": 15
+    }
+  ],
+  "referensi": [
+    "Michael J. Pont, 'C Language Programming and Software Engineering Fundamentals for Microcontrollers', CRC Press, 2014",
+    "John Waksman, 'Embedded Systems Architecture', Morgan Kaufmann, 2012",
+    "Andre LaFreniere, 'Introduction to Embedded Systems Using ANSI C', Prentice Hall, 2010",
+    "Eli Barett, 'Making Things See: 8 Kinect Projects for Artists, Designers, Engineers, and Makers', O'Reilly Media, 2011"
+  ],
+  "format": 2
+}

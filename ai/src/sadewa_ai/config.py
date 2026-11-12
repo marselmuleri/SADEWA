@@ -89,6 +89,16 @@ class Settings(BaseSettings):
     narasi_max_tokens: int = 2500
     narasi_temperature: float = 0.5
 
+    # --- Referensi RPS dari web (web_retriever.py) -----------------------
+    # Batas waktu total langkah web (pencarian + baca situs). Yang sudah
+    # terkumpul saat batas tercapai tetap dipakai, sisanya ditinggal.
+    web_budget_seconds: float = Field(default=10.0, alias="SADEWA_WEB_BUDGET_SECONDS")
+    # Masa berlaku cache file hasil web per mata kuliah (0 = tanpa cache file).
+    web_cache_days: int = Field(default=30, alias="SADEWA_WEB_CACHE_DAYS")
+    web_cache_path: str = Field(
+        default=str(PROJECT_ROOT / ".cache" / "web_rps_cache.json"), alias="SADEWA_WEB_CACHE_PATH"
+    )
+
     # --- Aturan validasi RPS --------------------------------------------
     jumlah_pertemuan: int = 16
     minggu_uts: int = 8

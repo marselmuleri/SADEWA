@@ -1,0 +1,17 @@
+{
+  "waktu_uji": "2026-11-12T19:25:50",
+  "model": "qwen3.8-flash",
+  "rps_temperature": 0.4,
+  "narasi_temperature": 0.5,
+  "top_k_chunks": 6,
+  "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "jumlah_chunk_vectorstore": 756,
+  "maks_retry_rps": 2,
+  "web_budget_seconds": 10.0,
+  "web_cache_days": 30,
+  "web_dingin": true,
+  "ambang_tercapai": 70.0,
+  "percobaan_per_mk": 3,
+  "jumlah_mk_rps": 5,
+  "jumlah_kasus_narasi": 0
+}

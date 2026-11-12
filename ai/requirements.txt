@@ -31,7 +31,7 @@ fastapi>=0.110
 uvicorn[standard]>=0.27
 
 # Web Search untuk referensi RPS universitas lain
-duckduckgo-search>=6.3.0
+ddgs>=9.0  # penerus duckduckgo-search (paket lama sudah tidak dirawat)
 trafilatura>=1.12.0
 
 # Pengujian
