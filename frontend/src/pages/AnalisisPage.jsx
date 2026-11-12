@@ -18,6 +18,7 @@ import {
   GitCompareArrows,
   SlidersHorizontal,
   Grid3x3,
+  Users,
 } from 'lucide-react'
 import {
   CartesianGrid,
@@ -46,6 +47,36 @@ import CpmkPendukungIk from '../components/analitik/CpmkPendukungIk'
 import DrilldownModel from '../components/analitik/DrilldownModel'
 import TrenAngkatan from '../components/analitik/TrenAngkatan'
 import SearchableSelect from '../components/SearchableSelect'
+import AnalitikMahasiswa from '../components/analitik/AnalitikMahasiswa'
+
+const MODE_ANALISIS = [
+  { id: 'mk', label: 'Per Mata Kuliah', icon: BookOpen },
+  { id: 'mahasiswa', label: 'Per Mahasiswa', icon: Users },
+]
+
+// Pemilih sudut pandang analisis: agregat per mata kuliah/prodi atau per mahasiswa.
+function ModeAnalisisSwitch({ value, onChange }) {
+  return (
+    <div className="inline-flex rounded-lg border border-[#CBD5E1] bg-white p-1 shadow-sm" role="radiogroup" aria-label="Mode analisis">
+      {MODE_ANALISIS.map(({ id, label, icon: Icon }) => (
+        <button
+          key={id}
+          type="button"
+          role="radio"
+          aria-checked={value === id}
+          onClick={() => onChange(id)}
+          data-testid={`mode-analisis-${id}`}
+          className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
+            value === id ? 'bg-[#1A3A6B] text-white' : 'text-[#64748B] hover:text-[#142B4A]'
+          }`}
+        >
+          <Icon className="h-4 w-4" />
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 // Tab Analitik OBE tingkat prodi (Kaprodi & Dekan)
 const TABS = [
@@ -69,8 +100,15 @@ const CHART_COLORS = [
 ]
 
 export default function AnalisisPage() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const initialCplId = searchParams.get('cpl_id')
+  const analisisMode = searchParams.get('mode') === 'mahasiswa' ? 'mahasiswa' : 'mk'
+  const setAnalisisMode = (mode) => {
+    const next = new URLSearchParams(searchParams)
+    if (mode === 'mahasiswa') next.set('mode', 'mahasiswa')
+    else next.delete('mode')
+    setSearchParams(next, { replace: true })
+  }
   const { user, activeRole } = useAuth()
   const currentRole = activeRole || user?.role || 'admin_prodi'
   const isDosen = currentRole === 'dosen'
@@ -563,7 +601,7 @@ export default function AnalisisPage() {
         <PageHeader
           eyebrow="Analitik Capaian Mata Kuliah"
           title="Analisis Ketercapaian Pembelajaran"
-          description="Fitur analitik yang sama dengan tingkat prodi, dengan cakupan mata kuliah yang Anda ampu."
+          description="Fitur analitik yang sama dengan tingkat prodi, dengan cakupan mata kuliah yang Anda ampu, per mata kuliah maupun per mahasiswa."
           badge="Mode Dosen Pengampu"
           actions={
             <ActionButton variant="secondary" onClick={() => window.print()} data-testid="analysis-print-dosen">
@@ -580,14 +618,21 @@ export default function AnalisisPage() {
             <div>
               <span className="font-bold block text-sm">Cakupan Analisis Dosen Pengampu</span>
               <p className="mt-1 text-[#64748B] leading-relaxed">
-                Semua angka di halaman ini hanya dihitung dari mata kuliah yang dipilih: CPL dan IK yang diukur mata kuliah ini,
-                CPMK-nya, serta perbandingan antar angkatan mahasiswa yang mengikutinya. Analisis lintas mata kuliah tingkat prodi
-                merupakan wewenang Kaprodi dan Dekan.
+                {analisisMode === 'mahasiswa'
+                  ? 'Mode per mahasiswa menampilkan mahasiswa peserta mata kuliah yang Anda ampu. Capaian CPL, IK, dan CPMK setiap mahasiswa hanya dihitung dari mata kuliah tersebut.'
+                  : 'Semua angka di halaman ini hanya dihitung dari mata kuliah yang dipilih: CPL dan IK yang diukur mata kuliah ini, CPMK-nya, serta perbandingan antar angkatan mahasiswa yang mengikutinya.'}{' '}
+                Analisis lintas mata kuliah tingkat prodi merupakan wewenang Kaprodi dan Dekan.
               </p>
             </div>
           </div>
         </div>
 
+        <ModeAnalisisSwitch value={analisisMode} onChange={setAnalisisMode} />
+
+        {analisisMode === 'mahasiswa' ? (
+          <AnalitikMahasiswa isDosen courses={dosenCourses} />
+        ) : (
+        <>
         {/* Course Selector */}
         <SectionCard
           title="Pilih Mata Kuliah Pengampu"
@@ -718,6 +763,8 @@ export default function AnalisisPage() {
             </div>
           ) : null
         )}
+        </>
+        )}
       </div>
     )
   }
@@ -732,7 +779,7 @@ export default function AnalisisPage() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {/* Opsi semester statis mengacu pada SemesterEnum (app/models/enums.py). Tab tren memakai filter angkatan sendiri. */}
-            {activeTab !== 'trending' && !scopeMkId && (
+            {analisisMode === 'mk' && activeTab !== 'trending' && !scopeMkId && (
               <select
                 value={selectedSemester}
                 onChange={(e) => setSelectedSemester(e.target.value)}
@@ -767,6 +814,12 @@ export default function AnalisisPage() {
         </div>
       ) : (
         <>
+          <ModeAnalisisSwitch value={analisisMode} onChange={setAnalisisMode} />
+
+          {analisisMode === 'mahasiswa' ? (
+            <AnalitikMahasiswa programStudiId={isDekan ? selectedProdiId : null} courses={courses} />
+          ) : (
+          <>
           {/* Pemilih cakupan: seluruh prodi atau satu mata kuliah */}
           <SectionCard
             title="Cakupan Analisis"
@@ -1388,6 +1441,8 @@ export default function AnalisisPage() {
           )}
         </div>
       )}
+          </>
+          )}
         </>
       )}
     </div>

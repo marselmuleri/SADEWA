@@ -133,3 +133,50 @@ def test_analitik_mata_kuliah_untuk_dosen(client: TestClient, audit_data: dict, 
     assert client.get(url, headers=auth_header(audit_data["kaprodi_a"])).status_code == 200
     assert client.get(url, headers=auth_header(audit_data["dekan"])).status_code == 200
     assert client.get("/api/v1/analitik/mata-kuliah/99999", headers=auth_header(audit_data["dosen_a"])).status_code == 404
+
+
+def test_analitik_per_mahasiswa_dan_cakupan(client: TestClient, audit_data: dict, db_session: Session):
+    s = _siapkan_mk(db_session, audit_data)
+    mk_id = audit_data["mk_a"].id
+    assert client.post(f"/api/v1/kalkulasi/run/{mk_id}", headers=auth_header(audit_data["dosen_a"])).status_code == 200
+    mhs_a, peserta_b = audit_data["mhs_a"], s["peserta_b"]
+
+    # Mahasiswa prodi yang tidak ikut MK mana pun: tampil untuk Kaprodi, tidak untuk Dosen
+    lain = Mahasiswa(nim="2401009", nama="Mhs Lain", semester_aktif=1, angkatan=2024, program_studi_id=audit_data["prodi_a"].id, status_masuk=StatusMasuk.reguler)
+    db_session.add(lain)
+    db_session.commit()
+
+    url = "/api/v1/analitik/mahasiswa"
+    dosen = client.get(url, headers=auth_header(audit_data["dosen_a"])).json()
+    assert {m["nim"] for m in dosen["mahasiswa"]} == {"2201001", "2301002"}
+    kaprodi = client.get(url, headers=auth_header(audit_data["kaprodi_a"])).json()
+    assert {m["nim"] for m in kaprodi["mahasiswa"]} == {"2201001", "2301002", "2401009"}
+    ringkas = {m["nim"]: m for m in kaprodi["mahasiswa"]}
+    assert ringkas["2301002"]["rata_rata_cpl"] == 80.0 and ringkas["2301002"]["cpl_tercapai"] == 1
+    assert ringkas["2201001"]["rata_rata_cpmk"] == 100.0 and ringkas["2201001"]["jumlah_mk"] == 1
+    assert ringkas["2401009"]["jumlah_cpl"] == 0
+    # Filter angkatan & pencarian
+    assert [m["nim"] for m in client.get(url, params={"angkatan": 2023}, headers=auth_header(audit_data["kaprodi_a"])).json()["mahasiswa"]] == ["2301002"]
+    assert [m["nim"] for m in client.get(url, params={"search": "Lain"}, headers=auth_header(audit_data["kaprodi_a"])).json()["mahasiswa"]] == ["2401009"]
+
+    # Detail
+    detail = client.get(f"{url}/{peserta_b.mahasiswa_id}", headers=auth_header(audit_data["dosen_a"])).json()
+    assert detail["mahasiswa"]["nim"] == "2301002"
+    assert [m["mk_id"] for m in detail["mata_kuliah"]] == [mk_id]
+    cpl = detail["cpl"][0]
+    assert cpl["nilai"] == 80.0 and cpl["tercapai"] is True and cpl["rata_rata_angkatan"] == 80.0
+    ik = {i["kode"]: i for i in detail["ik"]}
+    assert ik["IK-01.2"]["nilai"] == 50.0 and ik["IK-01.2"]["tercapai"] is False
+    assert ik["IK-01.2"]["rata_rata_kelas"] == 75.0
+    assert detail["cpmk"][0]["nilai"] == 80.0 and detail["cpmk"][0]["rata_rata_kelas"] == 90.0
+
+    # Akses
+    assert client.get(f"{url}/{lain.id}", headers=auth_header(audit_data["dosen_a"])).status_code == 403
+    assert client.get(f"{url}/{lain.id}", headers=auth_header(audit_data["kaprodi_a"])).status_code == 200
+    assert client.get(f"{url}/{mhs_a.id}", headers=auth_header(audit_data["dosen_b"])).status_code == 403
+    assert client.get(url, params={"mata_kuliah_id": audit_data["mk_b"].id}, headers=auth_header(audit_data["dosen_a"])).status_code == 403
+    assert client.get(url, params={"mata_kuliah_id": audit_data["mk_b"].id}, headers=auth_header(audit_data["kaprodi_a"])).status_code == 403
+    assert client.get(url, headers=auth_header(audit_data["admin_a"])).status_code == 403
+    dekan = auth_header(audit_data["dekan"])
+    assert client.get(url, headers=dekan).status_code == 400
+    assert client.get(url, params={"program_studi_id": audit_data["prodi_a"].id}, headers=dekan).status_code == 200
