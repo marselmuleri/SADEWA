@@ -1,4 +1,0 @@
-# perintah: node tes-tambahan/uji_token_setelah_logout_playwright.js
-# waktu: 2026-11-10 11:40:40 WIB ; Chromium headless, frontend vite preview :5173, backend :8000 PostgreSQL. Token tidak dicetak.
-{"status_me_sebelum_keluar":200,"url_setelah_keluar":"/login","status_me_dengan_token_lama_setelah_keluar":200}
-# exit=0
