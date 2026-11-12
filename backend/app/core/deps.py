@@ -193,5 +193,12 @@ def get_academic_scope(
             pengampu = db.query(PengampuMataKuliah).join(MataKuliah).filter(PengampuMataKuliah.user_id == user.id).first()
             if pengampu and pengampu.mata_kuliah:
                 prodi_id = pengampu.mata_kuliah.program_studi_id
+        # Tanpa prodi, scope kosong berarti "tanpa filter" di banyak endpoint (data semua prodi
+        # ikut terbaca). Tolak sampai akun dihubungkan ke prodi atau mengampu mata kuliah.
+        if not prodi_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Akun dosen ini belum terhubung ke Program Studi manapun. Hubungi Admin Prodi.",
+            )
         return AcademicScope(user, program_studi_id=prodi_id)
-    return AcademicScope(user)
+    raise HTTPException(status_code=403, detail="Role ini tidak memiliki akses ke data akademik")

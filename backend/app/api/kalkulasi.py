@@ -96,8 +96,14 @@ def run(
     """
     Jalankan engine kalkulasi OBE deterministik per mata kuliah.
     Menghitung capaian IK, CPMK, CPL, dan nilai akhir mahasiswa.
+    Ditolak bila bobot penilaian belum lengkap (aturan yang sama dengan finalisasi), agar
+    capaian yang tersimpan tidak dihitung dari konfigurasi bobot yang belum 100%.
+    Nilai akhir peserta yang sudah difinalisasi tidak ditimpa.
     """
     _check_write_access(db, user, matkul_id)
+    issues = cek_siap_dinilai(db, matkul_id)
+    if issues:
+        raise HTTPException(status_code=400, detail=f"Mata kuliah belum siap dinilai: {'; '.join(issues)}")
     result = run_kalkulasi(db, matkul_id)
     return result
 
@@ -270,6 +276,17 @@ def get_hasil_detail(
     hasil = db.query(HasilEvaluasi).filter(HasilEvaluasi.id == hasil_id).first()
     if not hasil:
         raise HTTPException(status_code=404, detail="Hasil evaluasi tidak ditemukan")
+    mk = hasil.peserta_mata_kuliah.mata_kuliah if hasil.peserta_mata_kuliah else None
+    if not mk:
+        raise HTTPException(status_code=404, detail="Hasil evaluasi tidak ditemukan")
+    if scope.program_studi_id and mk.program_studi_id != scope.program_studi_id:
+        raise HTTPException(status_code=403, detail="Hasil evaluasi ini di luar prodi Anda")
+    if scope.fakultas_id and (not mk.program_studi or mk.program_studi.fakultas_id != scope.fakultas_id):
+        raise HTTPException(status_code=403, detail="Hasil evaluasi ini di luar fakultas Anda")
+    if scope.user.role == UserRole.dosen and not db.query(PengampuMataKuliah).filter(
+        PengampuMataKuliah.mata_kuliah_id == mk.id, PengampuMataKuliah.user_id == scope.user.id,
+    ).first():
+        raise HTTPException(status_code=403, detail="Anda bukan dosen pengampu mata kuliah ini")
 
     return {
         "id": hasil.id,

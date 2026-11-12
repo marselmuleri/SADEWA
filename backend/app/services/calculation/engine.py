@@ -132,6 +132,7 @@ def run_kalkulasi(db: Session, mata_kuliah_id: int) -> dict:
     ambang = ambang_prodi(db, mk.program_studi_id if mk else None)
 
     sample_results = []
+    jumlah_final_dilewati = 0
 
     for peserta in peserta_list:
         nilai_records = db.query(NilaiBentukPenilaian).filter(
@@ -212,7 +213,11 @@ def run_kalkulasi(db: Session, mata_kuliah_id: int) -> dict:
         existing_he = db.query(HasilEvaluasi).filter(
             HasilEvaluasi.peserta_mata_kuliah_id == peserta.id
         ).first()
-        if existing_he:
+        if existing_he and existing_he.is_final:
+            # Nilai yang sudah difinalisasi adalah snapshot: tidak ditimpa kalkulasi ulang
+            # (mis. setelah skala huruf diubah). Buka kunci (unlock) dulu bila perlu dihitung ulang.
+            jumlah_final_dilewati += 1
+        elif existing_he:
             existing_he.nilai_akhir = nilai_akhir
             existing_he.nilai_huruf = nilai_huruf
             existing_he.status_outcome = "Tercapai" if nilai_akhir >= ambang else "Tidak Tercapai"
@@ -272,5 +277,6 @@ def run_kalkulasi(db: Session, mata_kuliah_id: int) -> dict:
     return {
         "mata_kuliah_id": mata_kuliah_id,
         "jumlah_peserta_diproses": len(peserta_list),
+        "jumlah_nilai_final_dilewati": jumlah_final_dilewati,
         "ik_results_sample": sample_results,
     }

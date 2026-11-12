@@ -121,7 +121,8 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.exception("Unhandled server exception: %s", exc)
     return JSONResponse(
         status_code=500,
-        content={"detail": "Terjadi kesalahan internal pada server.", "error": str(exc)},
+        # Detail exception hanya di log server; isi exception (SQL, path) tidak dikirim ke client.
+        content={"detail": "Terjadi kesalahan internal pada server."},
     )
 
 app.include_router(api_v1_router)

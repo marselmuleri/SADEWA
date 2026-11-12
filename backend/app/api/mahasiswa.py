@@ -1,5 +1,5 @@
 import re
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.deps import AcademicScope, get_academic_scope, get_scoped_prodi_id
@@ -54,12 +54,26 @@ def create_mahasiswa(payload: MahasiswaCreate, db: Session = Depends(get_db), pr
 
 
 @router.post("/batch", response_model=list[MahasiswaResponse])
-def batch_create_mahasiswa(payload: MahasiswaBatchCreate, db: Session = Depends(get_db), prodi_id: int = Depends(get_scoped_prodi_id)):
+def batch_create_mahasiswa(
+    payload: MahasiswaBatchCreate,
+    response: Response,
+    db: Session = Depends(get_db),
+    prodi_id: int = Depends(get_scoped_prodi_id),
+):
+    """
+    Tambah mahasiswa massal. NIM yang sudah terdaftar tidak dibuat ulang; status akademik,
+    semester, dan angkatannya diperbarui bila berbeda (impor ulang ekspor SIAKAD).
+    Respons berisi mahasiswa yang baru dibuat; jumlah per kategori ada di header
+    X-Jumlah-Ditambah, X-Jumlah-Diperbarui, X-Jumlah-Dilewati.
+    """
     created = []
+    diperbarui = 0
+    dilewati = 0
     seen_nim: set[str] = set()
 
     for item in payload.records:
         if item.nim in seen_nim:
+            dilewati += 1
             continue
         seen_nim.add(item.nim)
 
@@ -69,6 +83,20 @@ def batch_create_mahasiswa(payload: MahasiswaBatchCreate, db: Session = Depends(
             Mahasiswa.is_active.is_(True),
         ).first()
         if existing:
+            berubah = False
+            baru = {
+                "status_akademik": item.status_akademik.value,
+                "semester_aktif": item.semester_aktif,
+                "angkatan": item.angkatan or existing.angkatan,
+            }
+            for field, nilai in baru.items():
+                if nilai is not None and getattr(existing, field) != nilai:
+                    setattr(existing, field, nilai)
+                    berubah = True
+            if berubah:
+                diperbarui += 1
+            else:
+                dilewati += 1
             continue
 
         angkatan_val = derive_angkatan(item.nim, item.angkatan)
@@ -84,6 +112,10 @@ def batch_create_mahasiswa(payload: MahasiswaBatchCreate, db: Session = Depends(
     db.commit()
     for d in created:
         db.refresh(d)
+    response.headers["X-Jumlah-Ditambah"] = str(len(created))
+    response.headers["X-Jumlah-Diperbarui"] = str(diperbarui)
+    response.headers["X-Jumlah-Dilewati"] = str(dilewati)
+    response.headers["Access-Control-Expose-Headers"] = "X-Jumlah-Ditambah, X-Jumlah-Diperbarui, X-Jumlah-Dilewati"
     return created
 
 
