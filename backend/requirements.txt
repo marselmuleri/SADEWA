@@ -13,7 +13,7 @@ openpyxl
 numpy
 scikit-learn
 joblib
--e ../ai
+# -e ../ai
 python-multipart
 python-dotenv
 pytest
