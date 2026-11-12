@@ -20,8 +20,12 @@ const angka = (n, d = 1) => Number(n ?? 0).toLocaleString('id-ID', { maximumFrac
 
 function PratinjauRps({ data, detik, mode, selesai }) {
   const pertemuan = Array.isArray(data?.pertemuan) ? data.pertemuan.filter((p) => p && p.minggu) : []
-  // Pertemuan terakhir mungkin masih setengah jadi; hitung yang sudah punya bobot.
-  const lengkap = pertemuan.filter((p) => p.bobot !== undefined && p.bobot !== null).length
+  // Pertemuan terakhir mungkin masih setengah jadi. Pertemuan dianggap lengkap bila sudah ada
+  // pertemuan sesudahnya, atau field terakhirnya sudah tertulis. (Pertemuan kuliah tidak lagi
+  // memuat "bobot", jadi jangan dijadikan penanda.)
+  const sudahLengkap = (p) =>
+    p.jenis === 'UTS' || p.jenis === 'UAS' || Array.isArray(p.kriteria_indikator) || (p.bobot !== undefined && p.bobot !== null)
+  const lengkap = pertemuan.filter((p, i) => i < pertemuan.length - 1 || sudahLengkap(p)).length
   const terisi = selesai ? 16 : mode === 'stream' ? Math.min(16, lengkap) : Math.min(15, Math.floor(detik / 2.6) + 1)
   const terbaru = pertemuan.slice(-3).reverse()
 
