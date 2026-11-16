@@ -4,8 +4,13 @@ Lolos validate_rps di percobaan pertama,"15/15 = 100,0%"
 Lolos validate_rps setelah retry,"15/15 = 100,0%"
 Rata-rata percobaan LLM per RPS,"1,00"
 Waktu generate RPS rata-rata / median / maks (s),"62,4 / 62,2 / 69,6"
-RPS di atas target 10 s,15/15
-RPS di atas target 15 s,15/15
+RPS di atas target 90 s,0/15
 Waktu langkah web rata-rata / maks (s),"5,2 / 8,2"
 "Waktu generate tanpa langkah web, rata-rata (s)","57,2"
 RPS yang mendapat referensi web,15/15
+Narasi dibangkitkan,9
+Lolos validate_narasi,"8/9 = 88,9%"
+Ketepatan angka (faithfulness),"122/122 = 100,0%"
+Ketepatan status Tercapai/Belum,"32/32 = 100,0%"
+Waktu generate narasi rata-rata / maks (s),"12,6 / 18,7"
+Narasi di atas target 15 s,3/9

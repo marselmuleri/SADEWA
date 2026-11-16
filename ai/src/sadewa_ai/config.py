@@ -27,7 +27,7 @@ jadi hasilnya konsisten dari folder mana pun proses dijalankan.
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -82,6 +82,22 @@ class Settings(BaseSettings):
 
     llm_timeout_seconds: int = 120
     llm_max_retries: int = 2
+    # `enable_thinking` adalah parameter khusus Qwen (dikirim lewat extra_body).
+    # Matikan (False) saat memakai penyedia lain yang mungkin menolak parameter
+    # tak dikenal, mis. pada skrip evaluasi perbandingan Llama/GPT.
+    llm_kirim_enable_thinking: bool = Field(default=True, alias="LLM_KIRIM_ENABLE_THINKING")
+    # Model OpenAI generasi baru adalah model reasoning (bawaan effort "medium") yang
+    # menolak temperature kecuali reasoning_effort="none", dan memakai
+    # max_completion_tokens. Kosong/False = perilaku lama (Qwen, Llama).
+    llm_reasoning_effort: str = Field(default="", alias="LLM_REASONING_EFFORT")
+    llm_pakai_max_completion_tokens: bool = Field(default=False, alias="LLM_PAKAI_MAX_COMPLETION_TOKENS")
+    # Isi tambahan body permintaan (digabung ke extra_body). Dipakai skrip evaluasi saat
+    # lewat OpenRouter: {"provider": {...}, "reasoning": {...}, "usage": {"include": true}}.
+    # Kosong (None) = perilaku lama; aplikasi biasa tidak mengisinya.
+    # False = parameter temperature tidak dikirim (mis. GPT-6 Luna di OpenRouter tidak
+    # mendukungnya; dengan require_parameters permintaan akan ditolak bila tetap dikirim).
+    llm_kirim_temperature: bool = Field(default=True, alias="LLM_KIRIM_TEMPERATURE")
+    llm_extra_body: Optional[Dict[str, Any]] = Field(default=None, alias="LLM_EXTRA_BODY")
 
     # Parameter generasi
     rps_max_tokens: int = 12000  # Kontrak Kuliah + RPS format baru (16 pertemuan, kolom lengkap)

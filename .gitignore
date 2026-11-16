@@ -61,3 +61,12 @@ backend/uploads/
 # Keluaran lokal (tidak dilacak)
 /Claude outputs/
 /loadtest/
+
+# Eval AI & skripsi (lokal saja)
+/ai/eval
+/ai/eval/hasil_*/
+/ai/eval/hasil/
+/docs/skripsi/
+/docs/c500/
+/docs/hki/
+/docs/skripsi.zip
