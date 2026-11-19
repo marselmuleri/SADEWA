@@ -65,3 +65,13 @@ backend/uploads/
 /evaluasi_ai/
 /docs/
 /hardware/
+
+# Eval AI & skripsi (lokal saja)
+/ai/eval
+/ai/eval/hasil_*/
+/ai/eval/hasil/
+/docs/skripsi/
+/docs/c500/
+/docs/hki/
+/docs/skripsi.zip
+

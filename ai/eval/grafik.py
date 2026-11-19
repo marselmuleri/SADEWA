@@ -1,8 +1,8 @@
 """
 Membuat grafik dan ringkasan angka dari CSV hasil uji_ai.py, siap tempel ke C500.
 
-    python eval/grafik.py                         # baca eval/hasil, tulis eval/hasil/grafik
-    python eval/grafik.py --hasil eval/hasil --target 10 15
+    python eval/grafik.py --hasil eval/hasil/qwen   # satu model; tulis eval/hasil/qwen/grafik
+    python eval/grafik.py --hasil eval/hasil/gpt --target 10 15
 
 --target: satu atau dua garis target waktu generate (detik). Default 10 dan 15
 karena spesifikasi non-fungsional menulis 5-10 detik sedangkan kriteria uji
@@ -112,12 +112,13 @@ def grafik_angka(nar, out):
     plt.close(fig)
 
 
-def grafik_waktu(rps, nar, target, out):
-    seri = [(nama, [float(r["durasi_detik"]) for r in rows]) for nama, rows in (("Generate RPS", rps), ("Narasi evaluasi", nar)) if rows]
+def grafik_waktu(rps, nar, target_rps, target_nar, out):
+    seri = [(nama, [float(r["durasi_detik"]) for r in rows], tg)
+            for nama, rows, tg in (("Generate RPS", rps, target_rps), ("Narasi evaluasi", nar, target_nar)) if rows]
     if not seri:
         return
     fig, axes = plt.subplots(1, len(seri), figsize=(4.2 * len(seri), 3.6), squeeze=False)
-    for ax, (nama, d) in zip(axes[0], seri):
+    for ax, (nama, d, target) in zip(axes[0], seri):
         x = range(1, len(d) + 1)
         ax.plot(x, d, "o", color=BIRU_TUA, label="Durasi per percobaan")
         ax.axhline(mean(d), color=ABU, lw=1, label=f"Rata-rata {mean(d):.1f} s".replace(".", ","))
@@ -137,7 +138,7 @@ def grafik_waktu(rps, nar, target, out):
 def diagram_alur(out):
     langkah = [
         "Kasus uji\n(mata kuliah,\ndata capaian)", "Retrieval\nChromaDB\n(top-k chunk)",
-        "Generate\nLLM Qwen", "Validator\n(retry bila\ngagal)", "Cek angka\nnarasi vs\nbackend", "CSV hasil\n& grafik",
+        "Generate\nLLM (Qwen/\nLlama/GPT)", "Validator\n(retry bila\ngagal)", "Cek angka\nnarasi vs\nbackend", "CSV hasil\n& grafik",
     ]
     fig, ax = plt.subplots(figsize=(10, 1.9))
     ax.set_xlim(0, len(langkah) * 1.7)
@@ -161,7 +162,7 @@ def persen(a, b):
     return f"{a / b * 100:.1f}%".replace(".", ",") if b else "-"
 
 
-def ringkasan(rps, nar, pel, target, folder):
+def ringkasan(rps, nar, pel, target, target_nar, folder):
     baris = []
     if rps:
         n = len(rps)
@@ -201,6 +202,7 @@ def ringkasan(rps, nar, pel, target, folder):
             ("Ketepatan status Tercapai/Belum", f"{sb}/{st} = {persen(sb, st)}"),
             ("Waktu generate narasi rata-rata / maks (s)", f"{mean(d):.1f} / {max(d):.1f}".replace(".", ",")),
         ]
+        baris += [(f"Narasi di atas target {t:g} s", f"{sum(x > t for x in d)}/{n}") for t in target_nar]
     with (folder / "ringkasan.csv").open("w", newline="", encoding="utf-8-sig") as f:
         w = csv.writer(f)
         w.writerow(["metrik", "hasil"])
@@ -215,7 +217,13 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--hasil", default=str(Path(__file__).resolve().parent / "hasil"))
     ap.add_argument("--target", type=float, nargs="+", default=[10, 15])
+    ap.add_argument("--target-rps", type=float, nargs="+",
+                    help="target khusus RPS (menimpa --target untuk panel/baris RPS)")
+    ap.add_argument("--target-narasi", type=float, nargs="+",
+                    help="target khusus narasi (menimpa --target untuk panel/baris narasi)")
     args = ap.parse_args()
+    t_rps = (args.target_rps or args.target)[:2]
+    t_nar = (args.target_narasi or args.target)[:2]
 
     folder = Path(args.hasil)
     out = folder / "grafik"
@@ -231,8 +239,8 @@ def main():
         grafik_kegagalan(pel, out)
     if nar:
         grafik_angka(nar, out)
-    grafik_waktu(rps, nar, args.target[:2], out)
-    ringkasan(rps, nar, pel, args.target[:2], folder)
+    grafik_waktu(rps, nar, t_rps, t_nar, out)
+    ringkasan(rps, nar, pel, t_rps, t_nar, folder)
 
     konf = folder / "konfigurasi.json"
     if konf.exists():

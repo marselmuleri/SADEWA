@@ -16,10 +16,8 @@ function formatTanggal(value) {
   return d.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
-const label = 'text-[11px] font-semibold uppercase tracking-[0.14em] text-[#6D778E]'
 function RpsDetail({ rps, identitas }) {
   const data = normalisasiRps(rps.konten)
-  const sumber = Array.isArray(rps.sumber_dokumen_rag) ? rps.sumber_dokumen_rag : []
   const total = totalBobotPenilaian(data)
   const lamaFormat = parseRpsKonten(rps.konten)?.format !== 2
   const html = useMemo(() => buildRpsHtml(rps, identitas, { mode: 'preview' }), [rps, identitas])
@@ -51,20 +49,8 @@ function RpsDetail({ rps, identitas }) {
         Pratinjau sama dengan hasil unduhan Word dan Cetak/PDF. Logo universitas tampil di file unduhan bila
         file <code>logo-universitas.png</code> sudah tersedia.
       </p>
-
-      {sumber.length > 0 && (
-        <div>
-          <p className={label}>Sumber Dokumen Referensi (RAG)</p>
-          <ul className="mt-2 space-y-1">
-            {sumber.map((s, i) => (
-              <li key={i} className="text-xs text-[#64748B]">
-                {s.file}
-                {s.page != null ? `, hal. ${s.page}` : ''}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* Sumber dokumen RAG (rps.sumber_dokumen_rag) tetap disimpan backend, tetapi sengaja
+          tidak ditampilkan ke dosen. */}
     </div>
   )
 }

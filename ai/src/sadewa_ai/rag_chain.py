@@ -270,6 +270,7 @@ def generate_evaluasi_cpmk(
     target_persen: float = 60.0,
     target_rerata_skala: Any = None,
     skala_maks: Any = None,
+    on_event: OnEvent = None,
 ) -> Dict[str, Any]:
     """
     Saran teks sheet Evaluasi portofolio: analisis pelaksanaan pembelajaran dan
@@ -277,13 +278,18 @@ def generate_evaluasi_cpmk(
 
     Data dikembalikan sebagai {"evaluasi": [{"kode", "analisis", "rencana_perbaikan"}]}.
     Bila ada CPMK yang terlewat, LLM diminta mengulang sekali dengan daftar kekurangannya.
+    on_event (opsional) menerima event yang sama dengan generate_rps(); dipakai skrip
+    evaluasi untuk mengukur waktu per tahap dan mencatat pelanggaran percobaan pertama.
     """
     logger.info("Memulai RAG pipeline evaluasi CPMK untuk: %s", mk_name)
     query = (
         f"evaluasi pemenuhan CPMK {mk_name} {prodi} analisis pelaksanaan pembelajaran "
         "rencana perbaikan semester depan"
     )
+    _emit(on_event, "tahap", id="konteks", status="mulai")
     context_kurikulum, sources = retrieve_context_with_metadata(query)
+    _emit(on_event, "sumber", sumber=sources)
+    _emit(on_event, "tahap", id="konteks", status="selesai", detail=f"{len(sources)} potongan pedoman ditemukan")
 
     prompt = prompts.build_evaluasi_cpmk_prompt(
         mk_name=mk_name,
@@ -306,13 +312,23 @@ def generate_evaluasi_cpmk(
     data: Dict[str, Any] = {}
     errors: List[str] = []
     for percobaan in range(2):
+        if percobaan > 0:
+            _emit(on_event, "ulang", percobaan=percobaan + 1, pelanggaran=errors)
+        _emit(on_event, "tahap", id="menulis", status="mulai", percobaan=percobaan + 1)
         raw = chat(
             messages=messages,
             max_tokens=settings.narasi_max_tokens,
             temperature=settings.narasi_temperature,
+            on_token=_token_callback(on_event),
         )
+        _emit(on_event, "tahap", id="menulis", status="selesai", percobaan=percobaan + 1)
+        _emit(on_event, "tahap", id="validasi", status="mulai", percobaan=percobaan + 1)
         data = extract_json(raw)
         valid, errors = validate_evaluasi_cpmk(data, kode_wajib)
+        _emit(
+            on_event, "tahap", id="validasi", status="selesai", percobaan=percobaan + 1,
+            detail="Semua CPMK lengkap" if valid else f"{len(errors)} kekurangan ditemukan",
+        )
         if valid:
             break
         logger.warning("Evaluasi CPMK percobaan %d belum lengkap: %s", percobaan + 1, errors)

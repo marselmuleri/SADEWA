@@ -25,3 +25,9 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+
+# Eval AI & skripsi (lokal saja)
+/ai/eval/hasil_*/
+/ai/eval/hasil/
+/docs/skripsi/
+/docs/c500/
