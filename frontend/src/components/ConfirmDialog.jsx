@@ -13,22 +13,31 @@ export default function ConfirmDialog({
   isDestructive = true,
   loading = false,
   confirmTestId = 'confirm-dialog-submit',
+  icon: Icon = AlertTriangle,
+  tone,
+  children = null,
 }) {
   if (!open) return null
+  // tone: 'danger' (merah), 'warning' (kuning), 'info' (navy). Default mengikuti isDestructive.
+  const nada = tone || (isDestructive ? 'danger' : 'warning')
+  const warnaIkon = {
+    danger: 'bg-red-50 text-red-600',
+    warning: 'bg-amber-50 text-amber-600',
+    info: 'bg-[#EEF2F8] text-[#1A3A6B]',
+  }[nada]
 
   return (
     <Modal open={open} title={title} onClose={loading ? () => {} : onCancel} size="max-w-md">
       <div className="space-y-4">
         <div className="flex items-start gap-3">
           <div
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-              isDestructive ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
-            }`}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${warnaIkon}`}
           >
-            <AlertTriangle className="h-5 w-5" />
+            <Icon className="h-5 w-5" />
           </div>
-          <div className="space-y-1">
-            <p className="text-sm text-[#142B4A]">{message}</p>
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="text-sm leading-relaxed text-[#142B4A]">{message}</div>
+            {children}
             {warning && (
               <div className="rounded-[6px] border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-800 leading-relaxed">
                 {warning}

@@ -1,16 +1,52 @@
-export function PageHeader({ eyebrow, title, description, actions, badge }) {
+import { Printer } from 'lucide-react'
+
+function formatTanggalCetak(date = new Date()) {
+  return date.toLocaleString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+// Tombol cetak laporan: memakai dialog cetak browser (bisa "Simpan sebagai PDF").
+// Judul dokumen diganti sementara agar nama file PDF bermakna, lalu dikembalikan.
+export function PrintButton({ fileName, label = 'Cetak / PDF', ...props }) {
+  const handlePrint = () => {
+    const judulAsli = document.title
+    if (fileName) {
+      const tanggal = new Date().toISOString().slice(0, 10)
+      document.title = `${fileName}_${tanggal}`.replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '_')
+    }
+    const pulihkan = () => {
+      document.title = judulAsli
+      window.removeEventListener('afterprint', pulihkan)
+    }
+    window.addEventListener('afterprint', pulihkan)
+    window.print()
+  }
+
   return (
-    <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-      <div className="max-w-3xl space-y-2">
+    <ActionButton variant="secondary" onClick={handlePrint} title="Cetak halaman ini atau simpan sebagai PDF" {...props}>
+      <Printer className="h-4 w-4" />
+      {label}
+    </ActionButton>
+  )
+}
+
+export function PageHeader({ eyebrow, title, description, actions, badge, printMeta }) {
+  return (
+    <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between print:border-b print:border-[#CBD5E1] print:pb-3">
+      <div className="max-w-3xl space-y-2 print:max-w-none">
+        <div className="hidden print:flex print:justify-between print:text-[10px] print:text-[#64748B]">
+          <span className="font-semibold uppercase tracking-[0.18em]">SADEWA · Laporan Evaluasi OBE</span>
+          <span>Dicetak {formatTanggalCetak()}</span>
+        </div>
         <div className="flex items-center gap-3">
           <span className="inline-flex h-0.5 w-12 bg-[#F4A300]" />
           <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#6D778E]">{eyebrow}</span>
           {badge ? <span className="rounded-full border border-[#E2E8F0] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#142B4A]">{badge}</span> : null}
         </div>
         <h1 className="text-[31px] font-semibold tracking-tight text-[#142B4A]">{title}</h1>
-        <p className="max-w-2xl text-sm leading-6 text-[#64748B]">{description}</p>
+        <p className="max-w-2xl text-sm leading-6 text-[#64748B] print:hidden">{description}</p>
+        {printMeta ? <p className="hidden text-xs text-[#142B4A] print:block">{printMeta}</p> : null}
       </div>
-      {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap gap-2 print:hidden">{actions}</div> : null}
     </header>
   )
 }

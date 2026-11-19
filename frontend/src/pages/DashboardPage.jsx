@@ -6,7 +6,6 @@ import {
   Layers3,
   Users,
   Download,
-  Printer,
   BookOpen,
   Award,
   CheckCircle2,
@@ -37,7 +36,7 @@ import { ActionButton, Badge, PageHeader, SectionCard, StatCard } from '../compo
 import useDosenCourses from '../hooks/useDosenCourses'
 import api from '../services/api'
 import { getApiErrorMessage } from './superAdminHelpers'
-import { exportToCsv } from '../utils/csvExport'
+import { exportToExcel } from '../utils/spreadsheet'
 import { useDekanScope } from '../context/DekanScopeContext'
 import ProdiSelector from '../components/ProdiSelector'
 import SearchableSelect from '../components/SearchableSelect'
@@ -221,14 +220,6 @@ function AnalyticsDashboard({ currentRole }) {
           title={`Evaluasi Pembelajaran: ${selectedCourseObj ? selectedCourseObj.nama : 'Pilih Mata Kuliah'}`}
           description="Pantau ketercapaian CPMK dan Indikator Kinerja (IK) untuk kelas mata kuliah yang Anda ampu secara objektif berbasis OBE."
           badge="Mode Dosen Pengampu"
-          actions={
-            <div className="flex flex-wrap items-center gap-2">
-              <ActionButton variant="secondary" onClick={() => window.print()} data-testid="dashboard-print">
-                <Printer className="h-4 w-4" />
-                Print
-              </ActionButton>
-            </div>
-          }
         />
 
         <SectionCard title="Pilih Mata Kuliah Diampu">
@@ -450,7 +441,7 @@ function AnalyticsDashboard({ currentRole }) {
         status_label: avg >= th ? 'Tercapai' : 'Perlu Perhatian',
       }
     })
-    exportToCsv(`CPL_Overview_${prodiNama}_${selectedSemester || 'Semua'}`, headers, rows)
+    exportToExcel(`CPL_Overview_${prodiNama}_${selectedSemester || 'Semua'}`, headers, rows)
   }
 
   return (
@@ -477,10 +468,6 @@ function AnalyticsDashboard({ currentRole }) {
               <option value="Ganjil">Semester Ganjil</option>
               <option value="Genap">Semester Genap</option>
             </select>
-            <ActionButton variant="secondary" onClick={() => window.print()} data-testid="dashboard-print">
-              <Printer className="h-4 w-4" />
-              Print
-            </ActionButton>
             <ActionButton
               variant="secondary"
               onClick={handleExportCsv}
@@ -488,7 +475,7 @@ function AnalyticsDashboard({ currentRole }) {
               data-testid="dashboard-export-csv"
             >
               <Download className="h-4 w-4" />
-              Export CSV
+              Export Excel
             </ActionButton>
           </div>
         }

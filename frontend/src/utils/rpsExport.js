@@ -1,4 +1,4 @@
-// Dokumen Kontrak Kuliah + RPS (format resmi prodi): unduh Word (.doc) dan cetak / simpan PDF.
+// Dokumen Kontrak Kuliah + RPS (format resmi prodi): unduh Word (.docx, lihat rpsDocx.js) dan cetak / simpan PDF.
 // Isi diambil dari rps.konten (format 2); draf format lama dikonversi otomatis lewat normalisasiRps.
 // Identitas (fakultas, prodi, dosen) diambil dari GET /rps/identitas/{mata_kuliah_id}.
 
@@ -98,9 +98,9 @@ export const totalBobotPenilaian = (rps) => rps.penilaian.reduce((s, p) => s + (
 export const targetCpmkTeks = (kode) =>
   kode.length ? `CPMK ${kode.map((k) => k.replace(/^CPMK\s*/i, '')).join(', ')}` : ''
 
-const angka = (n) => (n == null || Number.isNaN(n) ? '' : String(Math.round(n * 100) / 100))
-const semesterAkademik = (s) => (String(s || '').toLowerCase() === 'genap' ? 'Genap' : 'Gasal')
-const tanpaAwalan = (nama, awalan) => teks(nama).replace(new RegExp(`^${awalan}\\s+`, 'i'), '')
+export const angka = (n) => (n == null || Number.isNaN(n) ? '' : String(Math.round(n * 100) / 100))
+export const semesterAkademik = (s) => (String(s || '').toLowerCase() === 'genap' ? 'Genap' : 'Gasal')
+export const tanpaAwalan = (nama, awalan) => teks(nama).replace(new RegExp(`^${awalan}\\s+`, 'i'), '')
 
 const paragrafBernomor = (items) =>
   items.map((t, i) => `<p class="hang">${i + 1}.&nbsp;&nbsp;${esc(t)}</p>`).join('')
@@ -208,25 +208,19 @@ ${baris('Capaian Pembelajaran Mata Kuliah:', rps.cpmk, (c) => `<p class="just">$
 </table>`
 }
 
-// mode: 'word' (MS Word HTML), 'print' (jendela cetak), 'preview' (iframe di aplikasi)
+// mode: 'print' (jendela cetak), 'preview' (iframe di aplikasi)
 export function buildRpsHtml(rpsRecord, identitas, { logoSrc = null, mode = 'print' } = {}) {
   const rps = normalisasiRps(rpsRecord.konten)
   const idt = identitas || {}
   const meta = { semester: rpsRecord.semester, tahun_ajaran: rpsRecord.tahun_ajaran }
   const judul = `RPS ${idt.kode || rps.kode_mk} ${idt.nama || ''}`.trim()
-  const pemisahHalaman =
-    mode === 'word'
-      ? `<br clear="all" style="mso-special-character:line-break;page-break-before:always">`
-      : '<div class="pisah-halaman"></div>'
+  const pemisahHalaman = '<div class="pisah-halaman"></div>'
 
   return `<!doctype html>
-<html lang="id" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<html lang="id">
 <head><meta charset="utf-8"><title>${esc(judul)}</title>
-<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
 <style>
   @page { size: A4 landscape; margin: 1.5cm 1.6cm; }
-  @page Halaman { size: 841.9pt 595.3pt; mso-page-orientation: landscape; margin: 1.5cm 1.6cm; }
-  div.Halaman { page: Halaman; }
   body { font-family: 'Times New Roman', Times, serif; font-size: 10pt; color: #000; margin: 0; }
   p { margin: 0; }
   .judul { text-align: center; font-weight: bold; font-size: 12pt; margin: 6pt 0 14pt; }
@@ -295,51 +289,14 @@ function namaFile(rps, identitas) {
   return `RPS_${kode}_${rps.semester}_${String(rps.tahun_ajaran || '').replace(/\//g, '-')}`.replace(/[^\w.-]+/g, '_')
 }
 
-function base64Utf8(str) {
-  const bytes = new TextEncoder().encode(str)
-  let biner = ''
-  for (let i = 0; i < bytes.length; i += 0x8000) biner += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
-  return btoa(biner)
-}
-const baris76 = (b64) => b64.replace(/.{76}/g, '$&\r\n')
-
-// Word tidak menyimpan gambar data URI dari HTML biasa; dengan logo dipakai MHTML (gambar ikut tertanam).
-function bungkusMhtml(html, logoDataUri) {
-  const batas = '----=_SADEWA_RPS_Batas'
-  const [, tipe, data] = /^data:([^;]+);base64,(.*)$/.exec(logoDataUri) || []
-  const htmlLogo = html.replace(logoDataUri, 'file:///C:/sadewa/logo-universitas')
-  return [
-    'MIME-Version: 1.0',
-    `Content-Type: multipart/related; boundary="${batas}"; type="text/html"`,
-    '',
-    `--${batas}`,
-    'Content-Type: text/html; charset="utf-8"',
-    'Content-Transfer-Encoding: base64',
-    'Content-Location: file:///C:/sadewa/rps.htm',
-    '',
-    baris76(base64Utf8(htmlLogo)),
-    '',
-    `--${batas}`,
-    `Content-Type: ${tipe}`,
-    'Content-Transfer-Encoding: base64',
-    'Content-Location: file:///C:/sadewa/logo-universitas',
-    '',
-    baris76(data),
-    '',
-    `--${batas}--`,
-    '',
-  ].join('\r\n')
-}
-
+// Dokumen Word asli (.docx). Pembuatnya dimuat terpisah agar library docx tidak membebani halaman awal.
 export async function downloadRpsWord(rps, identitas) {
-  const logo = await muatLogo()
-  const html = buildRpsHtml(rps, identitas, { logoSrc: logo, mode: 'word' })
-  const isi = logo ? bungkusMhtml(html, logo) : ['\ufeff', html].join('')
-  const blob = new Blob([isi], { type: 'application/msword' })
+  const [{ buatRpsDocx }, logo] = await Promise.all([import('./rpsDocx'), muatLogo()])
+  const blob = await buatRpsDocx(rps, identitas, logo)
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${namaFile(rps, identitas)}.doc`
+  a.download = `${namaFile(rps, identitas)}.docx`
   document.body.appendChild(a)
   a.click()
   a.remove()

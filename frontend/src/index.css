@@ -157,3 +157,62 @@ body {
   }
   .sadewa-target { transform: none !important; }
 }
+
+/* ==========================================================
+   Mode cetak laporan (tombol "Cetak / PDF")
+   Hanya isi halaman yang tercetak: sidebar, topbar, tombol, filter disembunyikan
+   lewat utilitas `print:hidden` di komponen.
+   ========================================================== */
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  /* Grafik Recharts dirender dengan lebar layar; skalakan agar muat di kertas */
+  .recharts-responsive-container,
+  .recharts-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  .recharts-surface {
+    width: 100% !important;
+    height: auto !important;
+  }
+  .recharts-tooltip-wrapper {
+    display: none !important;
+  }
+
+  /* Hindari kartu/tabel terpotong di antara halaman */
+  section,
+  figure,
+  tr,
+  .recharts-wrapper {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  thead {
+    display: table-header-group;
+  }
+
+  /* Tabel lebar: jangan disembunyikan oleh scroll container */
+  .overflow-x-auto,
+  .overflow-auto {
+    overflow: visible !important;
+  }
+}

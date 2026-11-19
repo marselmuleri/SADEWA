@@ -4,7 +4,7 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 import api from '../../services/api'
 import { ActionButton, Badge, SectionCard } from '../PageChrome'
 import SearchableSelect from '../SearchableSelect'
-import { exportToCsv } from '../../utils/csvExport'
+import { exportToExcel } from '../../utils/spreadsheet'
 import { getApiErrorMessage } from '../../pages/superAdminHelpers'
 import { fmt, warnaCapaian } from './analitikModel'
 
@@ -182,7 +182,7 @@ export default function AnalitikMahasiswa({ isDosen = false, programStudiId = nu
   }, [tersaring])
 
   const exportDaftar = () =>
-    exportToCsv(
+    exportToExcel(
       'Analitik_Per_Mahasiswa',
       [
         { key: 'nim', label: 'NIM' },
@@ -229,7 +229,7 @@ export default function AnalitikMahasiswa({ isDosen = false, programStudiId = nu
         action={
           <ActionButton variant="secondary" onClick={exportDaftar} disabled={tersaring.length === 0} data-testid="btn-export-mahasiswa-csv">
             <Download className="h-4 w-4" />
-            Export CSV
+            Export Excel
           </ActionButton>
         }
       >
@@ -425,7 +425,7 @@ function DetailMahasiswa({ detail, isDosen, onTutup }) {
   )
 
   const exportDetail = () =>
-    exportToCsv(
+    exportToExcel(
       `Analitik_${m.nim}`,
       [
         { key: 'level', label: 'Level' },
@@ -460,7 +460,7 @@ function DetailMahasiswa({ detail, isDosen, onTutup }) {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <ActionButton variant="secondary" onClick={exportDetail}><Download className="h-4 w-4" />Export CSV</ActionButton>
+            <ActionButton variant="secondary" onClick={exportDetail}><Download className="h-4 w-4" />Export Excel</ActionButton>
             <ActionButton variant="secondary" onClick={onTutup} data-testid="btn-tutup-detail-mahasiswa"><ArrowLeft className="h-4 w-4" />Kembali ke daftar</ActionButton>
           </div>
         </div>

@@ -8,7 +8,6 @@ import {
   BookOpen,
   Filter,
   Download,
-  Printer,
   RefreshCw,
   AlertCircle,
   TrendingUp,
@@ -30,11 +29,11 @@ import {
   YAxis,
   Legend,
 } from 'recharts'
-import { ActionButton, Badge, PageHeader, SectionCard } from '../components/PageChrome'
+import { ActionButton, Badge, PageHeader, PrintButton, SectionCard } from '../components/PageChrome'
 import api from '../services/api'
 import useDosenCourses from '../hooks/useDosenCourses'
 import { getApiErrorMessage } from './superAdminHelpers'
-import { exportToCsv } from '../utils/csvExport'
+import { exportToExcel } from '../utils/spreadsheet'
 import useAuth from '../hooks/useAuth'
 import { useDekanScope } from '../context/DekanScopeContext'
 import ProdiSelector from '../components/ProdiSelector'
@@ -446,7 +445,7 @@ export default function AnalisisPage() {
     return insights
   }, [chartData, cplKeys])
 
-  // Export IK Breakdown CSV
+  // Export IK Breakdown (Excel)
   const handleExportIkCsv = () => {
     if (ikList.length === 0) {
       alert('Tidak ada data IK untuk diekspor')
@@ -463,10 +462,10 @@ export default function AnalisisPage() {
       ...item,
       status: Number(item.rata_rata) >= (selectedCpl?.threshold || 70) ? 'Tercapai' : 'Perlu Perhatian',
     }))
-    exportToCsv(`IK_Breakdown_${selectedCpl?.kode || 'CPL'}`, headers, rows)
+    exportToExcel(`IK_Breakdown_${selectedCpl?.kode || 'CPL'}`, headers, rows)
   }
 
-  // Export Trending CSV
+  // Export Trending (Excel)
   const handleExportTrendingCsv = () => {
     if (trendingRaw.length === 0) {
       alert('Tidak ada data tren untuk diekspor')
@@ -478,7 +477,7 @@ export default function AnalisisPage() {
       { key: 'cpl_id', label: 'ID CPL' },
       { key: 'rata_rata', label: 'Rata-Rata Capaian (%)' },
     ]
-    exportToCsv(`Tren_CPL_${user?.program_studi_nama || 'Prodi'}`, headers, trendingRaw)
+    exportToExcel(`Tren_CPL_${user?.program_studi_nama || 'Prodi'}`, headers, trendingRaw)
   }
 
   // Auto-select first course for Dosen
@@ -612,11 +611,13 @@ export default function AnalisisPage() {
           title="Analisis Ketercapaian Pembelajaran"
           description="Fitur analitik yang sama dengan tingkat prodi, dengan cakupan mata kuliah yang Anda ampu, per mata kuliah maupun per mahasiswa."
           badge="Mode Dosen Pengampu"
+          printMeta={`Dosen pengampu: ${user?.nama || '-'}${analisisMode === 'mahasiswa' ? ' · Analitik per mahasiswa' : ` · Mata kuliah: ${selectedCourse ? `${selectedCourse.kode} ${selectedCourse.nama}` : '-'}`}`}
           actions={
-            <ActionButton variant="secondary" onClick={() => window.print()} data-testid="analysis-print-dosen">
-              <Printer className="h-4 w-4" />
-              Print
-            </ActionButton>
+            <PrintButton
+              label="Cetak Laporan Analitik"
+              fileName={`Analitik_${analisisMode === 'mahasiswa' ? 'Mahasiswa' : selectedCourse?.nama || 'Mata_Kuliah'}`}
+              data-testid="analysis-print-dosen"
+            />
           }
         />
 
@@ -778,6 +779,20 @@ export default function AnalisisPage() {
     )
   }
 
+  // Keterangan kop laporan cetak: cakupan, tab aktif, dan filter yang sedang dipakai
+  const printProdiNama = isDekan ? selectedProdi?.nama || 'Program Studi' : user?.program_studi_nama || 'Program Studi'
+  const printTabLabel =
+    analisisMode === 'mahasiswa' ? 'Per Mahasiswa' : TABS.find((t) => t.id === activeTab)?.label || 'Ringkasan'
+  const printScopeMk = scopeMkId ? courses.find((c) => String(c.id) === String(scopeMkId)) : null
+  const printMeta = [
+    `Program Studi: ${printProdiNama}`,
+    `Cakupan: ${printScopeMk ? `${printScopeMk.kode} ${printScopeMk.nama}` : 'Seluruh prodi'}`,
+    `Tampilan: ${printTabLabel}`,
+    analisisMode === 'mk' && activeTab !== 'trending' && !scopeMkId ? `Semester: ${selectedSemester || 'Semua'}` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
+
   return (
     <div className="space-y-8 animate-[fadeUp_200ms_ease]">
       <PageHeader
@@ -785,6 +800,7 @@ export default function AnalisisPage() {
         title="Analisis Ketercapaian & Tren Pembelajaran"
         description="Analisis multi-tingkat capaian OBE dari level CPL hingga CPMK, serta tren historis ketercapaian kompetensi antar angkatan."
         badge={isDekan ? 'Mode Lihat (Dekan)' : (user?.program_studi_nama || 'Program Studi')}
+        printMeta={printMeta}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {/* Opsi semester statis mengacu pada SemesterEnum (app/models/enums.py). Tab tren memakai filter angkatan sendiri. */}
@@ -800,10 +816,12 @@ export default function AnalisisPage() {
                 <option value="Genap">Semester Genap</option>
               </select>
             )}
-            <ActionButton variant="secondary" onClick={() => window.print()} data-testid="analysis-print">
-              <Printer className="h-4 w-4" />
-              Print
-            </ActionButton>
+            <PrintButton
+              label="Cetak Laporan Analitik"
+              fileName={`Analitik_OBE_${printProdiNama}_${printTabLabel}`}
+              disabled={isDekan && !selectedProdiId}
+              data-testid="analysis-print"
+            />
           </div>
         }
       />
@@ -1051,7 +1069,7 @@ export default function AnalisisPage() {
                   data-testid="btn-export-ik-csv"
                 >
                   <Download className="h-4 w-4" />
-                  Export CSV
+                  Export Excel
                 </ActionButton>
               }
             >
@@ -1292,7 +1310,7 @@ export default function AnalisisPage() {
                 data-testid="btn-export-trending-csv"
               >
                 <Download className="h-4 w-4" />
-                Export CSV
+                Export Excel
               </ActionButton>
             }
           >

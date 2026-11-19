@@ -15,6 +15,8 @@ class NilaiManualInput(BaseModel):
     mk_id: int
     semester: Literal["Ganjil", "Genap"]
     records: list[NilaiRecordIn]
+    # Asal nilai: "manual" (form di aplikasi) atau "upload" (impor file Excel/CSV)
+    sumber: Literal["manual", "upload"] = "manual"
 
 
 class NilaiResponse(BaseModel):

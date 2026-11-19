@@ -157,6 +157,15 @@ export default function RpsList({ mataKuliahId, mataKuliah = null, refreshKey = 
     }
   }
 
+  const unduhWord = async (rps) => {
+    try {
+      await downloadRpsWord(rps, identitas)
+    } catch (err) {
+      console.error('Gagal membuat dokumen Word:', err)
+      pushToast('Gagal membuat dokumen Word. Silakan coba lagi.', 'error')
+    }
+  }
+
   const cetak = (rps) => {
     if (!printRps(rps, identitas)) {
       pushToast('Jendela cetak diblokir browser. Izinkan pop-up untuk situs ini.', 'warning')
@@ -222,11 +231,11 @@ export default function RpsList({ mataKuliahId, mataKuliah = null, refreshKey = 
                       />
                       <TableActionButton
                         variant="secondary"
-                        onClick={() => downloadRpsWord(rps, identitas)}
+                        onClick={() => unduhWord(rps)}
                         data-testid={`rps-word-${rps.id}`}
                         icon={Download}
                         label="Word"
-                        title="Unduh sebagai dokumen Word"
+                        title="Unduh sebagai dokumen Word (.docx)"
                       />
                       <TableActionButton
                         variant="secondary"

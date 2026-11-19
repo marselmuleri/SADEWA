@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Download } from 'lucide-react'
 import { Bar, BarChart, CartesianGrid, Legend, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { ActionButton, SectionCard } from '../PageChrome'
-import { exportToCsv } from '../../utils/csvExport'
+import { exportToExcel } from '../../utils/spreadsheet'
 import { TARGET_KETUNTASAN, fmt, warnaCapaian } from './analitikModel'
 
 const WARNA = ['#1A3A6B', '#F4A300', '#10B981', '#6366F1', '#F43F5E', '#0EA5E9', '#8B5CF6', '#D97706']
@@ -61,7 +61,7 @@ export default function PerbandinganAngkatan({ model }) {
   const ambangGaris = metrik === 'pct' ? TARGET_KETUNTASAN : Math.round(mean(lv.rows.map((c) => c.threshold)) || 70)
 
   const exportCsv = () =>
-    exportToCsv(
+    exportToExcel(
       `Perbandingan_Angkatan_${lv.label}_${metrik}`,
       [{ key: 'cpl', label: lv.label }, ...angkatanList.flatMap((a) => [
         { key: `${a}_nilai`, label: `${a} ${METRIK[metrik].label}` },
@@ -93,7 +93,7 @@ export default function PerbandinganAngkatan({ model }) {
         description={`Pilih dua angkatan atau lebih untuk membandingkan capaian setiap ${lv.label}${model.scope === 'mata_kuliah' ? ' di mata kuliah ini' : ''}.`}
         action={
           <ActionButton variant="secondary" onClick={exportCsv} data-testid="btn-export-perbandingan">
-            <Download className="h-4 w-4" /> Export CSV
+            <Download className="h-4 w-4" /> Export Excel
           </ActionButton>
         }
       >

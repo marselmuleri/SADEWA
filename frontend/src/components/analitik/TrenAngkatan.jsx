@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Download } from 'lucide-react'
 import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { ActionButton, SectionCard } from '../PageChrome'
-import { exportToCsv } from '../../utils/csvExport'
+import { exportToExcel } from '../../utils/spreadsheet'
 import { fmt } from './analitikModel'
 
 const WARNA = ['#1A3A6B', '#F4A300', '#10B981', '#6366F1', '#F43F5E', '#0EA5E9', '#8B5CF6', '#D97706']
@@ -33,7 +33,7 @@ export default function TrenAngkatan({ model }) {
   const ambang = Math.round(rows.reduce((s, r) => s + r.threshold, 0) / (rows.length || 1)) || 70
 
   const exportCsv = () =>
-    exportToCsv(
+    exportToExcel(
       `Tren_${lv.label}_Per_Angkatan`,
       [{ key: 'kode', label: lv.label }, ...angkatan.map((a) => ({ key: String(a), label: `Angkatan ${a}` }))],
       lv.rows.map((r) => ({
@@ -53,7 +53,7 @@ export default function TrenAngkatan({ model }) {
       description="Rata-rata capaian per angkatan mahasiswa. Klik kode untuk menampilkan/menyembunyikan garisnya."
       action={
         <ActionButton variant="secondary" onClick={exportCsv} disabled={!angkatan.length} data-testid="btn-export-tren-mk">
-          <Download className="h-4 w-4" /> Export CSV
+          <Download className="h-4 w-4" /> Export Excel
         </ActionButton>
       }
     >

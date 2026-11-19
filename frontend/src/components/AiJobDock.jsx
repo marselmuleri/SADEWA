@@ -123,7 +123,7 @@ export default function AiJobDock() {
 
   if (!tampil.length) return null
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-[70] flex flex-col items-end gap-2" aria-label="Proses AI di latar belakang">
+    <div className="pointer-events-none fixed bottom-4 right-4 z-[70] flex flex-col items-end gap-2 print:hidden" aria-label="Proses AI di latar belakang">
       {tampil.map((job) => (
         <KartuJob key={job.jenis} job={job} />
       ))}

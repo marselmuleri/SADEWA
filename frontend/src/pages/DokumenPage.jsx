@@ -11,7 +11,6 @@ import {
   AlertCircle,
   Eye,
   BookOpen,
-  Printer,
   Download,
   Search,
   Filter,
@@ -34,7 +33,7 @@ import api from '../services/api'
 import { getApiErrorMessage } from './superAdminHelpers'
 import { formatNarasi } from '../utils/narasiFormat'
 import { IMPORT_ACCEPT, bacaFileLaporan } from '../utils/importDokumen'
-import { exportToCsv } from '../utils/csvExport'
+import { exportToExcel } from '../utils/spreadsheet'
 import { useDekanScope } from '../context/DekanScopeContext'
 
 export default function DokumenPage() {
@@ -460,7 +459,7 @@ export default function DokumenPage() {
     [laporanList]
   )
 
-  // Export CSV
+  // Export Excel
   const handleExportCsv = () => {
     if (filteredReports.length === 0) {
       alert('Tidak ada data laporan untuk diekspor')
@@ -484,7 +483,7 @@ export default function DokumenPage() {
         mata_kuliah_nama: c?.nama || `Mata Kuliah #${r.mata_kuliah_id}`,
       }
     })
-    exportToCsv(`Laporan_Evaluasi_${filterStatus}`, headers, rows)
+    exportToExcel(`Laporan_Evaluasi_${filterStatus}`, headers, rows)
   }
 
   const pageTitle = isDosen ? 'Laporan Saya' : 'Validasi Laporan Evaluasi'
@@ -524,10 +523,6 @@ export default function DokumenPage() {
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-2">
-              <ActionButton variant="secondary" onClick={() => window.print()} data-testid="validasi-print">
-                <Printer className="h-4 w-4" />
-                Print
-              </ActionButton>
               <ActionButton
                 variant="secondary"
                 onClick={handleExportCsv}
@@ -535,7 +530,7 @@ export default function DokumenPage() {
                 data-testid="validasi-export-csv"
               >
                 <Download className="h-4 w-4" />
-                Export CSV
+                Export Excel
               </ActionButton>
             </div>
           )

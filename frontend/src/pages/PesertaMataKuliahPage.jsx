@@ -23,7 +23,7 @@ import useDosenCourses from '../hooks/useDosenCourses'
 import useToast from '../hooks/useToast'
 import api from '../services/api'
 import { getApiErrorMessage } from './superAdminHelpers'
-import { parseCsv, downloadCsvTemplate } from '../utils/csvParser'
+import { IMPOR_ACCEPT, downloadTemplate, normalisasiKolom, readSpreadsheet } from '../utils/spreadsheet'
 import { fetchAllMahasiswa } from '../utils/mahasiswaApi'
 
 const MAX_CSV_SIZE_BYTES = 2 * 1024 * 1024 // 2 MB
@@ -244,21 +244,35 @@ export default function PesertaMataKuliahPage() {
     }
   }
 
-  // CSV Import Handlers
-  const handleDownloadTemplate = () => {
-    downloadCsvTemplate(
-      'template_impor_peserta.csv',
-      [
-        { label: 'nim', key: 'nim' },
-        { label: 'kelas', key: 'kelas' },
-      ],
-      [
-        { nim: '24060121120001', kelas: 'A' },
-        { nim: '24060121120002', kelas: 'A' },
-        { nim: '24060121120003', kelas: 'B' },
-      ]
-    )
-    pushToast('Template CSV peserta berhasil diunduh')
+  // Impor Excel/CSV: template .xlsx berisi kolom NIM, Nama (opsional), Kelas
+  const handleDownloadTemplate = async () => {
+    try {
+      await downloadTemplate(
+        `template_impor_peserta${currentCourse ? `_${currentCourse.kode}` : ''}`,
+        [
+          { header: 'NIM', key: 'nim', width: 20, required: true, text: true, note: 'NIM mahasiswa yang sudah terdaftar di program studi.' },
+          { header: 'Nama Mahasiswa', key: 'nama', width: 34, note: 'Opsional, hanya sebagai pengingat. Tidak dibaca saat impor.' },
+          { header: 'Kelas', key: 'kelas', width: 10, required: true, note: 'Kelas paralel, mis. A, B, C.' },
+        ],
+        [
+          { nim: '24060121120001', nama: 'CONTOH MAHASISWA SATU', kelas: 'A' },
+          { nim: '24060121120002', nama: 'CONTOH MAHASISWA DUA', kelas: 'B' },
+        ],
+        {
+          sheetName: 'Peserta',
+          contoh: true,
+          petunjuk: [
+            'Isi satu mahasiswa per baris pada lembar "Peserta". Baris berwarna kuning adalah contoh; hapus atau timpa sebelum diunggah.',
+            'Kolom NIM sudah berformat teks agar angka NIM tidak berubah menjadi notasi ilmiah (mis. 2,4E+13).',
+            'Kolom Kelas diisi huruf kelas paralel (A, B, C, ...). Jika kosong, sistem memakai kelas A.',
+            'Simpan sebagai Excel Workbook (.xlsx), lalu unggah melalui tombol "Impor Excel". Maksimal 500 baris per unggahan.',
+          ],
+        },
+      )
+      pushToast('Template Excel peserta berhasil diunduh')
+    } catch {
+      pushToast('Gagal membuat template Excel', 'error')
+    }
   }
 
   const handleOpenImport = () => {
@@ -282,8 +296,8 @@ export default function PesertaMataKuliahPage() {
       return
     }
 
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      setImportError('File harus berupa file berformat .csv')
+    if (!/\.(xlsx|csv|tsv|txt)$/i.test(file.name)) {
+      setImportError('File harus berformat Excel (.xlsx) atau CSV (.csv)')
       setImportFile(null)
       return
     }
@@ -296,14 +310,18 @@ export default function PesertaMataKuliahPage() {
 
     setImportFile(file)
     const reader = new FileReader()
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
-        const text = event.target?.result
-        const parsed = parseCsv(text)
-        const rows = parsed.rows || []
+        const { header, data } = await readSpreadsheet(event.target?.result, { kolomKunci: ['nim'] })
+        const idx = Object.fromEntries(header.map((h, i) => [normalisasiKolom(h), i]))
+        if (idx.nim === undefined) {
+          setImportError('Kolom "NIM" tidak ditemukan. Gunakan template Excel peserta dari tombol "Unduh Template Excel".')
+          return
+        }
+        const rows = data.map((r) => ({ nim: r[idx.nim] ?? '', kelas: idx.kelas !== undefined ? r[idx.kelas] ?? '' : '' }))
 
         if (rows.length === 0) {
-          setImportError('File CSV tidak memiliki baris data yang valid')
+          setImportError('File tidak memiliki baris data yang valid')
           return
         }
 
@@ -351,10 +369,10 @@ export default function PesertaMataKuliahPage() {
 
         setImportRows(validatedRows)
       } catch (err) {
-        setImportError(`Gagal membaca file CSV: ${err.message}`)
+        setImportError(`Gagal membaca file: ${err.message}`)
       }
     }
-    reader.readAsText(file)
+    reader.readAsArrayBuffer(file)
   }
 
   const handleStopImport = () => {
@@ -492,7 +510,7 @@ export default function PesertaMataKuliahPage() {
         title="Peserta Mata Kuliah"
         description={
           canManage
-            ? 'Kelola roster peserta per mata kuliah program studi dengan impor massal CSV (NIM + kelas) atau pendaftaran manual sebagai cadangan.'
+            ? 'Kelola roster peserta per mata kuliah program studi dengan impor massal Excel (NIM + kelas) atau pendaftaran manual sebagai cadangan.'
             : 'Lihat daftar peserta pada mata kuliah yang Anda ampu, filter per kelas paralel, dan cari mahasiswa.'
         }
         actions={
@@ -504,7 +522,7 @@ export default function PesertaMataKuliahPage() {
                 data-testid="btn-unduh-template-peserta"
               >
                 <Download className="h-4 w-4" />
-                Unduh Template CSV
+                Unduh Template Excel
               </ActionButton>
               <ActionButton
                 variant="secondary"
@@ -513,7 +531,7 @@ export default function PesertaMataKuliahPage() {
                 data-testid="btn-impor-peserta"
               >
                 <Upload className="h-4 w-4" />
-                Impor CSV
+                Impor Excel
               </ActionButton>
               <ActionButton
                 onClick={handleOpenAdd}
@@ -646,7 +664,7 @@ export default function PesertaMataKuliahPage() {
             <h4 className="mt-2 text-sm font-semibold text-[#142B4A]">Belum Ada Peserta</h4>
             <p className="mt-1 text-xs text-[#64748B]">
               {canManage
-                ? 'Belum ada mahasiswa yang didaftarkan ke mata kuliah ini. Gunakan tombol Impor CSV atau Tambah Manual.'
+                ? 'Belum ada mahasiswa yang didaftarkan ke mata kuliah ini. Gunakan tombol Impor Excel atau Tambah Manual.'
                 : 'Belum ada roster peserta mahasiswa pada mata kuliah ini.'}
             </p>
             {canManage && (
@@ -657,7 +675,7 @@ export default function PesertaMataKuliahPage() {
                   data-testid="empty-btn-impor"
                 >
                   <Upload className="h-4 w-4" />
-                  Impor Peserta CSV
+                  Impor Peserta (Excel)
                 </ActionButton>
                 <ActionButton onClick={handleOpenAdd} data-testid="empty-btn-tambah">
                   <Plus className="h-4 w-4" />
@@ -853,10 +871,10 @@ export default function PesertaMataKuliahPage() {
             </div>
           </Modal>
 
-          {/* Modal Impor CSV Peserta */}
+          {/* Modal Impor Excel Peserta */}
           <Modal
             open={openImportModal}
-            title={`Impor Peserta Mata Kuliah via CSV`}
+            title="Impor Peserta Mata Kuliah via Excel"
             onClose={() => !importing && setOpenImportModal(false)}
             size="max-w-2xl"
           >
@@ -875,11 +893,11 @@ export default function PesertaMataKuliahPage() {
                         data-testid="btn-unduh-template-modal-peserta"
                       >
                         <Download className="h-3.5 w-3.5" />
-                        Unduh Template CSV
+                        Unduh Template Excel
                       </button>
                     </div>
                     <p className="text-[#64748B]">
-                      File CSV wajib memiliki header kolom: <code>nim</code>, <code>kelas</code>.
+                      File Excel (.xlsx) atau CSV wajib memiliki kolom <code>NIM</code> dan <code>Kelas</code>. Paling mudah: unduh template, isi, lalu unggah kembali.
                     </p>
                     <p className="text-[#64748B]">
                       Sistem memvalidasi NIM terhadap seluruh mahasiswa program studi. Duplikat di dalam file akan langsung ditandai pada pratinjau. Mahasiswa yang sudah terdaftar di mata kuliah ini akan dilaporkan sebagai status 'Dilewati (Terdaftar)'.
@@ -888,11 +906,11 @@ export default function PesertaMataKuliahPage() {
 
                   <div>
                     <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                      Pilih File CSV:
+                      Pilih File Excel (.xlsx) atau CSV:
                     </label>
                     <input
                       type="file"
-                      accept=".csv"
+                      accept={IMPOR_ACCEPT}
                       disabled={importing}
                       onChange={handleFileChange}
                       data-testid="input-file-csv-peserta"

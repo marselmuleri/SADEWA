@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Loader2, Save, Sparkles } from 'lucide-react'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import { ActionButton, Badge, SectionCard } from '../../components/PageChrome'
 import api from '../../services/api'
 import { getApiErrorMessage } from '../superAdminHelpers'
@@ -22,6 +23,8 @@ export default function EvaluasiSection({ mkId, canWrite, pushToast }) {
   const [saving, setSaving] = useState(false)
   const [meminta, setMeminta] = useState(false)
   const [dirty, setDirty] = useState(false)
+  // Daftar kode CPMK yang sudah berisi teks; tidak null = dialog konfirmasi saran AI terbuka
+  const [konfirmasiTimpa, setKonfirmasiTimpa] = useState(null)
 
   const terapkan = (res) => {
     setData(res)
@@ -56,11 +59,23 @@ export default function EvaluasiSection({ mkId, canWrite, pushToast }) {
     setDirty(true)
   }
 
-  const mintaSaran = async () => {
-    const adaIsi = Object.values(teks).some((t) => t.analisis.trim() || t.rencana_perbaikan.trim())
-    if (adaIsi && !window.confirm('Teks yang sudah ada akan diganti dengan saran AI (belum tersimpan sampai Anda menekan Simpan). Lanjutkan?')) {
+  // Bila sudah ada teks, minta konfirmasi lewat dialog dulu agar tulisan dosen tidak tertimpa tanpa sengaja
+  const mintaSaran = () => {
+    const terisi = (data?.items || [])
+      .filter((it) => {
+        const t = teks[it.cpmk_id]
+        return t && (t.analisis.trim() || t.rencana_perbaikan.trim())
+      })
+      .map((it) => it.kode)
+    if (terisi.length) {
+      setKonfirmasiTimpa(terisi)
       return
     }
+    jalankanSaran()
+  }
+
+  const jalankanSaran = async () => {
+    setKonfirmasiTimpa(null)
     setMeminta(true)
     try {
       const res = await api.post(`/portofolio/${mkId}/evaluasi/saran`)
@@ -205,6 +220,33 @@ export default function EvaluasiSection({ mkId, canWrite, pushToast }) {
           })}
         </div>
       )}
+      <ConfirmDialog
+        open={Boolean(konfirmasiTimpa)}
+        title="Minta saran AI?"
+        icon={Sparkles}
+        tone="info"
+        isDestructive={false}
+        message={
+          <>
+            AI akan menyusun <b>analisis</b> dan <b>rencana perbaikan</b> untuk setiap CPMK berdasarkan nilai yang sudah masuk.
+            Beberapa CPMK sudah berisi teks:
+          </>
+        }
+        warning="Teks pada CPMK tersebut akan diganti dengan saran AI. Hasilnya belum tersimpan sampai Anda menekan Simpan, jadi masih bisa Anda tinjau dan sunting."
+        confirmLabel="Ya, ganti dengan saran AI"
+        cancelLabel="Batal"
+        confirmTestId="confirm-saran-ai"
+        onConfirm={jalankanSaran}
+        onCancel={() => setKonfirmasiTimpa(null)}
+      >
+        <div className="flex flex-wrap gap-1.5">
+          {(konfirmasiTimpa || []).map((kode) => (
+            <span key={kode} className="rounded-full border border-[#CBD5E1] bg-[#F8FAFC] px-2 py-0.5 text-[11px] font-semibold text-[#142B4A]">
+              {kode}
+            </span>
+          ))}
+        </div>
+      </ConfirmDialog>
     </SectionCard>
   )
 }

@@ -238,9 +238,9 @@ export default function Navbar({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-background text-[#142B4A]">
+    <div className="min-h-screen bg-background text-[#142B4A] print:min-h-0 print:bg-white">
       {/* Sidebar Desktop 248px */}
-      <aside className="fixed inset-y-0 left-0 z-50 flex w-[248px] flex-col border-r border-[#223E63] bg-[#132D50] text-white">
+      <aside className="fixed inset-y-0 left-0 z-50 flex w-[248px] print:hidden flex-col border-r border-[#223E63] bg-[#132D50] text-white">
         {/* Brand Header */}
         <div className="border-b border-white/10 px-5 py-5">
           <div className="flex items-center gap-3">
@@ -374,9 +374,9 @@ export default function Navbar({ children }) {
       </aside>
 
       {/* Main Layout Area */}
-      <div className="ml-[248px] min-h-screen">
+      <div className="ml-[248px] min-h-screen print:ml-0 print:min-h-0">
         {/* Topbar Header */}
-        <header className="sticky top-0 z-40 flex h-[72px] items-center justify-between border-b border-[#E2E8F0] bg-white px-8">
+        <header className="sticky top-0 z-40 flex h-[72px] print:hidden items-center justify-between border-b border-[#E2E8F0] bg-white px-8">
           {/* Breadcrumbs */}
           <div className="space-y-0.5">
             <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#6D778E]">
@@ -414,15 +414,15 @@ export default function Navbar({ children }) {
         </header>
 
         {/* Main Content Area */}
-        <main className="px-8 py-8">
-          <div className="mx-auto max-w-[1460px] animate-[fadeUp_240ms_ease] space-y-8">
+        <main className="px-8 py-8 print:p-0">
+          <div className="mx-auto max-w-[1460px] animate-[fadeUp_240ms_ease] space-y-8 print:max-w-none print:animate-none print:space-y-5">
             {children}
           </div>
         </main>
       </div>
 
       {/* Toast Notification Container */}
-      <div className="pointer-events-none fixed right-4 top-4 z-[70] space-y-2">
+      <div className="pointer-events-none fixed right-4 top-4 z-[70] space-y-2 print:hidden">
         {toasts.map((toast) => (
           <div
             key={toast.id}

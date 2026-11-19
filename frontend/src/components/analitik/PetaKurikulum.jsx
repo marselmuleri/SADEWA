@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { AlertTriangle, Download, X } from 'lucide-react'
 import { ActionButton, SectionCard } from '../PageChrome'
-import { exportToCsv } from '../../utils/csvExport'
+import { exportToExcel } from '../../utils/spreadsheet'
 import { fmt, warnaCapaian } from './analitikModel'
 
 // Cakupan satu mata kuliah: peta CPMK × IK (bobot pemetaan, warna = capaian IK di MK ini).
@@ -117,7 +117,7 @@ function PetaKurikulumProdi({ model }) {
   }, [model, sel])
 
   const exportCsv = () =>
-    exportToCsv(
+    exportToExcel(
       'Peta_Kurikulum_MK_CPL',
       [{ key: 'mk', label: 'Mata Kuliah' }, ...model.cpl.flatMap((c) => [
         { key: `${c.cpl_id}_b`, label: `${c.kode} bobot` },
@@ -147,7 +147,7 @@ function PetaKurikulumProdi({ model }) {
         description="Kontribusi setiap mata kuliah ke CPL (Σ bobot IK pada pemetaan CPMK) dan capaian CPL di mata kuliah itu. Klik sel untuk melihat IK dan CPMK di baliknya."
         action={
           <ActionButton variant="secondary" onClick={exportCsv} data-testid="btn-export-peta">
-            <Download className="h-4 w-4" /> Export CSV
+            <Download className="h-4 w-4" /> Export Excel
           </ActionButton>
         }
       >

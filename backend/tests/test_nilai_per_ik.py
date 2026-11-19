@@ -240,3 +240,50 @@ def test_nilai_di_luar_rentang_0_sampai_100_ditolak(client):
         ]
     }, headers=_auth_headers(dosen_token))
     assert resp_under.status_code in (400, 422)
+
+
+def test_nilai_tanpa_ik_diterapkan_ke_semua_ik_matriks_dan_impor_menimpa(client):
+    """
+    Satu nilai per bentuk penilaian (form dosen / impor Excel, tanpa ik_id) disimpan untuk
+    setiap IK pada matriks bentuk itu. Impor berikutnya (sumber "upload") memperbarui baris
+    yang sama (upsert), tidak menduplikasi.
+    """
+    env = _setup_obe_kelas(client)
+    headers = _auth_headers(env["dosen_token"])
+    mk_id = env["mk"]["id"]
+    rec = {"peserta_mata_kuliah_id": env["peserta"]["id"], "mk_bentuk_penilaian_id": env["mbp"]["id"]}
+
+    awal = client.post("/api/v1/nilai/manual", json={
+        "mk_id": mk_id, "semester": "Ganjil", "records": [{**rec, "nilai": 70}],
+    }, headers=headers)
+    assert awal.status_code == 200
+    assert {d["ik_id"] for d in awal.json()} == {env["ik1a"]["id"], env["ik1b"]["id"]}
+    assert all(d["source"] == "manual" for d in awal.json())
+
+    impor = client.post("/api/v1/nilai/manual", json={
+        "mk_id": mk_id, "semester": "Ganjil", "sumber": "upload", "records": [{**rec, "nilai": 88.5}],
+    }, headers=headers)
+    assert impor.status_code == 200
+    assert all(d["source"] == "upload" and Decimal(str(d["nilai"])) == Decimal("88.5") for d in impor.json())
+
+    semua = client.get(f"/api/v1/nilai/{mk_id}", headers=headers).json()
+    assert len(semua) == 2
+
+
+def test_nilai_tanpa_ik_bentrok_dengan_nilai_per_ik_ditolak(client):
+    env = _setup_obe_kelas(client)
+    rec = {"peserta_mata_kuliah_id": env["peserta"]["id"], "mk_bentuk_penilaian_id": env["mbp"]["id"]}
+    resp = client.post("/api/v1/nilai/manual", json={
+        "mk_id": env["mk"]["id"], "semester": "Ganjil",
+        "records": [{**rec, "nilai": 70}, {**rec, "ik_id": env["ik1a"]["id"], "nilai": 80}],
+    }, headers=_auth_headers(env["dosen_token"]))
+    assert resp.status_code == 400
+
+
+def test_sumber_nilai_tidak_dikenal_ditolak(client):
+    env = _setup_obe_kelas(client)
+    resp = client.post("/api/v1/nilai/manual", json={
+        "mk_id": env["mk"]["id"], "semester": "Ganjil", "sumber": "siap",
+        "records": [{"peserta_mata_kuliah_id": env["peserta"]["id"], "mk_bentuk_penilaian_id": env["mbp"]["id"], "nilai": 80}],
+    }, headers=_auth_headers(env["dosen_token"]))
+    assert resp.status_code == 422

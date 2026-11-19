@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { AlertOctagon, AlertTriangle, ArrowRight, Download, Info, TrendingUp } from 'lucide-react'
 import { ActionButton, Badge, SectionCard } from '../PageChrome'
-import { exportToCsv } from '../../utils/csvExport'
+import { exportToExcel } from '../../utils/spreadsheet'
 import { TARGET_KETUNTASAN, daftarPrioritas, daftarTemuan, fmt } from './analitikModel'
 
 const GAYA_TEMUAN = {
@@ -21,7 +21,7 @@ export default function RingkasanEvaluasi({ model, onNavigate }) {
   const hitung = (lv) => prioritas.filter((p) => p.level === lv).length
 
   const exportCsv = () =>
-    exportToCsv(
+    exportToExcel(
       'Papan_Prioritas_Evaluasi_OBE',
       [
         { key: 'peringkat', label: 'Peringkat' },
@@ -82,7 +82,7 @@ export default function RingkasanEvaluasi({ model, onNavigate }) {
         description={`CPL, IK, dan CPMK yang paling perlu dievaluasi, diurutkan dari yang paling jauh dari target. Target ketuntasan: ${TARGET_KETUNTASAN}% mahasiswa mencapai threshold.`}
         action={
           <ActionButton variant="secondary" onClick={exportCsv} disabled={!terfilter.length} data-testid="btn-export-prioritas">
-            <Download className="h-4 w-4" /> Export CSV
+            <Download className="h-4 w-4" /> Export Excel
           </ActionButton>
         }
       >

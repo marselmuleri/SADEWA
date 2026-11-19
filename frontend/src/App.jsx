@@ -10,7 +10,6 @@ import LoginPage from './pages/LoginPage'
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const PesertaMataKuliahPage = lazy(() => import('./pages/PesertaMataKuliahPage'))
 const MahasiswaPage = lazy(() => import('./pages/MahasiswaPage'))
-const NilaiPage = lazy(() => import('./pages/NilaiPage'))
 const AnalisisPage = lazy(() => import('./pages/AnalisisPage'))
 const PengaturanPage = lazy(() => import('./pages/PengaturanPage'))
 const KurikulumPage = lazy(() => import('./pages/KurikulumPage'))

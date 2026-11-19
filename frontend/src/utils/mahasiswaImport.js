@@ -4,55 +4,16 @@
 //   Nim | Nama | Jenis kelamin | Agama | Prodi | Tahun masuk | Jalur masuk | Kode status terakhir
 // Kolom yang dipakai SADEWA: Nim, Nama, Tahun masuk (angkatan), Jalur masuk (status masuk),
 // Kode status terakhir (status akademik + semester). Jenis kelamin & Agama tidak disimpan.
-// Format CSV lama (nim, nama, semester_aktif, status_masuk) tetap diterima.
+// File yang sama yang disimpan ulang sebagai Excel (.xlsx), template Excel SADEWA, dan format CSV lama
+// (nim, nama, semester_aktif, status_masuk) juga diterima.
+
+import { downloadTemplate, readSpreadsheet } from './spreadsheet'
 
 export const KOLOM_SIAKAD = ['Nim', 'Nama', 'Jenis kelamin', 'Agama', 'Prodi', 'Tahun masuk', 'Jalur masuk', 'Kode status terakhir']
 const KOLOM_WAJIB_SIAKAD = ['nim', 'nama', 'tahun masuk', 'kode status terakhir']
 
 const norm = (s) => String(s ?? '').trim()
 const kunci = (s) => norm(s).toLowerCase().replace(/[_\s]+/g, ' ')
-
-// Byte awal file menentukan pengodean teks. File Excel asli (biner) tidak bisa dibaca di sini.
-export function dekodeFile(buffer) {
-  const b = new Uint8Array(buffer)
-  if (b[0] === 0x50 && b[1] === 0x4b) {
-    throw new Error('File ini berformat Excel .xlsx. Gunakan file ekspor asli dari SIAKAD (jangan dibuka lalu disimpan ulang di Excel), atau simpan sebagai "Text (Tab delimited)" / CSV.')
-  }
-  if (b[0] === 0xd0 && b[1] === 0xcf && b[2] === 0x11 && b[3] === 0xe0) {
-    throw new Error('File ini berformat Excel 97-2003 (biner). Gunakan file ekspor asli dari SIAKAD (jangan disimpan ulang di Excel), atau simpan sebagai "Text (Tab delimited)" / CSV.')
-  }
-  if (b[0] === 0xff && b[1] === 0xfe) return new TextDecoder('utf-16le').decode(b.subarray(2))
-  if (b[0] === 0xfe && b[1] === 0xff) return new TextDecoder('utf-16be').decode(b.subarray(2))
-  // UTF-16 tanpa BOM: banyak byte nol di posisi ganjil
-  if (b.length > 8 && b[1] === 0 && b[3] === 0) return new TextDecoder('utf-16le').decode(b)
-  const teks = new TextDecoder('utf-8').decode(b)
-  return teks.charCodeAt(0) === 0xfeff ? teks.slice(1) : teks
-}
-
-function pecahBaris(teks) {
-  const baris = teks.split(/\r\n|\n|\r/).filter((l) => l.trim() !== '')
-  if (!baris.length) return { header: [], data: [] }
-  const pertama = baris[0]
-  const pemisah = pertama.includes('\t') ? '\t' : pertama.includes(';') && !pertama.includes(',') ? ';' : ','
-  const sel = (l) => {
-    if (pemisah === '\t') return l.split('\t').map(norm)
-    // CSV sederhana dengan dukungan tanda kutip
-    const out = []
-    let cur = ''
-    let kutip = false
-    for (let i = 0; i < l.length; i++) {
-      const c = l[i]
-      if (kutip) {
-        if (c === '"' && l[i + 1] === '"') { cur += '"'; i++ } else if (c === '"') kutip = false
-        else cur += c
-      } else if (c === '"') kutip = true
-      else if (c === pemisah) { out.push(norm(cur)); cur = '' } else cur += c
-    }
-    out.push(norm(cur))
-    return out
-  }
-  return { header: sel(pertama), data: baris.slice(1).map(sel) }
-}
 
 // "[2026-1] Aktif" -> { tahun: 2026, periode: 1, status: 'Aktif' }
 export function bacaKodeStatus(kode) {
@@ -97,11 +58,11 @@ export function prodiSama(a, b) {
 }
 
 /**
- * Baca file impor. Hasil: { format: 'siakad' | 'csv', rows: [{ rowNumber, nim, nama, angkatan, semester_aktif,
+ * Baca file impor (.xls SIAKAD, .xlsx, .csv). Hasil: { format: 'siakad' | 'csv', rows: [{ rowNumber, nim, nama, angkatan, semester_aktif,
  * status_masuk, status_akademik, prodi, jalur, statusAsli, errors[] }] }
  */
-export function bacaFileMahasiswa(buffer) {
-  const { header, data } = pecahBaris(dekodeFile(buffer))
+export async function bacaFileMahasiswa(buffer) {
+  const { header, data } = await readSpreadsheet(buffer, { kolomKunci: ['nim'] })
   if (!header.length) throw new Error('File kosong atau tidak memiliki baris header.')
   const idx = Object.fromEntries(header.map((h, i) => [kunci(h), i]))
   const ambil = (r, nama) => (idx[nama] != null ? norm(r[idx[nama]]) : '')
@@ -156,28 +117,36 @@ export function bacaFileMahasiswa(buffer) {
   return { format: siakad ? 'siakad' : 'csv', rows }
 }
 
-// Template berformat sama dengan ekspor SIAKAD (UTF-16 LE + tab) agar langsung terbuka di Excel.
-export function unduhTemplateSiakad(prodiNama = 'Teknik Komputer S1') {
+// Template Excel berkolom sama dengan ekspor SIAKAD, sehingga file SIAKAD maupun template ini bisa diunggah.
+export async function unduhTemplateSiakad(prodiNama = 'Teknik Komputer S1') {
   const contoh = [
     ['21120123120001', 'NAMA MAHASISWA SATU', 'PRIA', 'ISLAM', prodiNama, '2023', 'SNBP', '[2026-1] Aktif'],
     ['21120123120002', 'NAMA MAHASISWA DUA', 'WANITA', 'ISLAM', prodiNama, '2023', 'SNBT', '[2025-2] Cuti'],
     ['21120124120003', 'NAMA MAHASISWA TIGA', 'PRIA', 'PROTESTAN', prodiNama, '2024', 'UM S1', '[2026-1] Aktif'],
   ]
-  const teks = [KOLOM_SIAKAD, ...contoh].map((r) => `${r.join('\t')}\t`).join('\r\n') + '\r\n'
-  const isi = new Uint8Array(2 + teks.length * 2)
-  isi[0] = 0xff
-  isi[1] = 0xfe
-  for (let i = 0; i < teks.length; i++) {
-    const c = teks.charCodeAt(i)
-    isi[2 + i * 2] = c & 0xff
-    isi[3 + i * 2] = c >> 8
-  }
-  const url = URL.createObjectURL(new Blob([isi], { type: 'application/vnd.ms-excel' }))
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'template_impor_mahasiswa_siakad.xls'
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  await downloadTemplate(
+    'template_impor_mahasiswa',
+    [
+      { header: 'Nim', key: 'nim', width: 18, required: true, text: true },
+      { header: 'Nama', key: 'nama', width: 34, required: true },
+      { header: 'Jenis kelamin', key: 'jk', width: 14, list: ['PRIA', 'WANITA'], note: 'Tidak disimpan di SADEWA.' },
+      { header: 'Agama', key: 'agama', width: 14, note: 'Tidak disimpan di SADEWA.' },
+      { header: 'Prodi', key: 'prodi', width: 26, note: 'Harus sama dengan program studi akun Anda.' },
+      { header: 'Tahun masuk', key: 'tahun', width: 13, required: true, text: true, note: 'Tahun angkatan, 4 digit (mis. 2023).' },
+      { header: 'Jalur masuk', key: 'jalur', width: 14, note: 'SNBP, SNBT, UM, dst. = Reguler; pindahan/alih jenjang/RPL = Transfer.' },
+      { header: 'Kode status terakhir', key: 'status', width: 22, required: true, note: 'Format: [TAHUN-PERIODE] Status, mis. [2026-1] Aktif. Periode 1 = ganjil, 2 = genap.' },
+    ],
+    contoh,
+    {
+      sheetName: 'Mahasiswa',
+      contoh: true,
+      petunjuk: [
+        'Cara tercepat: unggah langsung file ekspor data mahasiswa dari SIAKAD tanpa diubah. Template ini hanya untuk input manual.',
+        'Isi satu mahasiswa per baris. Baris berwarna kuning adalah contoh; hapus atau timpa sebelum diunggah.',
+        'Kolom Nim dan Tahun masuk berformat teks agar angka tidak berubah menjadi notasi ilmiah.',
+        'Kode status terakhir ditulis seperti di SIAKAD, mis. "[2026-1] Aktif" atau "[2025-2] Cuti". Semester berjalan dihitung otomatis dari kolom ini dan Tahun masuk.',
+        'Simpan sebagai Excel Workbook (.xlsx). Maksimal 500 baris dan 2 MB per file.',
+      ],
+    },
+  )
 }

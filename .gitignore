@@ -61,3 +61,7 @@ backend/uploads/
 # Keluaran lokal (tidak dilacak)
 /Claude outputs/
 /loadtest/
+/security/
+/evaluasi_ai/
+/docs/
+/hardware/

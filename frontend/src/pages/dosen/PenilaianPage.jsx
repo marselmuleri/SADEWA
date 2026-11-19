@@ -33,6 +33,7 @@ import ConfirmDialog from '../../components/ConfirmDialog'
 import { PageHeader, ActionButton } from '../../components/PageChrome'
 import { TableActionHeader, TableActionCell, TableActionButton } from '../../components/TableActions'
 import { getApiErrorMessage, getDeleteErrorMessage } from '../superAdminHelpers'
+import ImporNilaiExcel from '../../components/nilai/ImporNilaiExcel'
 
 export default function PenilaianPage() {
   const { mkId } = useParams()
@@ -431,10 +432,25 @@ export default function PenilaianPage() {
   }
 
   // --- TAHAP D2: SCORES LOOKUP & COMPUTATION ---
+  // Nilai disimpan per IK; satu sel tabel = satu bentuk penilaian, jadi baris-baris IK-nya
+  // digabung: nilai = rata-rata (sama persis bila diisi lewat form/impor), ids = semua baris.
   const scoresByPesertaAndComp = useMemo(() => {
-    const map = new Map()
+    const grup = new Map()
     scoresList.forEach((s) => {
-      map.set(`${s.peserta_mata_kuliah_id}_${s.mk_bentuk_penilaian_id}`, s)
+      const key = `${s.peserta_mata_kuliah_id}_${s.mk_bentuk_penilaian_id}`
+      if (!grup.has(key)) grup.set(key, [])
+      grup.get(key).push(s)
+    })
+    const map = new Map()
+    grup.forEach((rows, key) => {
+      const nilai = rows.map((r) => Number(r.nilai))
+      const rata = nilai.reduce((a, b) => a + b, 0) / nilai.length
+      map.set(key, {
+        id: rows[0].id,
+        ids: rows.map((r) => r.id),
+        nilai: Math.round(rata * 100) / 100,
+        seragam: nilai.every((v) => v === nilai[0]),
+      })
     })
     return map
   }, [scoresList])
@@ -503,39 +519,26 @@ export default function PenilaianPage() {
 
     setSubmittingGrades(true)
     try {
-      const recordsToCreate = []
-      const promisesToUpdate = []
-
+      // Tanpa ik_id: backend menerapkan nilai ke semua IK pada matriks bentuk penilaian itu
+      // (baris baru dibuat, baris lama diperbarui).
+      const records = []
       for (const comp of componentsList) {
         const val = gradeInputs[comp.id]
         const existing = scoresByPesertaAndComp.get(`${activePeserta.id}_${comp.id}`)
-
         if (val !== '' && val !== null && val !== undefined) {
           const numVal = Number(val)
-          if (existing) {
-            if (Number(existing.nilai) !== numVal) {
-              promisesToUpdate.push(api.put(`/nilai/${existing.id}`, { nilai: numVal }))
-            }
-          } else {
-            recordsToCreate.push({
-              peserta_mata_kuliah_id: activePeserta.id,
-              mk_bentuk_penilaian_id: comp.id,
-              nilai: numVal,
-            })
+          if (!existing || !existing.seragam || Number(existing.nilai) !== numVal) {
+            records.push({ peserta_mata_kuliah_id: activePeserta.id, mk_bentuk_penilaian_id: comp.id, nilai: numVal })
           }
         }
       }
 
-      if (recordsToCreate.length > 0) {
+      if (records.length > 0) {
         await api.post('/nilai/manual', {
           mk_id: selectedCourse.id,
           semester: selectedCourse.semester || 'Ganjil',
-          records: recordsToCreate,
+          records,
         })
-      }
-
-      if (promisesToUpdate.length > 0) {
-        await Promise.all(promisesToUpdate)
       }
 
       pushToast('Nilai mahasiswa berhasil disimpan', 'success')
@@ -554,7 +557,7 @@ export default function PenilaianPage() {
     const existing = scoresByPesertaAndComp.get(`${activePeserta?.id}_${comp.id}`)
     if (!existing) return
     const compNama = bentukMap.get(Number(comp.bentuk_penilaian_id))?.nama || `Komponen #${comp.id}`
-    setDeletingScoreId(existing.id)
+    setDeletingScoreId(existing.ids)
     setDeletingScoreCompName(compNama)
     setIsDeleteScoreModalOpen(true)
   }
@@ -563,7 +566,7 @@ export default function PenilaianPage() {
     if (!deletingScoreId) return
     setDeletingScoreLoading(true)
     try {
-      await api.delete(`/nilai/${deletingScoreId}`)
+      await Promise.all(deletingScoreId.map((id) => api.delete(`/nilai/${id}`)))
       pushToast(`Nilai "${deletingScoreCompName}" berhasil dihapus`, 'success')
       setIsDeleteScoreModalOpen(false)
       setDeletingScoreId(null)
@@ -573,7 +576,7 @@ export default function PenilaianPage() {
           const copy = { ...prev }
           for (const comp of componentsList) {
             const s = scoresByPesertaAndComp.get(`${activePeserta.id}_${comp.id}`)
-            if (s && s.id === deletingScoreId) {
+            if (s && deletingScoreId.includes(s.id)) {
               copy[comp.id] = ''
             }
           }
@@ -1214,7 +1217,7 @@ export default function PenilaianPage() {
           <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-3.5 text-xs text-[#64748B] flex items-center gap-2.5">
             <Info className="h-4 w-4 text-[#1A3A6B] shrink-0" />
             <span>
-              <strong>Catatan:</strong> Sinkronisasi nilai otomatis ke sistem SIAP UNDIP belum tersedia. Seluruh pengisian dan pemutakhiran nilai dilakukan secara manual per komponen asesmen.
+              <strong>Catatan:</strong> Sinkronisasi nilai otomatis ke sistem SIAP UNDIP belum tersedia. Nilai bisa diisi per mahasiswa lewat tombol Nilai, atau sekaligus untuk satu kelas lewat Impor Nilai Excel.
             </span>
           </div>
 
@@ -1307,8 +1310,19 @@ export default function PenilaianPage() {
                   className="w-full rounded-md border border-[#CBD5E1] bg-white pl-8 pr-3 py-1.5 text-xs text-[#142B4A] placeholder:text-[#94A3B8] focus:border-[#1A3A6B] focus:outline-none"
                 />
               </div>
-              <div className="text-xs text-[#64748B]">
-                Total: <span className="font-semibold text-[#142B4A]">{filteredPesertaList.length}</span> peserta
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="text-xs text-[#64748B]">
+                  Total: <span className="font-semibold text-[#142B4A]">{filteredPesertaList.length}</span> peserta
+                </div>
+                <ImporNilaiExcel
+                  course={selectedCourse}
+                  componentsList={componentsList}
+                  bentukMap={bentukMap}
+                  pesertaList={pesertaList}
+                  scoresByPesertaAndComp={scoresByPesertaAndComp}
+                  onSelesai={() => fetchPesertaAndScores(selectedCourse.id)}
+                  pushToast={pushToast}
+                />
               </div>
             </div>
 

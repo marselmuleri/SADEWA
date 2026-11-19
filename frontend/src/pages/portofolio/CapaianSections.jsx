@@ -4,7 +4,7 @@ import {
   Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts'
 import { ActionButton, SectionCard, StatCard } from '../../components/PageChrome'
-import { exportToCsv } from '../../utils/csvExport'
+import { exportToExcel } from '../../utils/spreadsheet'
 import { formatNilai } from './portofolioShared'
 
 const NAVY = '#1A3A6B'
@@ -68,7 +68,7 @@ export function NilaiCpSection({ data }) {
       data.cpl.forEach((c) => { row[`cpl_${c.id}`] = m.cpl[c.id] })
       return row
     })
-    exportToCsv(`nilai-cp-${data.mata_kuliah.kode}`, headers, rows)
+    exportToExcel(`nilai-cp-${data.mata_kuliah.kode}`, headers, rows)
   }
 
   return (
@@ -88,7 +88,7 @@ export function NilaiCpSection({ data }) {
             />
           </label>
           <ActionButton variant="secondary" className="px-3 py-1.5 text-xs" onClick={ekspor}>
-            <Download className="h-3.5 w-3.5" /> Ekspor CSV
+            <Download className="h-3.5 w-3.5" /> Ekspor Excel
           </ActionButton>
         </div>
       }

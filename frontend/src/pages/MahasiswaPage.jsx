@@ -235,9 +235,13 @@ export default function MahasiswaPage() {
   }
 
   // Impor dari file ekspor SIAKAD (lihat utils/mahasiswaImport.js)
-  const handleDownloadTemplate = () => {
-    unduhTemplateSiakad(user?.program_studi_nama || undefined)
-    pushToast('Template format ekspor SIAKAD berhasil diunduh')
+  const handleDownloadTemplate = async () => {
+    try {
+      await unduhTemplateSiakad(user?.program_studi_nama || undefined)
+      pushToast('Template Excel mahasiswa berhasil diunduh')
+    } catch {
+      pushToast('Gagal membuat template Excel', 'error')
+    }
   }
 
   const handleOpenImport = () => {
@@ -261,8 +265,8 @@ export default function MahasiswaPage() {
       return
     }
 
-    if (!/\.(xls|tsv|txt|csv)$/i.test(file.name)) {
-      setImportError('File harus berupa ekspor SIAKAD (.xls) atau CSV (.csv)')
+    if (!/\.(xlsx|xls|tsv|txt|csv)$/i.test(file.name)) {
+      setImportError('File harus berupa ekspor SIAKAD (.xls), Excel (.xlsx), atau CSV (.csv)')
       setImportFile(null)
       return
     }
@@ -277,7 +281,7 @@ export default function MahasiswaPage() {
     const reader = new FileReader()
     reader.onload = async (event) => {
       try {
-        const { rows } = bacaFileMahasiswa(event.target?.result)
+        const { rows } = await bacaFileMahasiswa(event.target?.result)
 
         if (rows.length === 0) {
           setImportError('File tidak memiliki baris data mahasiswa')
@@ -452,7 +456,7 @@ export default function MahasiswaPage() {
               data-testid="btn-unduh-template-mahasiswa"
             >
               <Download className="h-4 w-4" />
-              Unduh Template
+              Unduh Template Excel
             </ActionButton>
             <ActionButton
               variant="secondary"
@@ -573,7 +577,7 @@ export default function MahasiswaPage() {
             <p className="mt-1 text-xs text-[#64748B]">
               {search || semesterFilter !== 'ALL' || statusFilter !== 'ALL' || keaktifanFilter !== 'ALL'
                 ? 'Tidak ditemukan data yang sesuai dengan filter pencarian.'
-                : 'Belum ada data mahasiswa di program studi ini. Silakan tambahkan mahasiswa atau gunakan fitur impor CSV.'}
+                : 'Belum ada data mahasiswa di program studi ini. Silakan tambahkan mahasiswa atau gunakan fitur impor Excel/SIAKAD.'}
             </p>
           </div>
         ) : (
@@ -844,29 +848,29 @@ export default function MahasiswaPage() {
                     className="inline-flex items-center gap-1 font-semibold text-[#1A3A6B] hover:underline"
                   >
                     <Download className="h-3.5 w-3.5" />
-                    Unduh Template
+                    Unduh Template Excel
                   </button>
                 </div>
                 <p className="text-[#64748B]">
-                  Unggah langsung file ekspor data mahasiswa dari SIAKAD (mis. <code>export-2026-11-12_11_39_21.xls</code>) tanpa diubah.
+                  Unggah langsung file ekspor data mahasiswa dari SIAKAD (mis. <code>export-2026-11-12_11_39_21.xls</code>) tanpa diubah, atau isi template Excel (.xlsx) dengan kolom yang sama.
                   Kolom: <code>Nim</code>, <code>Nama</code>, <code>Jenis kelamin</code>, <code>Agama</code>, <code>Prodi</code>, <code>Tahun masuk</code>, <code>Jalur masuk</code>, <code>Kode status terakhir</code>.
                 </p>
                 <ul className="list-disc space-y-0.5 pl-4 text-[#64748B]">
                   <li><b>Tahun masuk</b> menjadi angkatan. <b>Kode status terakhir</b> seperti <code>[2026-1] Aktif</code> menjadi status akademik, dan semester dihitung otomatis (masuk 2023, periode 2026-1 = semester 7).</li>
                   <li>Status <i>Undur Diri</i>, <i>Drop Out</i>, dan sejenisnya menjadi <b>Keluar</b>. Jalur SNBP/SNBT/UM/SBUB menjadi <b>Reguler</b>; jalur pindahan/alih jenjang menjadi <b>Transfer</b>.</li>
                   <li>NIM yang sudah terdaftar tidak ditambah ulang; bila status, semester, atau angkatannya berubah di SIAKAD, datanya <b>diperbarui</b>.</li>
-                  <li>Jenis kelamin dan agama tidak disimpan di SADEWA. Maksimal 500 baris dan 2 MB per file. File CSV lama (<code>nim, nama, semester_aktif, status_masuk</code>) tetap diterima.</li>
+                  <li>Jenis kelamin dan agama tidak disimpan di SADEWA. Maksimal 500 baris dan 2 MB per file. Jika file SIAKAD dibuka lalu disimpan ulang di Excel, simpan sebagai <b>Excel Workbook (.xlsx)</b>. File CSV lama (<code>nim, nama, semester_aktif, status_masuk</code>) tetap diterima.</li>
                 </ul>
               </div>
 
               {/* Upload Input */}
               <div>
                 <label className="block text-xs font-semibold text-[#142B4A] mb-1">
-                  Pilih File Ekspor SIAKAD (.xls) atau CSV:
+                  Pilih File Ekspor SIAKAD (.xls), Excel (.xlsx), atau CSV:
                 </label>
                 <input
                   type="file"
-                  accept=".xls,.csv,.tsv,.txt"
+                  accept=".xls,.xlsx,.csv,.tsv,.txt"
                   disabled={importing}
                   onChange={handleFileChange}
                   data-testid="input-file-csv-mahasiswa"

@@ -107,60 +107,86 @@ def input_manual(payload: NilaiManualInput, db: Session = Depends(get_db), user:
             _validate_mata_kuliah_siap_dinilai(db, mk_id)
             checked_mk_ids.add(mk_id)
 
-    # 1. Validasi duplikat dalam satu request batch
-    seen_keys: set[tuple[int, int, int | None]] = set()
+    # 1. Validasi per record. Nilai tanpa IK berlaku untuk SEMUA IK pada matriks bentuk
+    #    penilaian itu (satu nilai Tugas/UTS/UAS seperti di form dan impor Excel), sama dengan
+    #    aturan mesin kalkulasi untuk nilai tanpa IK. Kolom ik_id di database wajib terisi.
+    ik_per_mbp: dict[int, list[int]] = {}
+    peserta_cek: dict[int, int] = {}
+    seen_keys: set[tuple[int, int, int]] = set()
+    rencana: list[tuple[int, int, int, Decimal]] = []
     for record in payload.records:
         # Validasi rentang nilai 0..100 (C8)
         if record.nilai < Decimal("0") or record.nilai > Decimal("100"):
             raise HTTPException(status_code=400, detail="Nilai harus berada dalam rentang 0 sampai 100")
 
-        # Validasi peserta tidak terkunci karena sudah difinalisasi
-        he = db.query(HasilEvaluasi).filter(HasilEvaluasi.peserta_mata_kuliah_id == record.peserta_mata_kuliah_id).first()
-        if he and he.is_final:
-            raise HTTPException(
-                status_code=409,
-                detail=f"Peserta ID {record.peserta_mata_kuliah_id} telah difinalisasi dan nilai terkunci. Buka kunci terlebih dahulu untuk mengoreksi nilai.",
-            )
+        pid = record.peserta_mata_kuliah_id
+        mbp_id = record.mk_bentuk_penilaian_id
+        if pid not in peserta_cek:
+            peserta = db.query(PesertaMataKuliah).filter(PesertaMataKuliah.id == pid).first()
+            if not peserta or peserta.mata_kuliah_id != _mata_kuliah_id_of_mk_bentuk_penilaian(db, mbp_id):
+                raise HTTPException(status_code=400, detail=f"Peserta ID {pid} bukan peserta mata kuliah ini")
+            # Validasi peserta tidak terkunci karena sudah difinalisasi
+            he = db.query(HasilEvaluasi).filter(HasilEvaluasi.peserta_mata_kuliah_id == pid).first()
+            if he and he.is_final:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Peserta ID {pid} telah difinalisasi dan nilai terkunci. Buka kunci terlebih dahulu untuk mengoreksi nilai.",
+                )
+            peserta_cek[pid] = peserta.mata_kuliah_id
 
-        key = (record.peserta_mata_kuliah_id, record.mk_bentuk_penilaian_id, record.ik_id)
-        if key in seen_keys:
-            raise HTTPException(status_code=400, detail="Duplikat kombinasi peserta, bentuk penilaian, dan IK dalam satu request")
-        seen_keys.add(key)
+        if mbp_id not in ik_per_mbp:
+            ik_per_mbp[mbp_id] = [
+                m.ik_id
+                for m in db.query(MKBentukPenilaianIKMap).filter(MKBentukPenilaianIKMap.mk_bentuk_penilaian_id == mbp_id).all()
+                if m.bobot is not None and Decimal(str(m.bobot)) > Decimal("0")
+            ]
 
-        # 2. Validasi IK harus ada dalam matriks bentuk penilaian dengan bobot sel > 0
-        if record.ik_id is not None:
-            map_entry = db.query(MKBentukPenilaianIKMap).filter(
-                MKBentukPenilaianIKMap.mk_bentuk_penilaian_id == record.mk_bentuk_penilaian_id,
-                MKBentukPenilaianIKMap.ik_id == record.ik_id,
-            ).first()
-            if not map_entry or map_entry.bobot <= Decimal("0"):
+        if record.ik_id is None:
+            ik_ids = ik_per_mbp[mbp_id]
+            if not ik_ids:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"IK ID {record.ik_id} tidak terdapat dalam matriks bentuk penilaian {record.mk_bentuk_penilaian_id} atau bobot selnya 0",
+                    detail=f"Bentuk penilaian {mbp_id} belum memiliki pemetaan IK (Setting Bobot IK) sehingga belum bisa dinilai",
                 )
+        else:
+            # Validasi IK harus ada dalam matriks bentuk penilaian dengan bobot sel > 0
+            if record.ik_id not in ik_per_mbp[mbp_id]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"IK ID {record.ik_id} tidak terdapat dalam matriks bentuk penilaian {mbp_id} atau bobot selnya 0",
+                )
+            ik_ids = [record.ik_id]
+
+        for ik_id in ik_ids:
+            key = (pid, mbp_id, ik_id)
+            if key in seen_keys:
+                raise HTTPException(status_code=400, detail="Duplikat kombinasi peserta, bentuk penilaian, dan IK dalam satu request")
+            seen_keys.add(key)
+            rencana.append((pid, mbp_id, ik_id, record.nilai))
 
     created_or_updated = []
-    for record in payload.records:
-        # Cek apakah record sudah ada di DB untuk kombinasi yang sama (koreksi nilai)
+    for pid, mbp_id, ik_id, nilai in rencana:
+        # Kombinasi yang sudah ada = koreksi nilai (upsert)
         existing = db.query(NilaiBentukPenilaian).filter(
-            NilaiBentukPenilaian.peserta_mata_kuliah_id == record.peserta_mata_kuliah_id,
-            NilaiBentukPenilaian.mk_bentuk_penilaian_id == record.mk_bentuk_penilaian_id,
-            NilaiBentukPenilaian.ik_id == record.ik_id,
+            NilaiBentukPenilaian.peserta_mata_kuliah_id == pid,
+            NilaiBentukPenilaian.mk_bentuk_penilaian_id == mbp_id,
+            NilaiBentukPenilaian.ik_id == ik_id,
         ).first()
 
         if existing:
-            existing.nilai = record.nilai
+            existing.nilai = nilai
             existing.semester = payload.semester
+            existing.source = payload.sumber
             existing.imported_by = user.id
             created_or_updated.append(existing)
         else:
             data = NilaiBentukPenilaian(
-                peserta_mata_kuliah_id=record.peserta_mata_kuliah_id,
-                mk_bentuk_penilaian_id=record.mk_bentuk_penilaian_id,
-                ik_id=record.ik_id,
+                peserta_mata_kuliah_id=pid,
+                mk_bentuk_penilaian_id=mbp_id,
+                ik_id=ik_id,
                 semester=payload.semester,
-                nilai=record.nilai,
-                source="manual",
+                nilai=nilai,
+                source=payload.sumber,
                 imported_by=user.id,
             )
             db.add(data)
